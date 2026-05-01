@@ -112,15 +112,15 @@ export async function fetchVotes(): Promise<VoteRecord[]> {
 export async function initiateVote(
   entry: { name: string; realm: string; region: string; className?: string; specName?: string; thumbnailUrl?: string },
   sessionId: string,
-): Promise<{ ok: boolean; alreadyExists: boolean }> {
+): Promise<VoteRecord | null> {
   const charKey = `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()
   const res = await fetch('/api/votes', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ charKey, ...entry, sessionId }),
   })
-  if (res.status === 409) return { ok: false, alreadyExists: true }
-  return { ok: res.ok, alreadyExists: false }
+  if (!res.ok) return null
+  return res.json()
 }
 
 export async function castVote(charKey: string, vote: 'yes' | 'no', sessionId: string): Promise<VoteRecord | null> {

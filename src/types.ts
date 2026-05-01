@@ -12,6 +12,7 @@ export interface CharacterEntry extends CharacterInput {
   score?: number
   scoreDelta?: number
   prevRank?: number
+  isOwned?: boolean
   className?: string
   specName?: string
   thumbnailUrl?: string

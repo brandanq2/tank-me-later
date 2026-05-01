@@ -44,15 +44,14 @@ export default function App() {
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
   const sessionId = useRef(getSessionId())
-  const ownedCharKeys = useRef(new Set<string>())
 
-  const addCharacter = useCallback(async (input: CharacterInput) => {
+  const addCharacter = useCallback(async (input: CharacterInput, isOwned = false) => {
     const key = `${input.name}-${input.realm}-${input.region}`.toLowerCase()
     if (addedKeys.current.has(key)) return
     addedKeys.current.add(key)
 
     const id = makeId()
-    const pending: CharacterEntry = { ...input, id, status: 'loading' }
+    const pending: CharacterEntry = { ...input, id, status: 'loading', isOwned }
 
     setEntries((prev) => [...prev, pending])
     setAnyLoading(true)
@@ -77,12 +76,6 @@ export default function App() {
       setAnyLoading(false)
     }
   }, [])
-
-  const addOwnedCharacter = useCallback((input: CharacterInput) => {
-    const key = `${input.name}-${input.realm}-${input.region}`.toLowerCase()
-    ownedCharKeys.current.add(key)
-    addCharacter(input)
-  }, [addCharacter])
 
   useEffect(() => {
     fetchCutoff().then(setCutoff).catch(() => {})
@@ -112,9 +105,7 @@ export default function App() {
     setEntries((prev) => {
       const target = prev.find((e) => e.id === id)
       if (target) {
-        const key = `${target.name}-${target.realm}-${target.region}`.toLowerCase()
-        addedKeys.current.delete(key)
-        ownedCharKeys.current.delete(key)
+        addedKeys.current.delete(`${target.name}-${target.realm}-${target.region}`.toLowerCase())
         removePersistedCharacter(target).catch(() => {})
       }
       return prev.filter((e) => e.id !== id)
@@ -178,12 +169,13 @@ export default function App() {
   const handleRemoveOrVote = useCallback((id: string) => {
     const target = entries.find(e => e.id === id)
     if (!target) return
-    const key = `${target.name}-${target.realm}-${target.region}`.toLowerCase()
-    if (ownedCharKeys.current.has(key)) {
+    if (target.isOwned) {
       removeCharacter(id)
     } else {
       initiateVote(target, sessionId.current)
-        .then(() => fetchVotes().then(setVotes).catch(() => {}))
+        .then((newVote) => {
+          if (newVote) setVotes(prev => [...prev.filter(v => v.charKey !== newVote.charKey), newVote])
+        })
         .catch(() => {})
     }
   }, [entries, removeCharacter])
@@ -194,7 +186,6 @@ export default function App() {
     if (result.resolved) {
       setEntries(prev => prev.filter(e => `${e.name}-${e.realm}-${e.region}`.toLowerCase() !== charKey))
       addedKeys.current.delete(charKey)
-      ownedCharKeys.current.delete(charKey)
       setVotes(prev => prev.filter(v => v.charKey !== charKey))
     } else {
       setVotes(prev => prev.map(v => v.charKey === charKey ? result : v))
@@ -225,7 +216,7 @@ export default function App() {
       </header>
 
       <div className="controls">
-        <AddCharacterForm onAdd={addOwnedCharacter} loading={anyLoading} />
+        <AddCharacterForm onAdd={(input) => addCharacter(input, true)} loading={anyLoading} />
         {entries.length > 0 && (
           <button className="refresh-btn" onClick={refreshAll} disabled={anyLoading}>
             Refresh All
