@@ -148,8 +148,10 @@ export async function generateCover(
     body: JSON.stringify({ charKey, race, specName, className }),
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as { error?: string }
-    throw new Error(err.error ?? 'Generation failed')
+    const text = await res.text().catch(() => '')
+    let message = 'Generation failed'
+    try { message = (JSON.parse(text) as { error?: string }).error ?? text } catch { message = text || 'Generation failed' }
+    throw new Error(message)
   }
   return res.json()
 }
