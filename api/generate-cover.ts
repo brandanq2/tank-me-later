@@ -1,4 +1,3 @@
-import { put } from '@vercel/blob'
 import { Redis } from '@upstash/redis'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
@@ -86,13 +85,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const replicateUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output
 
-    const imageRes = await fetch(replicateUrl)
-    const imageBlob = await imageRes.blob()
-    const { url: blobUrl } = await put(`covers/${charKey}.jpg`, imageBlob, { access: 'public' })
+    await redis.set(coverCacheKey(charKey), replicateUrl, { ex: 60 * 60 * 24 * 7 })
 
-    await redis.set(coverCacheKey(charKey), blobUrl)
-
-    return res.json({ imageUrl: blobUrl })
+    return res.json({ imageUrl: replicateUrl })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[generate-cover] unhandled error:', message)

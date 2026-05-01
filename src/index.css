@@ -145,6 +145,19 @@ body {
   font-size: 0.95rem;
 }
 
+.album-error-copy {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--muted);
+  border-radius: 5px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.album-error-copy:hover { background: rgba(255, 255, 255, 0.14); }
+
 .album-error-sub {
   font-size: 0.75rem;
   opacity: 0.5;

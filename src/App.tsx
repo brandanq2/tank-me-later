@@ -361,7 +361,11 @@ export default function App() {
           {generatingCover
             ? <div className="album-generating"><div className="album-spinner" /><p>Generating cover art…</p></div>
             : coverError
-            ? <div className="album-generating"><p className="album-error">⚠ {coverError}</p><p className="album-error-sub">Click to dismiss</p></div>
+            ? <div className="album-generating">
+                <p className="album-error">⚠ {coverError}</p>
+                <button className="album-error-copy" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(coverError) }}>Copy error</button>
+                <p className="album-error-sub">Click anywhere to dismiss</p>
+              </div>
             : <img src={albumModalImage!} className="album-cover" alt="Album cover" />
           }
         </div>
