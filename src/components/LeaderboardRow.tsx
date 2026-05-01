@@ -1,5 +1,5 @@
 import { scoreToColor } from '../scoreColor'
-import type { CharacterEntry } from '../types'
+import type { CharacterEntry, TopKey } from '../types'
 
 interface Props {
   entry: CharacterEntry
@@ -41,6 +41,18 @@ const CLASS_COLORS: Record<string, string> = {
   Shaman: '#0070DD',
   Warlock: '#8788EE',
   Warrior: '#C69B3A',
+}
+
+function KeyChip({ topKey }: { topKey: TopKey }) {
+  return (
+    <span className="key-chip">
+      <span className="key-chip-name">{topKey.shortName}</span>
+      <span className="key-chip-level">+{topKey.level}</span>
+      {topKey.levelDelta != null && topKey.levelDelta > 0 && (
+        <span className="key-chip-delta">↑{topKey.levelDelta}</span>
+      )}
+    </span>
+  )
 }
 
 function RankBadge({ rank }: { rank: number }) {
@@ -108,34 +120,41 @@ export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEn
       rel="noopener noreferrer"
     >
       {isFirst && <span className="crown" aria-hidden>♛</span>}
-      <RankBadge rank={rank} />
-      {entry.thumbnailUrl ? (
-        <img className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`} src={entry.thumbnailUrl} alt={entry.name} />
-      ) : (
-        <div className={`row-avatar row-avatar-placeholder${isFirst ? ' row-avatar-first' : ''}`} />
+      <div className="row-main">
+        <RankBadge rank={rank} />
+        {entry.thumbnailUrl ? (
+          <img className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`} src={entry.thumbnailUrl} alt={entry.name} />
+        ) : (
+          <div className={`row-avatar row-avatar-placeholder${isFirst ? ' row-avatar-first' : ''}`} />
+        )}
+        <div className="row-info">
+          <span className="row-name" style={{ color: classColor }}>{entry.name}</span>
+          <span className="row-sub">
+            {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className} — {entry.realm} ({entry.region.toUpperCase()})
+          </span>
+        </div>
+        <div className="row-score-wrap">
+          <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
+            {entry.score?.toLocaleString(undefined, { maximumFractionDigits: 1 }) ?? '0'}
+          </span>
+          <span className="row-score-label">
+            {entry.scoreDelta != null && entry.scoreDelta > 0
+              ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
+              : 'Tank IO'}
+          </span>
+        </div>
+        <button
+          className="remove-btn"
+          onClick={(e) => { e.preventDefault(); onRemove(entry.id) }}
+        >
+          ✕
+        </button>
+      </div>
+      {entry.topKeys && entry.topKeys.length > 0 && (
+        <div className="row-keys">
+          {entry.topKeys.map((k) => <KeyChip key={k.shortName} topKey={k} />)}
+        </div>
       )}
-      <div className="row-info">
-        <span className="row-name" style={{ color: classColor }}>{entry.name}</span>
-        <span className="row-sub">
-          {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className} — {entry.realm} ({entry.region.toUpperCase()})
-        </span>
-      </div>
-      <div className="row-score-wrap">
-        <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
-          {entry.score?.toLocaleString(undefined, { maximumFractionDigits: 1 }) ?? '0'}
-        </span>
-        <span className="row-score-label">
-          {entry.scoreDelta != null && entry.scoreDelta > 0
-            ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
-            : 'Tank IO'}
-        </span>
-      </div>
-      <button
-        className="remove-btn"
-        onClick={(e) => { e.preventDefault(); onRemove(entry.id) }}
-      >
-        ✕
-      </button>
     </a>
   )
 }

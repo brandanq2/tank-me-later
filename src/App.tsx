@@ -55,11 +55,12 @@ export default function App() {
 
     try {
       const data = await fetchCharacter(input)
-      const scoreDelta = await reportScore(input, data.score).catch(() => 0)
+      const { scoreDelta, keyDeltas } = await reportScore(input, data.score, data.topKeys).catch(() => ({ scoreDelta: 0, keyDeltas: {} as Record<string, number> }))
+      const topKeys = data.topKeys.map((k) => ({ ...k, levelDelta: keyDeltas[k.shortName] ?? 0 }))
       setEntries((prev) =>
         prev.map((e) =>
           e.id === id
-            ? { ...e, status: 'success', ...data, scoreDelta }
+            ? { ...e, status: 'success', ...data, topKeys, scoreDelta }
             : e
         )
       )
@@ -128,9 +129,10 @@ export default function App() {
       allEntries.map(async (e) => {
         try {
           const data = await fetchCharacter(e)
-          const scoreDelta = await reportScore(e, data.score).catch(() => 0)
+          const { scoreDelta, keyDeltas } = await reportScore(e, data.score, data.topKeys).catch(() => ({ scoreDelta: 0, keyDeltas: {} as Record<string, number> }))
+          const topKeys = data.topKeys.map((k) => ({ ...k, levelDelta: keyDeltas[k.shortName] ?? 0 }))
           setEntries((prev) =>
-            prev.map((entry) => (entry.id === e.id ? { ...entry, status: 'success', ...data, scoreDelta } : entry))
+            prev.map((entry) => (entry.id === e.id ? { ...entry, status: 'success', ...data, topKeys, scoreDelta } : entry))
           )
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Unknown error'

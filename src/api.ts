@@ -1,4 +1,4 @@
-import type { CharacterInput } from './types'
+import type { CharacterInput, TopKey } from './types'
 
 interface RaiderIOScore {
   season: string
@@ -10,6 +10,12 @@ interface RaiderIOScore {
   }
 }
 
+interface RaiderIOBestRun {
+  dungeon: string
+  short_name: string
+  mythic_level: number
+}
+
 interface RaiderIOResponse {
   name: string
   race: string
@@ -19,10 +25,12 @@ interface RaiderIOResponse {
   thumbnail_url: string
   profile_url: string
   mythic_plus_scores_by_season: RaiderIOScore[]
+  mythic_plus_best_runs: RaiderIOBestRun[]
 }
 
 export interface CharacterData {
   score: number
+  topKeys: TopKey[]
   className: string
   specName: string
   thumbnailUrl: string
@@ -34,15 +42,25 @@ export interface CutoffData {
   percentile: string
 }
 
-export async function reportScore(char: CharacterInput, score: number): Promise<number> {
+export async function reportScore(
+  char: CharacterInput,
+  score: number,
+  topKeys: TopKey[],
+): Promise<{ scoreDelta: number; keyDeltas: Record<string, number> }> {
+  const keys: Record<string, number> = {}
+  for (const k of topKeys) keys[k.shortName] = k.level
+
   const res = await fetch('/api/scores', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...char, score }),
+    body: JSON.stringify({ ...char, score, keys }),
   })
-  if (!res.ok) return 0
+  if (!res.ok) return { scoreDelta: 0, keyDeltas: {} }
   const data = await res.json()
-  return data.delta ?? 0
+  return {
+    scoreDelta: data.delta ?? 0,
+    keyDeltas: data.keyDeltas ?? {},
+  }
 }
 
 export async function listCharacters(): Promise<CharacterInput[]> {
@@ -73,7 +91,6 @@ export async function fetchCutoff(season = 'season-mn-1', region = 'us'): Promis
   const data = await res.json()
   console.log('[raiderio] cutoff response:', JSON.stringify(data, null, 2))
 
-  // Try common response shapes the API might return
   const p999 =
     data?.cutoffs?.p999 ??
     data?.all?.p999 ??
@@ -91,7 +108,7 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
     region: char.region,
     realm: char.realm,
     name: char.name,
-    fields: 'mythic_plus_scores_by_season:current',
+    fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs',
   })
 
   const res = await fetch(`/api/raiderio?${params}`)
@@ -107,8 +124,13 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
   const currentSeason = data.mythic_plus_scores_by_season?.[0]
   const score = currentSeason?.scores?.tank ?? 0
 
+  const topKeys: TopKey[] = (data.mythic_plus_best_runs ?? [])
+    .map((r) => ({ dungeon: r.dungeon, shortName: r.short_name, level: r.mythic_level }))
+    .sort((a, b) => b.level - a.level)
+
   return {
     score,
+    topKeys,
     className: data.class,
     specName: data.active_spec_name,
     thumbnailUrl: data.thumbnail_url,
