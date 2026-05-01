@@ -133,7 +133,10 @@ export default function App() {
   }, [entries])
 
   const sorted = sortedEntries(entries)
-  const loadedScores = entries.filter((e) => e.status === 'success').map((e) => e.score ?? 0)
+  const leaderboard = sorted.filter((e) => e.status !== 'success' || (e.score ?? 0) > 0)
+  const clowns = sorted.filter((e) => e.status === 'success' && (e.score ?? 0) === 0)
+
+  const loadedScores = leaderboard.filter((e) => e.status === 'success').map((e) => e.score ?? 0)
   const groupMax = loadedScores.length ? Math.max(...loadedScores) : 0
   const cutoffScore = cutoff?.score ?? groupMax
 
@@ -164,17 +167,37 @@ export default function App() {
       {entries.length === 0 ? (
         <p className="empty">Add characters above to build your leaderboard.</p>
       ) : (
-        <div className="leaderboard">
-          {sorted.map((entry, i) => (
-            <LeaderboardRow
-              key={entry.id}
-              entry={entry}
-              rank={i + 1}
-              cutoffScore={cutoffScore}
-              onRemove={removeCharacter}
-            />
-          ))}
-        </div>
+        <>
+          <div className="leaderboard">
+            {leaderboard.map((entry, i) => (
+              <LeaderboardRow
+                key={entry.id}
+                entry={entry}
+                rank={i + 1}
+                cutoffScore={cutoffScore}
+                onRemove={removeCharacter}
+              />
+            ))}
+          </div>
+
+          {clowns.length > 0 && (
+            <div className="clown-section">
+              <h2 className="clown-title">🤡 Clown List</h2>
+              <p className="clown-subtitle">0 tank IO this season</p>
+              <div className="leaderboard">
+                {clowns.map((entry) => (
+                  <LeaderboardRow
+                    key={entry.id}
+                    entry={entry}
+                    rank={0}
+                    cutoffScore={cutoffScore}
+                    onRemove={removeCharacter}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

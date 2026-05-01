@@ -34,6 +34,7 @@ const CLASS_COLORS: Record<string, string> = {
 }
 
 function RankBadge({ rank }: { rank: number }) {
+  if (rank === 0) return <span className="rank">🤡</span>
   if (rank === 1) return <span className="rank rank-gold">1</span>
   if (rank === 2) return <span className="rank rank-silver">2</span>
   if (rank === 3) return <span className="rank rank-bronze">3</span>
@@ -82,7 +83,7 @@ export function LeaderboardRow({ entry, rank, cutoffScore, onRemove }: Props) {
     )
   }
 
-  const isFirst = rank === 1
+  const isFirst = rank === 1 && entry.status === 'success'
 
   return (
     <a

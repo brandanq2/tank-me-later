@@ -65,6 +65,27 @@ body {
   color: #ff8000;
 }
 
+/* Clown section */
+.clown-section {
+  margin-top: 2.5rem;
+}
+
+.clown-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.clown-subtitle {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+  opacity: 0.6;
+}
+
 /* Controls */
 .controls {
   display: flex;
