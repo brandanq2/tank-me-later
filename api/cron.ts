@@ -57,11 +57,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const ttl = 60 * 60 * 24 * 7
-  const today = new Date()
+  const snapshotDate = new Date()
+  snapshotDate.setUTCDate(snapshotDate.getUTCDate() - 1)
 
   if (Object.keys(scoreSnapshot).length > 0) {
-    await redis.hset(dailyKey(today), scoreSnapshot)
-    await redis.expire(dailyKey(today), ttl)
+    await redis.hset(dailyKey(snapshotDate), scoreSnapshot)
+    await redis.expire(dailyKey(snapshotDate), ttl)
 
     const rankSnapshot: Record<string, number> = {}
     Object.entries(scoreSnapshot)
@@ -70,8 +71,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .forEach(([key], i) => { rankSnapshot[key] = i + 1 })
 
     if (Object.keys(rankSnapshot).length > 0) {
-      await redis.hset(rankKey(today), rankSnapshot)
-      await redis.expire(rankKey(today), ttl)
+      await redis.hset(rankKey(snapshotDate), rankSnapshot)
+      await redis.expire(rankKey(snapshotDate), ttl)
     }
   }
 
