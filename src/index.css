@@ -70,6 +70,43 @@ body {
   color: var(--muted);
   opacity: 0.45;
   font-style: italic;
+  cursor: pointer;
+  user-select: none;
+}
+
+.header-disclaimer:hover {
+  opacity: 0.7;
+}
+
+/* Album cover easter egg */
+.album-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  cursor: pointer;
+  animation: album-fade-in 0.25s ease-out both;
+}
+
+@keyframes album-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.album-cover {
+  max-width: min(480px, 90vw);
+  max-height: 90vh;
+  border-radius: 4px;
+  box-shadow: 0 0 80px rgba(228, 56, 49, 0.35), 0 0 20px rgba(0, 0, 0, 0.8);
+  animation: album-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes album-pop {
+  from { transform: scale(0.82); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
 }
 
 .cutoff-badge {

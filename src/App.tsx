@@ -66,6 +66,7 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [votes, setVotes] = useState<VoteRecord[]>([])
   const [hiddenVoteKeys, setHiddenVoteKeys] = useState<string[]>([])
+  const [albumVisible, setAlbumVisible] = useState(false)
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
   const sessionId = useRef(getSessionId())
@@ -258,7 +259,7 @@ export default function App() {
           <span>Later</span>
         </h1>
         <p className="subtitle">Mythic+ Tank IO Leaderboard</p>
-        <p className="header-disclaimer">Yeah, I know what I said.</p>
+        <p className="header-disclaimer" onClick={() => setAlbumVisible(true)}>Yeah, I know what I said.</p>
         {cutoff && (
           <p className="cutoff-badge">
             {cutoff.percentile} cutoff&nbsp;
@@ -333,6 +334,12 @@ export default function App() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {albumVisible && (
+        <div className="album-overlay" onClick={() => setAlbumVisible(false)}>
+          <img src="/album-cover.png" className="album-cover" alt="Tank BTW Me Later" />
         </div>
       )}
 
