@@ -216,6 +216,66 @@ body {
   opacity: 0.6;
 }
 
+/* Weekly Leader Card */
+.weekly-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  padding: 1.25rem 1.25rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.weekly-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  opacity: 0.9;
+}
+
+.weekly-image-wrap {
+  width: 100%;
+  max-width: 240px;
+}
+
+.weekly-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 7px;
+  box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.2), 0 0 32px rgba(228, 56, 49, 0.2);
+}
+
+.weekly-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.weekly-char-name {
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: capitalize;
+}
+
+.weekly-char-score {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.weekly-coming-soon {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-style: italic;
+  opacity: 0.55;
+}
+
 /* Controls */
 .controls {
   display: flex;

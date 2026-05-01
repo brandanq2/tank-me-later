@@ -4,6 +4,7 @@ import type { CutoffData } from './api'
 import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
 import { VoteModal } from './components/VoteModal'
+import { WeeklyLeaderCard } from './components/WeeklyLeaderCard'
 import type { CharacterEntry, CharacterInput, VoteRecord } from './types'
 
 function makeId() {
@@ -67,15 +68,7 @@ export default function App() {
   const [votes, setVotes] = useState<VoteRecord[]>([])
   const [hiddenVoteKeys, setHiddenVoteKeys] = useState<string[]>([])
   const [albumModalImage, setAlbumModalImage] = useState<string | null>(null)
-
-  const handleDisclaimerClick = useCallback(async () => {
-    try {
-      const { imageUrl } = await fetch('/api/weekly-cover').then(r => r.json())
-      setAlbumModalImage(imageUrl ?? '/album-cover.png')
-    } catch {
-      setAlbumModalImage('/album-cover.png')
-    }
-  }, [])
+  const [weeklyCover, setWeeklyCover] = useState<{ imageUrl: string | null; weekNumber: number | null; charName: string | null; score: number | null } | null>(null)
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
   const sessionId = useRef(getSessionId())
@@ -112,6 +105,13 @@ export default function App() {
     } finally {
       setAnyLoading(false)
     }
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/weekly-cover')
+      .then(r => r.json())
+      .then(setWeeklyCover)
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -268,7 +268,7 @@ export default function App() {
           <span>Later</span>
         </h1>
         <p className="subtitle">Mythic+ Tank IO Leaderboard</p>
-        <p className="header-disclaimer" onClick={handleDisclaimerClick}>Yeah, I know what I said.</p>
+        <p className="header-disclaimer" onClick={() => setAlbumModalImage('/album-cover.png')}>Yeah, I know what I said.</p>
         {cutoff && (
           <p className="cutoff-badge">
             {cutoff.percentile} cutoff&nbsp;
@@ -278,6 +278,8 @@ export default function App() {
           </p>
         )}
       </header>
+
+      <WeeklyLeaderCard data={weeklyCover} />
 
       <div className="controls">
         <AddCharacterForm onAdd={(input) => addCharacter(input, true)} loading={anyLoading} />

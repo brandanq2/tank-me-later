@@ -109,13 +109,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const imageUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output
 
-  // Cache as the weekly cover with a 9-day TTL (outlasts next weekly run by 2 days)
+  // Increment the persistent week counter (no TTL — survives forever)
+  const prevWeek = await redis.get<number>('tank-me-later:weekly-number') ?? 0
+  const weekNumber = prevWeek + 1
+  await redis.set('tank-me-later:weekly-number', weekNumber)
+
+  // Cache the full weekly cover data with a 9-day TTL (outlasts the next weekly run)
   const ttl = 60 * 60 * 24 * 9
+  const weeklyData = {
+    imageUrl,
+    weekNumber,
+    charKey,
+    charName: name,
+    score: Number(rows[0].max_score),
+  }
   await Promise.all([
-    redis.set('tank-me-later:weekly-cover', imageUrl, { ex: ttl }),
+    redis.set('tank-me-later:weekly-cover', weeklyData, { ex: ttl }),
     redis.set(`tank-me-later:cover:${charKey}`, imageUrl, { ex: ttl }),
   ])
 
-  console.log('[cron-weekly] cover cached for:', charKey)
-  return res.json({ generated: true, charKey, imageUrl })
+  console.log('[cron-weekly] week', weekNumber, 'cover cached for:', charKey)
+  return res.json({ generated: true, weekNumber, charKey, imageUrl })
 }
