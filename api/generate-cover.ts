@@ -35,54 +35,67 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'charKey, race, specName, and className are required' })
   }
 
-  const bust = req.query.bust === '1'
-  if (!bust) {
-    const cached = await redis.get<string>(coverCacheKey(charKey))
-    if (cached) return res.json({ imageUrl: cached })
-  }
-
-  // Use the album cover as the style reference input
-  const proto = (req.headers['x-forwarded-proto'] as string | undefined) ?? 'https'
-  const host = req.headers.host ?? process.env.VERCEL_URL
-  const albumCoverUrl = `${proto}://${host}/album-cover.png`
-
-  const albumRes = await fetch(albumCoverUrl)
-  const albumBuffer = await albumRes.arrayBuffer()
-  const base64 = Buffer.from(albumBuffer).toString('base64')
-  const inputImage = `data:image/png;base64,${base64}`
-
-  const prediction = await fetch(
-    'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
-        'Content-Type': 'application/json',
-        Prefer: 'wait',
-      },
-      body: JSON.stringify({
-        input: {
-          prompt: buildPrompt(race, specName, className),
-          input_image: inputImage,
-          output_format: 'jpg',
-          output_quality: 95,
-        },
-      }),
+  try {
+    const bust = req.query.bust === '1'
+    if (!bust) {
+      const cached = await redis.get<string>(coverCacheKey(charKey))
+      if (cached) return res.json({ imageUrl: cached })
     }
-  ).then(r => r.json()) as { id: string; status: string; output?: string | string[]; error?: string }
 
-  if (prediction.error) return res.status(500).json({ error: prediction.error })
-  if (prediction.status !== 'succeeded' || !prediction.output) {
-    return res.status(500).json({ error: 'Generation timed out', predictionId: prediction.id })
+    // Use the album cover as the style reference input
+    const proto = (req.headers['x-forwarded-proto'] as string | undefined) ?? 'https'
+    const host = req.headers.host ?? process.env.VERCEL_URL
+    const albumCoverUrl = `${proto}://${host}/album-cover.png`
+
+    console.log('[generate-cover] fetching album cover from', albumCoverUrl)
+    const albumRes = await fetch(albumCoverUrl)
+    if (!albumRes.ok) throw new Error(`Failed to fetch album cover: ${albumRes.status} ${albumCoverUrl}`)
+    const albumBuffer = await albumRes.arrayBuffer()
+    const base64 = Buffer.from(albumBuffer).toString('base64')
+    const inputImage = `data:image/png;base64,${base64}`
+
+    const prompt = buildPrompt(race, specName, className)
+    console.log('[generate-cover] prompt:', prompt)
+
+    const prediction = await fetch(
+      'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
+          'Content-Type': 'application/json',
+          Prefer: 'wait',
+        },
+        body: JSON.stringify({
+          input: {
+            prompt,
+            input_image: inputImage,
+            output_format: 'jpg',
+            output_quality: 95,
+          },
+        }),
+      }
+    ).then(r => r.json()) as { id: string; status: string; output?: string | string[]; error?: string }
+
+    console.log('[generate-cover] prediction status:', prediction.status, 'error:', prediction.error)
+
+    if (prediction.error) return res.status(500).json({ error: prediction.error })
+    if (prediction.status !== 'succeeded' || !prediction.output) {
+      return res.status(500).json({ error: 'Generation timed out', predictionId: prediction.id })
+    }
+
+    const replicateUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output
+
+    const imageRes = await fetch(replicateUrl)
+    const imageBlob = await imageRes.blob()
+    const { url: blobUrl } = await put(`covers/${charKey}.jpg`, imageBlob, { access: 'public' })
+
+    await redis.set(coverCacheKey(charKey), blobUrl)
+
+    return res.json({ imageUrl: blobUrl })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('[generate-cover] unhandled error:', message)
+    return res.status(500).json({ error: message })
   }
-
-  const replicateUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output
-
-  const imageRes = await fetch(replicateUrl)
-  const imageBlob = await imageRes.blob()
-  const { url: blobUrl } = await put(`covers/${charKey}.jpg`, imageBlob, { access: 'public' })
-
-  await redis.set(coverCacheKey(charKey), blobUrl)
-
-  return res.json({ imageUrl: blobUrl })
 }
