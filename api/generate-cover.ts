@@ -47,8 +47,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (cached) return res.json({ imageUrl: cached })
     }
 
-    // Read album cover directly from filesystem — avoids self-referential HTTP hang
-    const albumPath = path.join(process.cwd(), 'public', 'album-cover.png')
+    // Read album cover from same directory as function — always bundled by Vercel
+    const albumPath = path.join(__dirname, 'album-cover.png')
     console.log('[generate-cover] reading album cover from', albumPath)
     const albumBuffer = fs.readFileSync(albumPath)
     const base64 = albumBuffer.toString('base64')

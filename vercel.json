@@ -4,8 +4,7 @@
   "framework": "vite",
   "functions": {
     "api/generate-cover.ts": {
-      "maxDuration": 90,
-      "includeFiles": "public/album-cover.png"
+      "maxDuration": 90
     }
   },
   "crons": [
