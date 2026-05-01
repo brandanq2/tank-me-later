@@ -138,7 +138,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
           <div className="row-avatar skeleton" />
           <div className="row-info">
             <span className="row-name">{entry.name}</span>
-            <span className="row-sub">{entry.realm} — {entry.region.toUpperCase()}</span>
+            <span className="row-sub">Loading...</span>
           </div>
           <div className="row-score-wrap">
             <span className="row-score">...</span>
@@ -191,7 +191,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
         <div className="row-info">
           <span className="row-name" style={{ color: classColor }}>{entry.name}</span>
           <span className="row-sub">
-            {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className} — {entry.realm} ({entry.region.toUpperCase()})
+            {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className}
           </span>
         </div>
         {entry.history && (
