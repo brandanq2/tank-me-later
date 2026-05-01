@@ -70,12 +70,12 @@ export default function App() {
   const [generatingCover, setGeneratingCover] = useState(false)
   const [coverError, setCoverError] = useState<string | null>(null)
 
-  const handleGenerateCover = useCallback(async (thumbnailUrl: string, charKey: string, bust = false) => {
+  const handleGenerateCover = useCallback(async (charKey: string, race: string, specName: string, className: string, bust = false) => {
     setGeneratingCover(true)
     setAlbumModalImage(null)
     setCoverError(null)
     try {
-      const { imageUrl } = await generateCover(thumbnailUrl, charKey, bust)
+      const { imageUrl } = await generateCover(charKey, race, specName, className, bust)
       setAlbumModalImage(imageUrl)
     } catch (err) {
       setCoverError(err instanceof Error ? err.message : 'Generation failed')
@@ -107,7 +107,7 @@ export default function App() {
       setEntries((prev) =>
         prev.map((e) =>
           e.id === id
-            ? { ...e, status: 'success', ...data, scoreDelta, prevRank: prevRank ?? undefined, history }
+            ? { ...e, status: 'success', ...data, race: data.race, scoreDelta, prevRank: prevRank ?? undefined, history }
             : e
         )
       )
@@ -318,7 +318,9 @@ export default function App() {
                   isInitialEntry={initialIds.current.has(entry.id)}
                   revealDelay={revealDelay(rank)}
                   onRemove={handleRemoveOrVote}
-                  onGenerateCover={rank === 1 && entry.thumbnailUrl ? (bust) => handleGenerateCover(entry.thumbnailUrl!, `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase(), bust) : undefined}
+                  onGenerateCover={rank === 1 && entry.race && entry.specName && entry.className
+                    ? (bust) => handleGenerateCover(`${entry.name}-${entry.realm}-${entry.region}`.toLowerCase(), entry.race!, entry.specName!, entry.className!, bust)
+                    : undefined}
                 />
               )
             })}

@@ -11,21 +11,29 @@ function coverCacheKey(charKey: string) {
   return `tank-me-later:cover:${charKey}`
 }
 
-const PROMPT =
-  'Redraw the character from this image as the subject of a dramatic hip-hop album cover portrait. ' +
-  'Keep the character\'s facial features, armor, and non-human traits fully intact and recognizable. ' +
-  'Extreme high contrast black and white tones with deep crimson red (#E43831) paint splatters as the only color. ' +
-  'Subject facing forward, head slightly tilted back, eyes intense and half-closed, powerful expression. ' +
-  'Harsh directional lighting from above casting deep shadows across the face and armor. ' +
-  'Dark distressed background with scratched film grain texture. ' +
-  'Photorealistic, cinematic, square album cover composition. ' +
-  'No text, no names, no titles anywhere on the image.'
+function buildPrompt(race: string, specName: string, className: string) {
+  const characterDesc = `${specName} ${className} ${race}`.trim()
+  return (
+    `Replace the human subject in this album cover with a ${characterDesc} from World of Warcraft. ` +
+    'Preserve the exact composition, dramatic pose, lighting, and background of the album cover. ' +
+    'Keep the high contrast black and white style with deep crimson red paint splatters as the only color. ' +
+    'Render the character with visual traits typical of their race and class from World of Warcraft. ' +
+    'No text, no names, no titles on the image.'
+  )
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const { thumbnailUrl, charKey } = req.body as { thumbnailUrl?: string; charKey?: string }
-  if (!thumbnailUrl || !charKey) return res.status(400).json({ error: 'thumbnailUrl and charKey required' })
+  const { charKey, race, specName, className } = req.body as {
+    charKey?: string
+    race?: string
+    specName?: string
+    className?: string
+  }
+  if (!charKey || !race || !specName || !className) {
+    return res.status(400).json({ error: 'charKey, race, specName, and className are required' })
+  }
 
   const bust = req.query.bust === '1'
   if (!bust) {
@@ -33,12 +41,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (cached) return res.json({ imageUrl: cached })
   }
 
-  // Fetch the thumbnail server-side and pass as base64 to avoid URL-based filtering
-  const thumbRes = await fetch(thumbnailUrl)
-  const thumbBuffer = await thumbRes.arrayBuffer()
-  const base64 = Buffer.from(thumbBuffer).toString('base64')
-  const mimeType = thumbRes.headers.get('content-type') ?? 'image/jpeg'
-  const inputImage = `data:${mimeType};base64,${base64}`
+  // Use the album cover as the style reference input
+  const proto = (req.headers['x-forwarded-proto'] as string | undefined) ?? 'https'
+  const host = req.headers.host ?? process.env.VERCEL_URL
+  const albumCoverUrl = `${proto}://${host}/album-cover.png`
+
+  const albumRes = await fetch(albumCoverUrl)
+  const albumBuffer = await albumRes.arrayBuffer()
+  const base64 = Buffer.from(albumBuffer).toString('base64')
+  const inputImage = `data:image/png;base64,${base64}`
 
   const prediction = await fetch(
     'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions',
@@ -51,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({
         input: {
-          prompt: PROMPT,
+          prompt: buildPrompt(race, specName, className),
           input_image: inputImage,
           output_format: 'jpg',
           output_quality: 95,
