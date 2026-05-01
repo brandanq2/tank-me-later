@@ -10,6 +10,30 @@ function makeId() {
   return Math.random().toString(36).slice(2)
 }
 
+const OWNED_STORAGE_KEY = 'tank-me-later:owned'
+
+function getOwnedKeys(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(OWNED_STORAGE_KEY) ?? '[]'))
+  } catch { return new Set() }
+}
+
+function saveOwnedKey(key: string) {
+  try {
+    const keys = getOwnedKeys()
+    keys.add(key)
+    localStorage.setItem(OWNED_STORAGE_KEY, JSON.stringify([...keys]))
+  } catch {}
+}
+
+function removeOwnedKey(key: string) {
+  try {
+    const keys = getOwnedKeys()
+    keys.delete(key)
+    localStorage.setItem(OWNED_STORAGE_KEY, JSON.stringify([...keys]))
+  } catch {}
+}
+
 function sortedEntries(entries: CharacterEntry[]): CharacterEntry[] {
   return [...entries].sort((a, b) => {
     if (a.status === 'loading' && b.status !== 'loading') return 1
@@ -51,6 +75,8 @@ export default function App() {
     if (addedKeys.current.has(key)) return
     addedKeys.current.add(key)
 
+    if (isOwned) saveOwnedKey(key)
+
     const id = makeId()
     const pending: CharacterEntry = { ...input, id, status: 'loading', isOwned }
 
@@ -87,7 +113,11 @@ export default function App() {
         // Persist the defaults on first load
         Promise.all(INITIAL_CHARACTERS.map(persistCharacter)).catch(() => {})
       }
-      seed.forEach((char) => addCharacter(char))
+      const ownedKeys = getOwnedKeys()
+      seed.forEach((char) => {
+        const key = `${char.name}-${char.realm}-${char.region}`.toLowerCase()
+        addCharacter(char, ownedKeys.has(key))
+      })
     }).catch(() => {
       // API unavailable (local dev without vercel dev) — fall back to defaults
       INITIAL_CHARACTERS.forEach((char) => addCharacter(char))
@@ -118,7 +148,9 @@ export default function App() {
     setEntries((prev) => {
       const target = prev.find((e) => e.id === id)
       if (target) {
-        addedKeys.current.delete(`${target.name}-${target.realm}-${target.region}`.toLowerCase())
+        const key = `${target.name}-${target.realm}-${target.region}`.toLowerCase()
+        addedKeys.current.delete(key)
+        removeOwnedKey(key)
         removePersistedCharacter(target).catch(() => {})
       }
       return prev.filter((e) => e.id !== id)
