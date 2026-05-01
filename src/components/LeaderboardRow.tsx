@@ -1,10 +1,12 @@
 import { scoreToColor } from '../scoreColor'
-import type { CharacterEntry } from '../types'
+import type { CharacterEntry, VoteRecord } from '../types'
 
 interface Props {
   entry: CharacterEntry
   rank: number
   rankDelta?: number
+  activeVote?: VoteRecord
+  sessionId?: string
   cutoffScore: number
   revealed: boolean
   isInitialEntry: boolean
@@ -63,7 +65,28 @@ function RankBadge({ rank, delta }: { rank: number; delta?: number }) {
   )
 }
 
-export function LeaderboardRow({ entry, rank, rankDelta, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove }: Props) {
+function VoteStrip({ vote }: { vote: VoteRecord }) {
+  const slots: Array<'yes' | 'no' | 'pending'> = []
+  for (let i = 0; i < 5; i++) {
+    if (i < vote.yesVotes.length) slots.push('yes')
+    else if (i < vote.yesVotes.length + vote.noVotes.length) slots.push('no')
+    else slots.push('pending')
+  }
+  return (
+    <div className="vote-strip" onClick={(e) => e.preventDefault()}>
+      <span className="vote-strip-label">Vote to Remove</span>
+      <div className="vote-strip-icons">
+        {slots.map((s, i) => (
+          <span key={i} className={`vote-strip-icon vote-strip-icon-${s}`}>
+            {s === 'yes' ? '✓' : s === 'no' ? '✗' : '○'}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove }: Props) {
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
     ? scoreToColor(entry.score ?? 0, 0, cutoffScore)
@@ -154,6 +177,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, cutoffScore, revealed, 
           ✕
         </button>
       </div>
+      {activeVote && <VoteStrip vote={activeVote} />}
     </a>
   )
 }

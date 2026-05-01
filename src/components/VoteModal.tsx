@@ -29,9 +29,10 @@ interface Props {
   votes: VoteRecord[]
   sessionId: string
   onVote: (charKey: string, vote: 'yes' | 'no') => void
+  onDismiss: (charKey: string) => void
 }
 
-export function VoteModal({ votes, sessionId, onVote }: Props) {
+export function VoteModal({ votes, sessionId, onVote, onDismiss }: Props) {
   if (votes.length === 0) return null
 
   return (
@@ -48,6 +49,7 @@ export function VoteModal({ votes, sessionId, onVote }: Props) {
 
           return (
             <div key={vote.charKey} className="vote-card">
+              <div className="vote-card-top">
               <div className="vote-char-info">
                 {vote.thumbnailUrl ? (
                   <img className="vote-avatar" src={vote.thumbnailUrl} alt={vote.name} />
@@ -62,6 +64,8 @@ export function VoteModal({ votes, sessionId, onVote }: Props) {
                     {vote.specName ? `${vote.specName} ` : ''}{vote.className ? `${vote.className} — ` : ''}{vote.realm} ({vote.region.toUpperCase()})
                   </div>
                 </div>
+              </div>
+              <button className="vote-card-dismiss" onClick={() => onDismiss(vote.charKey)} aria-label="Dismiss">✕</button>
               </div>
 
               <div className="vote-tally">

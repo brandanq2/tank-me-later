@@ -41,6 +41,7 @@ export default function App() {
   const [revealed, setRevealed] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [votes, setVotes] = useState<VoteRecord[]>([])
+  const [hiddenVoteKeys, setHiddenVoteKeys] = useState<string[]>([])
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
   const sessionId = useRef(getSessionId())
@@ -187,6 +188,7 @@ export default function App() {
       setEntries(prev => prev.filter(e => `${e.name}-${e.realm}-${e.region}`.toLowerCase() !== charKey))
       addedKeys.current.delete(charKey)
       setVotes(prev => prev.filter(v => v.charKey !== charKey))
+      setHiddenVoteKeys(prev => prev.filter(k => k !== charKey))
     } else {
       setVotes(prev => prev.map(v => v.charKey === charKey ? result : v))
     }
@@ -232,12 +234,16 @@ export default function App() {
             {leaderboard.map((entry, i) => {
               const rank = i + 1
               const rankDelta = entry.prevRank != null ? entry.prevRank - rank : undefined
+              const charKey = `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()
+              const activeVote = votes.find(v => v.charKey === charKey)
               return (
                 <LeaderboardRow
                   key={entry.id}
                   entry={entry}
                   rank={rank}
                   rankDelta={rankDelta}
+                  activeVote={activeVote}
+                  sessionId={sessionId.current}
                   cutoffScore={cutoffScore}
                   revealed={revealed}
                   isInitialEntry={initialIds.current.has(entry.id)}
@@ -255,11 +261,15 @@ export default function App() {
               <div className="leaderboard">
                 {clowns.map((entry) => {
                   const clownDelay = revealDelay(leaderboard.length + 1)
+                  const charKey = `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()
+                  const activeVote = votes.find(v => v.charKey === charKey)
                   return (
                     <LeaderboardRow
                       key={entry.id}
                       entry={entry}
                       rank={0}
+                      activeVote={activeVote}
+                      sessionId={sessionId.current}
                       cutoffScore={cutoffScore}
                       revealed={revealed}
                       isInitialEntry={initialIds.current.has(entry.id)}
@@ -274,7 +284,12 @@ export default function App() {
         </div>
       )}
 
-      <VoteModal votes={votes} sessionId={sessionId.current} onVote={handleVoteCast} />
+      <VoteModal
+        votes={votes.filter(v => !hiddenVoteKeys.includes(v.charKey))}
+        sessionId={sessionId.current}
+        onVote={handleVoteCast}
+        onDismiss={(charKey) => setHiddenVoteKeys(prev => [...prev, charKey])}
+      />
     </div>
   )
 }

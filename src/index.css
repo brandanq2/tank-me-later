@@ -575,3 +575,60 @@ a.row-first:hover {
   background: rgba(248, 81, 73, 0.1);
 }
 
+.vote-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.vote-card-dismiss {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.vote-card-dismiss:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Vote strip on leaderboard rows */
+.vote-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(200, 160, 40, 0.2);
+}
+
+.vote-strip-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #c8a028;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.vote-strip-icons {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.vote-strip-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.vote-strip-icon-yes { color: #3fb950; }
+.vote-strip-icon-no { color: #f85149; }
+.vote-strip-icon-pending { color: rgba(255, 255, 255, 0.15); }
