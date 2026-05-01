@@ -421,7 +421,10 @@ a.row-first:hover {
 }
 
 .vote-modal-header {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 2px;
@@ -429,6 +432,29 @@ a.row-first:hover {
   color: #c8a028;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid rgba(200, 160, 40, 0.3);
+}
+
+.vote-modal-close {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.vote-modal-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .vote-card {
@@ -573,31 +599,6 @@ a.row-first:hover {
 .vote-cast-no {
   color: #f85149;
   background: rgba(248, 81, 73, 0.1);
-}
-
-.vote-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.vote-card-dismiss {
-  background: none;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 0.9rem;
-  padding: 0.1rem 0.3rem;
-  border-radius: 3px;
-  line-height: 1;
-  flex-shrink: 0;
-  transition: color 0.15s, background 0.15s;
-}
-
-.vote-card-dismiss:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Vote strip on leaderboard rows */

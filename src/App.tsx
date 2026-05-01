@@ -95,8 +95,20 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const isFirstVoteFetch = useRef(true)
   useEffect(() => {
-    const poll = () => fetchVotes().then(setVotes).catch(() => {})
+    const poll = () => fetchVotes().then((fetched) => {
+      if (isFirstVoteFetch.current) {
+        isFirstVoteFetch.current = false
+        const alreadyVoted = fetched
+          .filter(v => v.yesVotes.includes(sessionId.current) || v.noVotes.includes(sessionId.current))
+          .map(v => v.charKey)
+        if (alreadyVoted.length > 0) {
+          setHiddenVoteKeys(prev => [...new Set([...prev, ...alreadyVoted])])
+        }
+      }
+      setVotes(fetched)
+    }).catch(() => {})
     poll()
     const interval = setInterval(poll, 10_000)
     return () => clearInterval(interval)
@@ -288,7 +300,10 @@ export default function App() {
         votes={votes.filter(v => !hiddenVoteKeys.includes(v.charKey))}
         sessionId={sessionId.current}
         onVote={handleVoteCast}
-        onDismiss={(charKey) => setHiddenVoteKeys(prev => [...prev, charKey])}
+        onClose={() => {
+          const visibleKeys = votes.filter(v => !hiddenVoteKeys.includes(v.charKey)).map(v => v.charKey)
+          setHiddenVoteKeys(prev => [...new Set([...prev, ...visibleKeys])])
+        }}
       />
     </div>
   )

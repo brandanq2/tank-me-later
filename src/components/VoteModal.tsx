@@ -29,16 +29,19 @@ interface Props {
   votes: VoteRecord[]
   sessionId: string
   onVote: (charKey: string, vote: 'yes' | 'no') => void
-  onDismiss: (charKey: string) => void
+  onClose: () => void
 }
 
-export function VoteModal({ votes, sessionId, onVote, onDismiss }: Props) {
+export function VoteModal({ votes, sessionId, onVote, onClose }: Props) {
   if (votes.length === 0) return null
 
   return (
     <div className="vote-overlay">
       <div className="vote-modal">
-        <div className="vote-modal-header">⚔ Vote to Remove</div>
+        <div className="vote-modal-header">
+          <span>⚔ Vote to Remove</span>
+          <button className="vote-modal-close" onClick={onClose} aria-label="Close">✕</button>
+        </div>
         {votes.map((vote) => {
           const hasVotedYes = vote.yesVotes.includes(sessionId)
           const hasVotedNo = vote.noVotes.includes(sessionId)
@@ -49,7 +52,6 @@ export function VoteModal({ votes, sessionId, onVote, onDismiss }: Props) {
 
           return (
             <div key={vote.charKey} className="vote-card">
-              <div className="vote-card-top">
               <div className="vote-char-info">
                 {vote.thumbnailUrl ? (
                   <img className="vote-avatar" src={vote.thumbnailUrl} alt={vote.name} />
@@ -64,8 +66,6 @@ export function VoteModal({ votes, sessionId, onVote, onDismiss }: Props) {
                     {vote.specName ? `${vote.specName} ` : ''}{vote.className ? `${vote.className} — ` : ''}{vote.realm} ({vote.region.toUpperCase()})
                   </div>
                 </div>
-              </div>
-              <button className="vote-card-dismiss" onClick={() => onDismiss(vote.charKey)} aria-label="Dismiss">✕</button>
               </div>
 
               <div className="vote-tally">
