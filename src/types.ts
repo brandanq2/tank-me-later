@@ -6,20 +6,11 @@ export interface CharacterInput {
 
 export type FetchStatus = 'idle' | 'loading' | 'success' | 'error'
 
-export interface TopKey {
-  dungeon: string
-  shortName: string
-  level: number
-  levelDelta?: number
-  url?: string
-}
-
 export interface CharacterEntry extends CharacterInput {
   id: string
   status: FetchStatus
   score?: number
   scoreDelta?: number
-  topKeys?: TopKey[]
   className?: string
   specName?: string
   thumbnailUrl?: string

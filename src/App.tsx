@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { fetchCharacter, fetchCutoff, listCharacters, persistCharacter, removePersistedCharacter, reportScore } from './api'
 import type { CutoffData } from './api'
 import { AddCharacterForm } from './components/AddCharacterForm'
@@ -55,12 +55,11 @@ export default function App() {
 
     try {
       const data = await fetchCharacter(input)
-      const { scoreDelta, keyDeltas } = await reportScore(input, data.score, data.topKeys).catch(() => ({ scoreDelta: 0, keyDeltas: {} as Record<string, number> }))
-      const topKeys = data.topKeys.map((k) => ({ ...k, levelDelta: keyDeltas[k.shortName] ?? 0 }))
+      const scoreDelta = await reportScore(input, data.score).catch(() => 0)
       setEntries((prev) =>
         prev.map((e) =>
           e.id === id
-            ? { ...e, status: 'success', ...data, topKeys, scoreDelta }
+            ? { ...e, status: 'success', ...data, scoreDelta }
             : e
         )
       )
@@ -129,10 +128,9 @@ export default function App() {
       allEntries.map(async (e) => {
         try {
           const data = await fetchCharacter(e)
-          const { scoreDelta, keyDeltas } = await reportScore(e, data.score, data.topKeys).catch(() => ({ scoreDelta: 0, keyDeltas: {} as Record<string, number> }))
-          const topKeys = data.topKeys.map((k) => ({ ...k, levelDelta: keyDeltas[k.shortName] ?? 0 }))
+          const scoreDelta = await reportScore(e, data.score).catch(() => 0)
           setEntries((prev) =>
-            prev.map((entry) => (entry.id === e.id ? { ...entry, status: 'success', ...data, topKeys, scoreDelta } : entry))
+            prev.map((entry) => (entry.id === e.id ? { ...entry, status: 'success', ...data, scoreDelta } : entry))
           )
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Unknown error'
@@ -156,14 +154,6 @@ export default function App() {
   const sorted = sortedEntries(entries)
   const leaderboard = sorted.filter((e) => e.status !== 'success' || (e.score ?? 0) > 0)
   const clowns = sorted.filter((e) => e.status === 'success' && (e.score ?? 0) === 0)
-
-  const allDungeons = useMemo(() => {
-    const map = new Map<string, string>()
-    entries.forEach((e) => e.topKeys?.forEach((k) => map.set(k.shortName, k.dungeon)))
-    return Array.from(map.entries())
-      .map(([shortName, dungeon]) => ({ shortName, dungeon }))
-      .sort((a, b) => a.shortName.localeCompare(b.shortName))
-  }, [entries])
 
   const loadedScores = leaderboard.filter((e) => e.status === 'success').map((e) => e.score ?? 0)
   const groupMax = loadedScores.length ? Math.max(...loadedScores) : 0
@@ -209,7 +199,6 @@ export default function App() {
                   revealed={revealed}
                   isInitialEntry={initialIds.current.has(entry.id)}
                   revealDelay={revealDelay(rank)}
-                  allDungeons={allDungeons}
                   onRemove={removeCharacter}
                 />
               )
@@ -221,7 +210,7 @@ export default function App() {
               <h2 className="clown-title">🤡 Clown List</h2>
               <p className="clown-subtitle">0 tank IO this season</p>
               <div className="leaderboard">
-                {clowns.map((entry, ci) => {
+                {clowns.map((entry) => {
                   const clownDelay = revealDelay(leaderboard.length + 1)
                   return (
                     <LeaderboardRow
@@ -232,7 +221,6 @@ export default function App() {
                       revealed={revealed}
                       isInitialEntry={initialIds.current.has(entry.id)}
                       revealDelay={clownDelay}
-                      allDungeons={allDungeons}
                       onRemove={removeCharacter}
                     />
                   )

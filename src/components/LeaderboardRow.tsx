@@ -1,11 +1,5 @@
-import type { MouseEvent } from 'react'
 import { scoreToColor } from '../scoreColor'
-import type { CharacterEntry, TopKey } from '../types'
-
-interface DungeonRef {
-  shortName: string
-  dungeon: string
-}
+import type { CharacterEntry } from '../types'
 
 interface Props {
   entry: CharacterEntry
@@ -14,7 +8,6 @@ interface Props {
   revealed: boolean
   isInitialEntry: boolean
   revealDelay: number
-  allDungeons: DungeonRef[]
   onRemove: (id: string) => void
 }
 
@@ -50,31 +43,6 @@ const CLASS_COLORS: Record<string, string> = {
   Warrior: '#C69B3A',
 }
 
-function KeyChip({ topKey }: { topKey: TopKey }) {
-  const handleClick = topKey.url
-    ? (e: MouseEvent) => { e.stopPropagation(); e.preventDefault(); window.open(topKey.url, '_blank', 'noopener,noreferrer') }
-    : undefined
-
-  return (
-    <span className={`key-chip${topKey.url ? ' key-chip-link' : ''}`} onClick={handleClick}>
-      <span className="key-chip-name">{topKey.shortName}</span>
-      <span className="key-chip-level">+{topKey.level}</span>
-      {topKey.levelDelta != null && topKey.levelDelta > 0 && (
-        <span className="key-chip-delta">↑{topKey.levelDelta}</span>
-      )}
-    </span>
-  )
-}
-
-function MissingKeyChip({ shortName }: { shortName: string }) {
-  return (
-    <span className="key-chip key-chip-missing">
-      <span className="key-chip-name">{shortName}</span>
-      <span className="key-chip-level">—</span>
-    </span>
-  )
-}
-
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 0) return <span className="rank">🤡</span>
   if (rank === 1) return <span className="rank rank-gold">1</span>
@@ -83,7 +51,7 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="rank">{rank}</span>
 }
 
-export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEntry, revealDelay, allDungeons, onRemove }: Props) {
+export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove }: Props) {
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
     ? scoreToColor(entry.score ?? 0, 0, cutoffScore)
@@ -96,17 +64,19 @@ export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEn
   if (entry.status === 'loading') {
     return (
       <div className={`row row-loading ${anim.className}`} style={anim.style}>
-        <RankBadge rank={rank} />
-        <div className="row-avatar skeleton" />
-        <div className="row-info">
-          <span className="row-name">{entry.name}</span>
-          <span className="row-sub">{entry.realm} — {entry.region.toUpperCase()}</span>
+        <div className="row-main">
+          <RankBadge rank={rank} />
+          <div className="row-avatar skeleton" />
+          <div className="row-info">
+            <span className="row-name">{entry.name}</span>
+            <span className="row-sub">{entry.realm} — {entry.region.toUpperCase()}</span>
+          </div>
+          <div className="row-score-wrap">
+            <span className="row-score">...</span>
+            <span className="row-score-label">Tank IO</span>
+          </div>
+          <button className="remove-btn" onClick={() => onRemove(entry.id)}>✕</button>
         </div>
-        <div className="row-score-wrap">
-          <span className="row-score">...</span>
-          <span className="row-score-label">Tank IO</span>
-        </div>
-        <button className="remove-btn" onClick={() => onRemove(entry.id)}>✕</button>
       </div>
     )
   }
@@ -114,17 +84,19 @@ export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEn
   if (entry.status === 'error') {
     return (
       <div className={`row row-error ${anim.className}`} style={anim.style}>
-        <RankBadge rank={rank} />
-        <div className="row-avatar row-avatar-err">?</div>
-        <div className="row-info">
-          <span className="row-name">{entry.name}</span>
-          <span className="row-sub row-error-msg">{entry.error ?? 'Failed to load'}</span>
+        <div className="row-main">
+          <RankBadge rank={rank} />
+          <div className="row-avatar row-avatar-err">?</div>
+          <div className="row-info">
+            <span className="row-name">{entry.name}</span>
+            <span className="row-sub row-error-msg">{entry.error ?? 'Failed to load'}</span>
+          </div>
+          <div className="row-score-wrap">
+            <span className="row-score row-score-err">—</span>
+            <span className="row-score-label">Tank IO</span>
+          </div>
+          <button className="remove-btn" onClick={() => onRemove(entry.id)}>✕</button>
         </div>
-        <div className="row-score-wrap">
-          <span className="row-score row-score-err">—</span>
-          <span className="row-score-label">Tank IO</span>
-        </div>
-        <button className="remove-btn" onClick={() => onRemove(entry.id)}>✕</button>
       </div>
     )
   }
@@ -170,16 +142,6 @@ export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEn
           ✕
         </button>
       </div>
-      {allDungeons.length > 0 && (
-        <div className="row-keys">
-          {allDungeons.map(({ shortName }) => {
-            const key = entry.topKeys?.find((k) => k.shortName === shortName)
-            return key
-              ? <KeyChip key={shortName} topKey={key} />
-              : <MissingKeyChip key={shortName} shortName={shortName} />
-          })}
-        </div>
-      )}
     </a>
   )
 }

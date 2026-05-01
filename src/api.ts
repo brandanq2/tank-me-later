@@ -1,4 +1,4 @@
-import type { CharacterInput, TopKey } from './types'
+import type { CharacterInput } from './types'
 
 interface RaiderIOScore {
   season: string
@@ -10,15 +10,6 @@ interface RaiderIOScore {
   }
 }
 
-interface RaiderIOBestRun {
-  dungeon: string
-  short_name: string
-  mythic_level: number
-  active_spec_role: string
-  url?: string
-}
-
-
 interface RaiderIOResponse {
   name: string
   race: string
@@ -28,13 +19,10 @@ interface RaiderIOResponse {
   thumbnail_url: string
   profile_url: string
   mythic_plus_scores_by_season: RaiderIOScore[]
-  mythic_plus_best_runs: RaiderIOBestRun[]
-  mythic_plus_alternate_runs: RaiderIOBestRun[]
 }
 
 export interface CharacterData {
   score: number
-  topKeys: TopKey[]
   className: string
   specName: string
   thumbnailUrl: string
@@ -49,22 +37,15 @@ export interface CutoffData {
 export async function reportScore(
   char: CharacterInput,
   score: number,
-  topKeys: TopKey[],
-): Promise<{ scoreDelta: number; keyDeltas: Record<string, number> }> {
-  const keys: Record<string, number> = {}
-  for (const k of topKeys) keys[k.shortName] = k.level
-
+): Promise<number> {
   const res = await fetch('/api/scores', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...char, score, keys }),
+    body: JSON.stringify({ ...char, score }),
   })
-  if (!res.ok) return { scoreDelta: 0, keyDeltas: {} }
+  if (!res.ok) return 0
   const data = await res.json()
-  return {
-    scoreDelta: data.delta ?? 0,
-    keyDeltas: data.keyDeltas ?? {},
-  }
+  return data.delta ?? 0
 }
 
 export async function listCharacters(): Promise<CharacterInput[]> {
@@ -112,7 +93,7 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
     region: char.region,
     realm: char.realm,
     name: char.name,
-    fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs,mythic_plus_alternate_runs',
+    fields: 'mythic_plus_scores_by_season:current',
   })
 
   const res = await fetch(`/api/raiderio?${params}`)
@@ -128,19 +109,8 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
   const currentSeason = data.mythic_plus_scores_by_season?.[0]
   const score = currentSeason?.scores?.tank ?? 0
 
-  const tankRunMap = new Map<string, RaiderIOBestRun>()
-  for (const run of [...(data.mythic_plus_best_runs ?? []), ...(data.mythic_plus_alternate_runs ?? [])]) {
-    if (run.active_spec_role !== 'tank') continue
-    const existing = tankRunMap.get(run.short_name)
-    if (!existing || run.mythic_level > existing.mythic_level) tankRunMap.set(run.short_name, run)
-  }
-  const topKeys: TopKey[] = Array.from(tankRunMap.values())
-    .map((r) => ({ dungeon: r.dungeon, shortName: r.short_name, level: r.mythic_level, url: r.url }))
-    .sort((a, b) => a.shortName.localeCompare(b.shortName))
-
   return {
     score,
-    topKeys,
     className: data.class,
     specName: data.active_spec_name,
     thumbnailUrl: data.thumbnail_url,
