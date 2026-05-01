@@ -195,78 +195,64 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
   const isFirst = rank === 1 && entry.status === 'success'
   const hasCover = isFirst && (!!coverLoading || !!coverUrl)
 
-  const rowMain = (
-    <div className="row-main">
-      <RankBadge rank={rank} delta={rankDelta} />
-      {entry.thumbnailUrl ? (
-        <img className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`} src={entry.thumbnailUrl} alt={entry.name} />
-      ) : (
-        <div className={`row-avatar row-avatar-placeholder${isFirst ? ' row-avatar-first' : ''}`} />
-      )}
-      <div className="row-info">
-        <span className="row-name" style={{ color: classColor }}>{entry.name}</span>
-        <span className="row-sub">
-          {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className}
-        </span>
-      </div>
-      {entry.history && (
-        <Sparkline history={entry.history} color={classColor} id={entry.id} />
-      )}
-      <div className="row-score-wrap">
-        <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
-          {entry.score?.toLocaleString(undefined, { maximumFractionDigits: 1 }) ?? '0'}
-        </span>
-        <span className="row-score-label">
-          {entry.scoreDelta != null && entry.scoreDelta > 0
-            ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
-            : 'Tank IO'}
-        </span>
-      </div>
-      <button
-        className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}`}
-        disabled={!!activeVote?.failed}
-        onClick={(e) => { e.preventDefault(); if (!activeVote?.failed) onRemove(entry.id) }}
-        title={activeVote?.failed ? 'Vote to remove failed — on cooldown' : undefined}
-      >
-        {activeVote?.failed ? '🔒' : '✕'}
-      </button>
-    </div>
-  )
-
   return (
     <a
-      className={`row${isFirst ? ' row-first' : ''}${hasCover ? ' row-with-cover' : ''} ${anim.className}`}
+      className={`row${isFirst ? ' row-first' : ''} ${anim.className}`}
       style={{ ...anim.style, '--spec-color': classColor } as unknown as React.CSSProperties}
       href={entry.profileUrl}
       target="_blank"
       rel="noopener noreferrer"
     >
       {isFirst && <span className="crown" aria-hidden>♛</span>}
-      {hasCover ? (
-        <>
-          <div className="row-first-body">
-            {rowMain}
-            {activeVote && !activeVote.failed && <VoteStrip vote={activeVote} />}
-            {activeVote?.failed && <FailedStrip vote={activeVote} />}
-          </div>
-          <div
-            className="row-cover-panel"
-            onClick={(e) => { e.preventDefault(); if (coverUrl) onOpenCover?.() }}
-            title={coverUrl ? 'View full album cover' : 'Generating cover art…'}
-          >
-            {coverLoading && !coverUrl
-              ? <div className="row-cover-shimmer" />
-              : <img src={coverUrl!} className="row-cover-img" alt="Generated album cover" />
-            }
-          </div>
-        </>
-      ) : (
-        <>
-          {rowMain}
-          {activeVote && !activeVote.failed && <VoteStrip vote={activeVote} />}
-          {activeVote?.failed && <FailedStrip vote={activeVote} />}
-        </>
+      {hasCover && (
+        <div
+          className="row-cover-hero"
+          onClick={(e) => { e.preventDefault(); if (coverUrl) onOpenCover?.() }}
+          title={coverUrl ? 'View full album cover' : 'Generating cover art…'}
+        >
+          {coverLoading && !coverUrl
+            ? <div className="row-cover-shimmer" />
+            : <img src={coverUrl!} className="row-cover-img" alt="Generated album cover" />
+          }
+        </div>
       )}
+      <div className="row-main">
+        <RankBadge rank={rank} delta={rankDelta} />
+        {entry.thumbnailUrl ? (
+          <img className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`} src={entry.thumbnailUrl} alt={entry.name} />
+        ) : (
+          <div className={`row-avatar row-avatar-placeholder${isFirst ? ' row-avatar-first' : ''}`} />
+        )}
+        <div className="row-info">
+          <span className="row-name" style={{ color: classColor }}>{entry.name}</span>
+          <span className="row-sub">
+            {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className}
+          </span>
+        </div>
+        {entry.history && (
+          <Sparkline history={entry.history} color={classColor} id={entry.id} />
+        )}
+        <div className="row-score-wrap">
+          <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
+            {entry.score?.toLocaleString(undefined, { maximumFractionDigits: 1 }) ?? '0'}
+          </span>
+          <span className="row-score-label">
+            {entry.scoreDelta != null && entry.scoreDelta > 0
+              ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
+              : 'Tank IO'}
+          </span>
+        </div>
+        <button
+          className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}`}
+          disabled={!!activeVote?.failed}
+          onClick={(e) => { e.preventDefault(); if (!activeVote?.failed) onRemove(entry.id) }}
+          title={activeVote?.failed ? 'Vote to remove failed — on cooldown' : undefined}
+        >
+          {activeVote?.failed ? '🔒' : '✕'}
+        </button>
+      </div>
+      {activeVote && !activeVote.failed && <VoteStrip vote={activeVote} />}
+      {activeVote?.failed && <FailedStrip vote={activeVote} />}
     </a>
   )
 }
