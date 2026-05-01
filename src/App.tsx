@@ -93,13 +93,29 @@ export default function App() {
   }, [])
 
   const refreshAll = useCallback(async () => {
-    if (entries.length === 0) return
     setAnyLoading(true)
-    const refreshed = entries.map((e) => ({ ...e, status: 'loading' as const }))
-    setEntries(refreshed)
+
+    // Pull latest list from KV and find any characters added from another session
+    const saved = await listCharacters().catch((): CharacterInput[] => [])
+    const newChars = saved.filter((c) => {
+      const key = `${c.name}-${c.realm}-${c.region}`.toLowerCase()
+      return !addedKeys.current.has(key)
+    })
+    newChars.forEach((c) => addedKeys.current.add(`${c.name}-${c.realm}-${c.region}`.toLowerCase()))
+
+    const newEntries: CharacterEntry[] = newChars.map((char) => ({
+      ...char, id: makeId(), status: 'loading' as const,
+    }))
+
+    // Mark all existing entries as loading and append any new ones from KV
+    const allEntries = [
+      ...entries.map((e) => ({ ...e, status: 'loading' as const })),
+      ...newEntries,
+    ]
+    setEntries(allEntries)
 
     await Promise.allSettled(
-      refreshed.map(async (e) => {
+      allEntries.map(async (e) => {
         try {
           const data = await fetchCharacter(e)
           setEntries((prev) =>
