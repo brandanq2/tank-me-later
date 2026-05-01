@@ -10,8 +10,8 @@ function coverCacheKey(charKey: string) {
   return `tank-me-later:cover:${charKey}`
 }
 
-function buildPrompt(race: string, specName: string, className: string) {
-  const characterDesc = `${specName} ${className} ${race}`.trim()
+function buildPrompt(race: string, gender: string, specName: string, className: string) {
+  const characterDesc = `${gender} ${race} ${specName} ${className}`.trim()
   return (
     `Replace the human subject in this album cover with a ${characterDesc} from World of Warcraft. ` +
     'Preserve the exact composition, dramatic pose, lighting, and background of the album cover. ' +
@@ -24,14 +24,15 @@ function buildPrompt(race: string, specName: string, className: string) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const { charKey, race, specName, className } = req.body as {
+  const { charKey, race, gender, specName, className } = req.body as {
     charKey?: string
     race?: string
+    gender?: string
     specName?: string
     className?: string
   }
-  if (!charKey || !race || !specName || !className) {
-    return res.status(400).json({ error: 'charKey, race, specName, and className are required' })
+  if (!charKey || !race || !gender || !specName || !className) {
+    return res.status(400).json({ error: 'charKey, race, gender, specName, and className are required' })
   }
 
   try {
@@ -53,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const base64 = Buffer.from(albumBuffer).toString('base64')
     const inputImage = `data:image/png;base64,${base64}`
 
-    const prompt = buildPrompt(race, specName, className)
+    const prompt = buildPrompt(race, gender, specName, className)
     console.log('[generate-cover] prompt:', prompt)
 
     const prediction = await fetch(

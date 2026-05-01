@@ -14,6 +14,7 @@ interface RaiderIOResponse {
   name: string
   race: string
   class: string
+  gender: number
   active_spec_name: string
   active_spec_role: string
   thumbnail_url: string
@@ -24,6 +25,7 @@ interface RaiderIOResponse {
 export interface CharacterData {
   score: number
   race: string
+  gender: string
   className: string
   specName: string
   thumbnailUrl: string
@@ -137,6 +139,7 @@ export async function castVote(charKey: string, vote: 'yes' | 'no', sessionId: s
 export async function generateCover(
   charKey: string,
   race: string,
+  gender: string,
   specName: string,
   className: string,
   bust = false,
@@ -145,7 +148,7 @@ export async function generateCover(
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ charKey, race, specName, className }),
+    body: JSON.stringify({ charKey, race, gender, specName, className }),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
@@ -187,6 +190,7 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
   return {
     score,
     race: data.race,
+    gender: data.gender === 1 ? 'female' : 'male',
     className: data.class,
     specName: data.active_spec_name,
     thumbnailUrl: data.thumbnail_url,

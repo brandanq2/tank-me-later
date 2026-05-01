@@ -19,6 +19,7 @@ export interface CharacterEntry extends CharacterInput {
   prevRank?: number
   isOwned?: boolean
   race?: string
+  gender?: string
   className?: string
   specName?: string
   thumbnailUrl?: string
