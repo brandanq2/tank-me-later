@@ -1,6 +1,11 @@
 import { scoreToColor } from '../scoreColor'
 import type { CharacterEntry, TopKey } from '../types'
 
+interface DungeonRef {
+  shortName: string
+  dungeon: string
+}
+
 interface Props {
   entry: CharacterEntry
   rank: number
@@ -8,6 +13,7 @@ interface Props {
   revealed: boolean
   isInitialEntry: boolean
   revealDelay: number
+  allDungeons: DungeonRef[]
   onRemove: (id: string) => void
 }
 
@@ -55,6 +61,15 @@ function KeyChip({ topKey }: { topKey: TopKey }) {
   )
 }
 
+function MissingKeyChip({ shortName }: { shortName: string }) {
+  return (
+    <span className="key-chip key-chip-missing">
+      <span className="key-chip-name">{shortName}</span>
+      <span className="key-chip-level">—</span>
+    </span>
+  )
+}
+
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 0) return <span className="rank">🤡</span>
   if (rank === 1) return <span className="rank rank-gold">1</span>
@@ -63,7 +78,7 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="rank">{rank}</span>
 }
 
-export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove }: Props) {
+export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEntry, revealDelay, allDungeons, onRemove }: Props) {
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
     ? scoreToColor(entry.score ?? 0, 0, cutoffScore)
@@ -150,9 +165,14 @@ export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEn
           ✕
         </button>
       </div>
-      {entry.topKeys && entry.topKeys.length > 0 && (
+      {allDungeons.length > 0 && (
         <div className="row-keys">
-          {entry.topKeys.map((k) => <KeyChip key={k.shortName} topKey={k} />)}
+          {allDungeons.map(({ shortName }) => {
+            const key = entry.topKeys?.find((k) => k.shortName === shortName)
+            return key
+              ? <KeyChip key={shortName} topKey={key} />
+              : <MissingKeyChip key={shortName} shortName={shortName} />
+          })}
         </div>
       )}
     </a>

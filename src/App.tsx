@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { fetchCharacter, fetchCutoff, listCharacters, persistCharacter, removePersistedCharacter, reportScore } from './api'
 import type { CutoffData } from './api'
 import { AddCharacterForm } from './components/AddCharacterForm'
@@ -157,6 +157,14 @@ export default function App() {
   const leaderboard = sorted.filter((e) => e.status !== 'success' || (e.score ?? 0) > 0)
   const clowns = sorted.filter((e) => e.status === 'success' && (e.score ?? 0) === 0)
 
+  const allDungeons = useMemo(() => {
+    const map = new Map<string, string>()
+    entries.forEach((e) => e.topKeys?.forEach((k) => map.set(k.shortName, k.dungeon)))
+    return Array.from(map.entries())
+      .map(([shortName, dungeon]) => ({ shortName, dungeon }))
+      .sort((a, b) => a.shortName.localeCompare(b.shortName))
+  }, [entries])
+
   const loadedScores = leaderboard.filter((e) => e.status === 'success').map((e) => e.score ?? 0)
   const groupMax = loadedScores.length ? Math.max(...loadedScores) : 0
   const cutoffScore = cutoff?.score ?? groupMax
@@ -201,6 +209,7 @@ export default function App() {
                   revealed={revealed}
                   isInitialEntry={initialIds.current.has(entry.id)}
                   revealDelay={revealDelay(rank)}
+                  allDungeons={allDungeons}
                   onRemove={removeCharacter}
                 />
               )
@@ -223,6 +232,7 @@ export default function App() {
                       revealed={revealed}
                       isInitialEntry={initialIds.current.has(entry.id)}
                       revealDelay={clownDelay}
+                      allDungeons={allDungeons}
                       onRemove={removeCharacter}
                     />
                   )

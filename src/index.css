@@ -396,6 +396,11 @@ a.row-first:hover {
   white-space: nowrap;
 }
 
+.key-chip-missing {
+  opacity: 0.35;
+  border-style: dashed;
+}
+
 .key-chip-name {
   color: var(--muted);
   font-weight: 500;
