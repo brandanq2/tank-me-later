@@ -81,45 +81,36 @@ body {
 /* Inline album cover hero on rank-1 row */
 .row-cover-hero {
   width: 100%;
-  height: 200px;
   border-radius: 5px;
   overflow: hidden;
   position: relative;
   cursor: pointer;
   flex-shrink: 0;
   transition: opacity 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
 }
 
 .row-cover-hero:hover { opacity: 0.9; }
 
-.row-cover-hero::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: linear-gradient(transparent, var(--surface));
-  pointer-events: none;
-}
-
 @keyframes cover-reveal {
-  from { opacity: 0; transform: scaleY(0.96); transform-origin: top; }
+  from { opacity: 0; transform: scaleY(0.97); transform-origin: top; }
   to   { opacity: 1; transform: scaleY(1); }
 }
 
 .row-cover-img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  height: auto;
   display: block;
+  border-radius: 4px;
   animation: cover-reveal 0.4s ease-out both;
 }
 
 .row-cover-shimmer {
   width: 100%;
-  height: 100%;
+  aspect-ratio: 1;
   background: var(--surface2);
   animation: pulse 1.2s ease-in-out infinite;
 }
