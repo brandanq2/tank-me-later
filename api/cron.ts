@@ -39,17 +39,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         region: char.region,
         realm: char.realm,
         name: char.name,
-        fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs:tank_score',
+        fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs,mythic_plus_alternate_runs',
       })
       const upstream = await fetch(`https://raider.io/api/v1/characters/profile?${params}`)
       if (!upstream.ok) throw new Error(`${char.name}: ${upstream.status}`)
       const data = await upstream.json()
 
       const score: number = data?.mythic_plus_scores_by_season?.[0]?.scores?.tank ?? 0
-      const keys: Record<string, number> = {}
-      for (const run of data?.mythic_plus_best_runs ?? []) {
-        if (run.active_spec_role === 'tank') keys[run.short_name] = run.mythic_level
+      const allRuns = [...(data?.mythic_plus_best_runs ?? []), ...(data?.mythic_plus_alternate_runs ?? [])]
+      const tankRunMap = new Map<string, number>()
+      for (const run of allRuns) {
+        if (run.active_spec_role !== 'tank') continue
+        const prev = tankRunMap.get(run.short_name) ?? 0
+        if (run.mythic_level > prev) tankRunMap.set(run.short_name, run.mythic_level)
       }
+      const keys = Object.fromEntries(tankRunMap)
 
       return { key: charKey(char), score, keys }
     })

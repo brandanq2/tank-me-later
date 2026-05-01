@@ -29,6 +29,7 @@ interface RaiderIOResponse {
   profile_url: string
   mythic_plus_scores_by_season: RaiderIOScore[]
   mythic_plus_best_runs: RaiderIOBestRun[]
+  mythic_plus_alternate_runs: RaiderIOBestRun[]
 }
 
 export interface CharacterData {
@@ -111,7 +112,7 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
     region: char.region,
     realm: char.realm,
     name: char.name,
-    fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs:tank_score',
+    fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs,mythic_plus_alternate_runs',
   })
 
   const res = await fetch(`/api/raiderio?${params}`)
@@ -127,8 +128,13 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
   const currentSeason = data.mythic_plus_scores_by_season?.[0]
   const score = currentSeason?.scores?.tank ?? 0
 
-  const topKeys: TopKey[] = (data.mythic_plus_best_runs ?? [])
-    .filter((r) => r.active_spec_role === 'tank')
+  const tankRunMap = new Map<string, RaiderIOBestRun>()
+  for (const run of [...(data.mythic_plus_best_runs ?? []), ...(data.mythic_plus_alternate_runs ?? [])]) {
+    if (run.active_spec_role !== 'tank') continue
+    const existing = tankRunMap.get(run.short_name)
+    if (!existing || run.mythic_level > existing.mythic_level) tankRunMap.set(run.short_name, run)
+  }
+  const topKeys: TopKey[] = Array.from(tankRunMap.values())
     .map((r) => ({ dungeon: r.dungeon, shortName: r.short_name, level: r.mythic_level, url: r.url }))
     .sort((a, b) => a.shortName.localeCompare(b.shortName))
 
