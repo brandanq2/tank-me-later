@@ -38,12 +38,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'charKey, race, gender, specName, className, and charName are required' })
   }
 
+  console.log('[generate-cover] handler called, charKey:', charKey, 'bust:', req.query.bust)
   try {
     const bust = req.query.bust === '1'
-    if (!bust) {
-      const cached = await redis.get<string>(coverCacheKey(charKey))
-      if (cached) return res.json({ imageUrl: cached })
-    }
+    const cached = await redis.get<string>(coverCacheKey(charKey))
+    console.log('[generate-cover] cache hit:', !!cached, 'bust:', bust)
+    if (!bust && cached) return res.json({ imageUrl: cached })
 
     // Pass the album cover URL directly — Replicate fetches it themselves
     const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || req.headers.host
