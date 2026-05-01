@@ -103,6 +103,8 @@ export default function App() {
   }, [])
 
   const refreshAll = useCallback(async () => {
+    setRevealed(false)
+    initialIds.current.clear()
     setAnyLoading(true)
 
     // Pull latest list from KV and find any characters added from another session
