@@ -103,6 +103,8 @@ export default function App() {
   }, [])
 
   const refreshAll = useCallback(async () => {
+    const loadingEntries = entries.map((e) => ({ ...e, status: 'loading' as const }))
+    setEntries(loadingEntries)
     setRevealed(false)
     initialIds.current.clear()
     setAnyLoading(true)
@@ -119,12 +121,10 @@ export default function App() {
       ...char, id: makeId(), status: 'loading' as const,
     }))
 
-    // Mark all existing entries as loading and append any new ones from KV
-    const allEntries = [
-      ...entries.map((e) => ({ ...e, status: 'loading' as const })),
-      ...newEntries,
-    ]
-    setEntries(allEntries)
+    const allEntries = [...loadingEntries, ...newEntries]
+    if (newEntries.length > 0) {
+      setEntries(allEntries)
+    }
 
     await Promise.allSettled(
       allEntries.map(async (e) => {
