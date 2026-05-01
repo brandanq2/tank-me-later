@@ -85,11 +85,11 @@ body {
 }
 
 .row-avatar-cover {
-  width: 110px;
-  height: 110px;
+  width: 160px;
+  height: 160px;
   object-fit: cover;
-  border-radius: 7px;
-  box-shadow: 0 0 0 2px var(--gold), 0 0 18px rgba(228, 56, 49, 0.4);
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px var(--gold), 0 0 24px rgba(228, 56, 49, 0.45);
   cursor: pointer;
   flex-shrink: 0;
   transition: opacity 0.15s, transform 0.15s;
@@ -98,7 +98,7 @@ body {
 
 .row-avatar-cover:hover {
   opacity: 0.88;
-  transform: scale(1.04);
+  transform: scale(1.03);
 }
 
 /* Album cover easter egg */
@@ -392,7 +392,7 @@ a.row:hover { border-color: var(--accent); border-left-color: var(--spec-color, 
     var(--surface) 100%
   );
   box-shadow: 0 0 16px rgba(255, 215, 0, 0.15);
-  padding: 1.25rem 1.25rem;
+  padding: 1.5rem 1.5rem;
   position: relative;
 }
 
