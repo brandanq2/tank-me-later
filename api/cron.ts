@@ -1,10 +1,15 @@
 import { Redis } from '@upstash/redis'
+import { neon } from '@neondatabase/serverless'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,
   token: process.env.KV_REST_API_TOKEN!,
 })
+
+function getDb() {
+  return neon(process.env.DATABASE_URL!)
+}
 
 interface CharacterInput {
   name: string
@@ -75,6 +80,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await redis.expire(rankKey(snapshotDate), ttl)
     }
   }
+
+  const sql = getDb()
+  const dateStr = snapshotDate.toISOString().slice(0, 10)
+  await Promise.allSettled(
+    characters
+      .filter((c) => scoreSnapshot[charKey(c)] != null)
+      .map((c) => {
+        const key = charKey(c)
+        const score = scoreSnapshot[key]
+        return sql`
+          INSERT INTO score_history (char_key, name, realm, region, score, snapped_on)
+          VALUES (${key}, ${c.name}, ${c.realm}, ${c.region}, ${score}, ${dateStr})
+          ON CONFLICT (char_key, snapped_on) DO UPDATE SET score = EXCLUDED.score
+        `
+      })
+  )
 
   return res.json({ snapshotted: Object.keys(scoreSnapshot).length })
 }
