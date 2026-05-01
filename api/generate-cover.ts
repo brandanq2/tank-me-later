@@ -14,13 +14,12 @@ function buildPrompt(race: string, gender: string, specName: string, className: 
   const characterDesc = `${gender} ${race} ${specName} ${className}`.trim()
   const nameUpper = charName.toUpperCase()
   return (
-    `Replace the human subject in this album cover with a ${characterDesc} from World of Warcraft. ` +
-    'Preserve the exact composition, dramatic pose, lighting, and background of the album cover. ' +
-    'Keep the high contrast black and white style with deep crimson red paint splatters as the only color. ' +
-    'Render the character with visual traits typical of their race and class from World of Warcraft. ' +
-    `Replace the red text "BTW" in the title with "${nameUpper}" in the same bold red font and style. ` +
-    'Keep "TANK", "ME", and "LATER" exactly as they appear in the original. ' +
-    'Do not add or remove any other text.'
+    `Edit this album cover image with two changes. ` +
+    `First: change the bold red word "BTW" in the title to "${nameUpper}" — same position, same bold red color, same large font size, same style. ` +
+    `Second: replace the human subject with a ${characterDesc} from World of Warcraft, preserving the dramatic pose, composition, and lighting. ` +
+    'Keep "TANK", "ME", and "LATER" exactly unchanged. ' +
+    'Keep the high contrast black and white style with deep crimson red as the only color. ' +
+    'No other text changes.'
   )
 }
 
