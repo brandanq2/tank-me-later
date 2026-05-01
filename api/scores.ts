@@ -6,10 +6,18 @@ const redis = new Redis({
   token: process.env.KV_REST_API_TOKEN!,
 })
 
-const HASH_KEY = 'tank-me-later:scores'
-
 function charKey(name: string, realm: string, region: string) {
   return `${name}-${realm}-${region}`.toLowerCase()
+}
+
+function dailyKey(date: Date) {
+  return `tank-me-later:daily:${date.toISOString().slice(0, 10)}`
+}
+
+function yesterday() {
+  const d = new Date()
+  d.setUTCDate(d.getUTCDate() - 1)
+  return d
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -23,13 +31,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const key = charKey(name, realm, region)
-  const prev = await redis.hget<number>(HASH_KEY, key)
-  const delta = prev != null ? Math.max(0, score - prev) : 0
-
-  // Only update stored score if it increased (IO never decreases)
-  if (prev == null || score > prev) {
-    await redis.hset(HASH_KEY, { [key]: score })
-  }
+  const prevScore = await redis.hget<number>(dailyKey(yesterday()), key)
+  const delta = prevScore != null ? Math.max(0, score - prevScore) : 0
 
   return res.json({ delta })
 }

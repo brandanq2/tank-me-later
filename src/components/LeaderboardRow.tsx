@@ -111,7 +111,7 @@ export function LeaderboardRow({ entry, rank, cutoffScore, onRemove }: Props) {
         </span>
         <span className="row-score-label">
           {entry.scoreDelta != null && entry.scoreDelta > 0
-            ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+            ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
             : 'Tank IO'}
         </span>
       </div>
