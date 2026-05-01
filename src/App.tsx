@@ -38,6 +38,7 @@ export default function App() {
   const [anyLoading, setAnyLoading] = useState(false)
   const [cutoff, setCutoff] = useState<CutoffData | null>(null)
   const [revealed, setRevealed] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
 
@@ -103,13 +104,13 @@ export default function App() {
   }, [])
 
   const refreshAll = useCallback(async () => {
-    const loadingEntries = entries.map((e) => ({ ...e, status: 'loading' as const }))
-    setEntries(loadingEntries)
-    setRevealed(false)
     initialIds.current.clear()
+    setIsRefreshing(true)
     setAnyLoading(true)
 
-    // Pull latest list from KV and find any characters added from another session
+    const loadingEntries = entries.map((e) => ({ ...e, status: 'loading' as const }))
+    setEntries(loadingEntries)
+
     const saved = await listCharacters().catch((): CharacterInput[] => [])
     const newChars = saved.filter((c) => {
       const key = `${c.name}-${c.realm}-${c.region}`.toLowerCase()
@@ -142,6 +143,9 @@ export default function App() {
         }
       })
     )
+
+    allEntries.forEach((e) => { initialIds.current.add(e.id) })
+    setIsRefreshing(false)
     setAnyLoading(false)
   }, [entries])
 
@@ -188,7 +192,7 @@ export default function App() {
       {entries.length === 0 ? (
         <p className="empty">Add characters above to build your leaderboard.</p>
       ) : (
-        <div className={revealed ? undefined : 'pre-reveal'}>
+        <div className={revealed && !isRefreshing ? undefined : 'pre-reveal'}>
           <div className="leaderboard">
             {leaderboard.map((entry, i) => {
               const rank = i + 1
