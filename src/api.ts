@@ -14,6 +14,7 @@ interface RaiderIOBestRun {
   dungeon: string
   short_name: string
   mythic_level: number
+  active_spec_role: string
   url?: string
 }
 
@@ -127,6 +128,7 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
   const score = currentSeason?.scores?.tank ?? 0
 
   const topKeys: TopKey[] = (data.mythic_plus_best_runs ?? [])
+    .filter((r) => r.active_spec_role === 'tank')
     .map((r) => ({ dungeon: r.dungeon, shortName: r.short_name, level: r.mythic_level, url: r.url }))
     .sort((a, b) => a.shortName.localeCompare(b.shortName))
 

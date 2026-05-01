@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const score: number = data?.mythic_plus_scores_by_season?.[0]?.scores?.tank ?? 0
       const keys: Record<string, number> = {}
       for (const run of data?.mythic_plus_best_runs ?? []) {
-        keys[run.short_name] = run.mythic_level
+        if (run.active_spec_role === 'tank') keys[run.short_name] = run.mythic_level
       }
 
       return { key: charKey(char), score, keys }
