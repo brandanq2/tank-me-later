@@ -1,4 +1,4 @@
-import type { CharacterInput } from './types'
+import type { CharacterInput, VoteRecord } from './types'
 
 interface RaiderIOScore {
   season: string
@@ -91,6 +91,46 @@ export async function fetchCutoff(season = 'season-mn-1', region = 'us'): Promis
   }
 
   throw new Error('Cutoff score not found in response')
+}
+
+export function getSessionId(): string {
+  const KEY = 'tank-me-later:session'
+  let id = localStorage.getItem(KEY)
+  if (!id) {
+    id = crypto.randomUUID()
+    localStorage.setItem(KEY, id)
+  }
+  return id
+}
+
+export async function fetchVotes(): Promise<VoteRecord[]> {
+  const res = await fetch('/api/votes')
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function initiateVote(
+  entry: { name: string; realm: string; region: string; className?: string; specName?: string; thumbnailUrl?: string },
+  sessionId: string,
+): Promise<{ ok: boolean; alreadyExists: boolean }> {
+  const charKey = `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()
+  const res = await fetch('/api/votes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ charKey, ...entry, sessionId }),
+  })
+  if (res.status === 409) return { ok: false, alreadyExists: true }
+  return { ok: res.ok, alreadyExists: false }
+}
+
+export async function castVote(charKey: string, vote: 'yes' | 'no', sessionId: string): Promise<VoteRecord | null> {
+  const res = await fetch('/api/vote-cast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ charKey, vote, sessionId }),
+  })
+  if (!res.ok) return null
+  return res.json()
 }
 
 export async function fetchCharacter(char: CharacterInput): Promise<CharacterData> {

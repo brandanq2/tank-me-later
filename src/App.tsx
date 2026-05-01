@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { fetchCharacter, fetchCutoff, listCharacters, persistCharacter, removePersistedCharacter, reportScore } from './api'
+import { fetchCharacter, fetchCutoff, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote } from './api'
 import type { CutoffData } from './api'
 import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
-import type { CharacterEntry, CharacterInput } from './types'
+import { VoteModal } from './components/VoteModal'
+import type { CharacterEntry, CharacterInput, VoteRecord } from './types'
 
 function makeId() {
   return Math.random().toString(36).slice(2)
@@ -39,13 +40,17 @@ export default function App() {
   const [cutoff, setCutoff] = useState<CutoffData | null>(null)
   const [revealed, setRevealed] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [votes, setVotes] = useState<VoteRecord[]>([])
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
+  const sessionId = useRef(getSessionId())
+  const ownedCharKeys = useRef(new Set<string>())
 
   const addCharacter = useCallback(async (input: CharacterInput) => {
     const key = `${input.name}-${input.realm}-${input.region}`.toLowerCase()
     if (addedKeys.current.has(key)) return
     addedKeys.current.add(key)
+    ownedCharKeys.current.add(key)
 
     const id = makeId()
     const pending: CharacterEntry = { ...input, id, status: 'loading' }
@@ -91,12 +96,20 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    const poll = () => fetchVotes().then(setVotes).catch(() => {})
+    poll()
+    const interval = setInterval(poll, 10_000)
+    return () => clearInterval(interval)
+  }, [])
+
   const removeCharacter = useCallback((id: string) => {
     setEntries((prev) => {
       const target = prev.find((e) => e.id === id)
       if (target) {
         const key = `${target.name}-${target.realm}-${target.region}`.toLowerCase()
         addedKeys.current.delete(key)
+        ownedCharKeys.current.delete(key)
         removePersistedCharacter(target).catch(() => {})
       }
       return prev.filter((e) => e.id !== id)
@@ -157,6 +170,32 @@ export default function App() {
     }
   }, [entries, revealed])
 
+  const handleRemoveOrVote = useCallback((id: string) => {
+    const target = entries.find(e => e.id === id)
+    if (!target) return
+    const key = `${target.name}-${target.realm}-${target.region}`.toLowerCase()
+    if (ownedCharKeys.current.has(key)) {
+      removeCharacter(id)
+    } else {
+      initiateVote(target, sessionId.current)
+        .then(() => fetchVotes().then(setVotes).catch(() => {}))
+        .catch(() => {})
+    }
+  }, [entries, removeCharacter])
+
+  const handleVoteCast = useCallback(async (charKey: string, vote: 'yes' | 'no') => {
+    const result = await castVote(charKey, vote, sessionId.current)
+    if (!result) return
+    if (result.resolved) {
+      setEntries(prev => prev.filter(e => `${e.name}-${e.realm}-${e.region}`.toLowerCase() !== charKey))
+      addedKeys.current.delete(charKey)
+      ownedCharKeys.current.delete(charKey)
+      setVotes(prev => prev.filter(v => v.charKey !== charKey))
+    } else {
+      setVotes(prev => prev.map(v => v.charKey === charKey ? result : v))
+    }
+  }, [])
+
   const sorted = sortedEntries(entries)
   const leaderboard = sorted.filter((e) => e.status !== 'success' || (e.score ?? 0) > 0)
   const clowns = sorted.filter((e) => e.status === 'success' && (e.score ?? 0) === 0)
@@ -207,7 +246,7 @@ export default function App() {
                   revealed={revealed}
                   isInitialEntry={initialIds.current.has(entry.id)}
                   revealDelay={revealDelay(rank)}
-                  onRemove={removeCharacter}
+                  onRemove={handleRemoveOrVote}
                 />
               )
             })}
@@ -229,7 +268,7 @@ export default function App() {
                       revealed={revealed}
                       isInitialEntry={initialIds.current.has(entry.id)}
                       revealDelay={clownDelay}
-                      onRemove={removeCharacter}
+                      onRemove={handleRemoveOrVote}
                     />
                   )
                 })}
@@ -238,6 +277,8 @@ export default function App() {
           )}
         </div>
       )}
+
+      <VoteModal votes={votes} sessionId={sessionId.current} onVote={handleVoteCast} />
     </div>
   )
 }

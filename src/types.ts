@@ -18,3 +18,17 @@ export interface CharacterEntry extends CharacterInput {
   profileUrl?: string
   error?: string
 }
+
+export interface VoteRecord {
+  charKey: string
+  name: string
+  realm: string
+  region: string
+  className?: string
+  specName?: string
+  thumbnailUrl?: string
+  yesVotes: string[]
+  noVotes: string[]
+  expiresAt: number
+  resolved?: boolean
+}
