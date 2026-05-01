@@ -55,13 +55,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     type Prediction = { id: string; status: string; output?: string | string[]; error?: string }
 
-    const created = await fetch(
+    const createRes = await fetch(
       'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions',
       {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
           'Content-Type': 'application/json',
+          'Prefer': 'respond-async',
         },
         body: JSON.stringify({
           input: {
@@ -72,9 +73,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
         }),
       }
-    ).then(r => r.json()) as Prediction
+    )
+    const created = await createRes.json() as Prediction & { detail?: string; title?: string }
+    console.log('[generate-cover] create response status:', createRes.status, 'body:', JSON.stringify(created))
 
-    if (created.error) return res.status(500).json({ error: created.error })
+    const createError = created.error ?? created.detail ?? (createRes.ok ? null : `HTTP ${createRes.status}`)
+    if (createError || !created.id) return res.status(500).json({ error: createError ?? 'No prediction ID returned', raw: created })
     console.log('[generate-cover] prediction created:', created.id)
 
     // Poll until succeeded or failed (up to 240s)
