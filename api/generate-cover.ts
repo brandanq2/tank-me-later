@@ -1,5 +1,7 @@
 import { Redis } from '@upstash/redis'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import fs from 'fs'
+import path from 'path'
 
 const redis = new Redis({
   url: process.env.KV_REST_API_URL!,
@@ -45,16 +47,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (cached) return res.json({ imageUrl: cached })
     }
 
-    // Use the album cover as the style reference input
-    const proto = (req.headers['x-forwarded-proto'] as string | undefined) ?? 'https'
-    const host = req.headers.host ?? process.env.VERCEL_URL
-    const albumCoverUrl = `${proto}://${host}/album-cover.png`
-
-    console.log('[generate-cover] fetching album cover from', albumCoverUrl)
-    const albumRes = await fetch(albumCoverUrl)
-    if (!albumRes.ok) throw new Error(`Failed to fetch album cover: ${albumRes.status} ${albumCoverUrl}`)
-    const albumBuffer = await albumRes.arrayBuffer()
-    const base64 = Buffer.from(albumBuffer).toString('base64')
+    // Read album cover directly from filesystem — avoids self-referential HTTP hang
+    const albumPath = path.join(process.cwd(), 'public', 'album-cover.png')
+    console.log('[generate-cover] reading album cover from', albumPath)
+    const albumBuffer = fs.readFileSync(albumPath)
+    const base64 = albumBuffer.toString('base64')
     const inputImage = `data:image/png;base64,${base64}`
 
     const prompt = buildPrompt(race, gender, specName, className, charName)
