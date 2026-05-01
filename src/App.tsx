@@ -26,11 +26,20 @@ const INITIAL_CHARACTERS: CharacterInput[] = [
   { name: 'Woodworker', realm: 'zuljin',  region: 'us' },
 ]
 
+function revealDelay(rank: number): number {
+  if (rank === 1) return 0
+  if (rank === 2) return 1.1
+  if (rank === 3) return 1.9
+  return 2.5 + (rank - 4) * 0.08
+}
+
 export default function App() {
   const [entries, setEntries] = useState<CharacterEntry[]>([])
   const [anyLoading, setAnyLoading] = useState(false)
   const [cutoff, setCutoff] = useState<CutoffData | null>(null)
+  const [revealed, setRevealed] = useState(false)
   const addedKeys = useRef(new Set<string>())
+  const initialIds = useRef(new Set<string>())
 
   const addCharacter = useCallback(async (input: CharacterInput) => {
     const key = `${input.name}-${input.realm}-${input.region}`.toLowerCase()
@@ -134,6 +143,14 @@ export default function App() {
     setAnyLoading(false)
   }, [entries])
 
+  useEffect(() => {
+    if (revealed || entries.length === 0) return
+    if (entries.every((e) => e.status !== 'loading')) {
+      entries.forEach((e) => initialIds.current.add(e.id))
+      setRevealed(true)
+    }
+  }, [entries, revealed])
+
   const sorted = sortedEntries(entries)
   const leaderboard = sorted.filter((e) => e.status !== 'success' || (e.score ?? 0) > 0)
   const clowns = sorted.filter((e) => e.status === 'success' && (e.score ?? 0) === 0)
@@ -171,15 +188,21 @@ export default function App() {
       ) : (
         <>
           <div className="leaderboard">
-            {leaderboard.map((entry, i) => (
-              <LeaderboardRow
-                key={entry.id}
-                entry={entry}
-                rank={i + 1}
-                cutoffScore={cutoffScore}
-                onRemove={removeCharacter}
-              />
-            ))}
+            {leaderboard.map((entry, i) => {
+              const rank = i + 1
+              return (
+                <LeaderboardRow
+                  key={entry.id}
+                  entry={entry}
+                  rank={rank}
+                  cutoffScore={cutoffScore}
+                  revealed={revealed}
+                  isInitialEntry={initialIds.current.has(entry.id)}
+                  revealDelay={revealDelay(rank)}
+                  onRemove={removeCharacter}
+                />
+              )
+            })}
           </div>
 
           {clowns.length > 0 && (
@@ -187,15 +210,21 @@ export default function App() {
               <h2 className="clown-title">🤡 Clown List</h2>
               <p className="clown-subtitle">0 tank IO this season</p>
               <div className="leaderboard">
-                {clowns.map((entry) => (
-                  <LeaderboardRow
-                    key={entry.id}
-                    entry={entry}
-                    rank={0}
-                    cutoffScore={cutoffScore}
-                    onRemove={removeCharacter}
-                  />
-                ))}
+                {clowns.map((entry, ci) => {
+                  const clownDelay = revealDelay(leaderboard.length + 1) + ci * 0.08
+                  return (
+                    <LeaderboardRow
+                      key={entry.id}
+                      entry={entry}
+                      rank={0}
+                      cutoffScore={cutoffScore}
+                      revealed={revealed}
+                      isInitialEntry={initialIds.current.has(entry.id)}
+                      revealDelay={clownDelay}
+                      onRemove={removeCharacter}
+                    />
+                  )
+                })}
               </div>
             </div>
           )}

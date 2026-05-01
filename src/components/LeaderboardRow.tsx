@@ -5,7 +5,17 @@ interface Props {
   entry: CharacterEntry
   rank: number
   cutoffScore: number
+  revealed: boolean
+  isInitialEntry: boolean
+  revealDelay: number
   onRemove: (id: string) => void
+}
+
+function revealClass(rank: number): string {
+  if (rank === 1) return 'row-reveal-1'
+  if (rank === 2) return 'row-reveal-2'
+  if (rank === 3) return 'row-reveal-3'
+  return 'row-reveal-rest'
 }
 
 const CLASS_TANK_SPEC: Record<string, string> = {
@@ -41,15 +51,19 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="rank">{rank}</span>
 }
 
-export function LeaderboardRow({ entry, rank, cutoffScore, onRemove }: Props) {
+export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove }: Props) {
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
     ? scoreToColor(entry.score ?? 0, 0, cutoffScore)
     : '#9d9d9d'
 
+  const anim = revealed && isInitialEntry
+    ? { className: revealClass(rank), style: { animationDelay: `${revealDelay}s` } }
+    : { className: '', style: {} }
+
   if (entry.status === 'loading') {
     return (
-      <div className="row row-loading">
+      <div className={`row row-loading ${anim.className}`} style={anim.style}>
         <RankBadge rank={rank} />
         <div className="row-avatar skeleton" />
         <div className="row-info">
@@ -67,7 +81,7 @@ export function LeaderboardRow({ entry, rank, cutoffScore, onRemove }: Props) {
 
   if (entry.status === 'error') {
     return (
-      <div className="row row-error">
+      <div className={`row row-error ${anim.className}`} style={anim.style}>
         <RankBadge rank={rank} />
         <div className="row-avatar row-avatar-err">?</div>
         <div className="row-info">
@@ -87,7 +101,8 @@ export function LeaderboardRow({ entry, rank, cutoffScore, onRemove }: Props) {
 
   return (
     <a
-      className={`row${isFirst ? ' row-first' : ''}`}
+      className={`row${isFirst ? ' row-first' : ''} ${anim.className}`}
+      style={anim.style}
       href={entry.profileUrl}
       target="_blank"
       rel="noopener noreferrer"

@@ -161,6 +161,33 @@ body {
   margin-top: 3rem;
 }
 
+/* Reveal animations */
+@keyframes reveal-rank1 {
+  0%   { opacity: 0; transform: scale(0.78) translateY(-24px); filter: brightness(1); }
+  55%  { transform: scale(1.06) translateY(5px); filter: brightness(1.9); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: brightness(1); }
+}
+
+@keyframes reveal-rank2 {
+  0%   { opacity: 0; transform: translateX(-28px) scale(0.94); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes reveal-rank3 {
+  0%   { opacity: 0; transform: translateX(-16px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes reveal-rest {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.row-reveal-1 { animation: reveal-rank1 1s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.row-reveal-2 { animation: reveal-rank2 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.row-reveal-3 { animation: reveal-rank3 0.5s ease-out both; }
+.row-reveal-rest { animation: reveal-rest 0.22s ease-out both; }
+
 /* Leaderboard */
 .leaderboard {
   display: flex;
