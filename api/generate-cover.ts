@@ -45,15 +45,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (cached) return res.json({ imageUrl: cached })
     }
 
-    // Fetch album cover from Vercel's production CDN — safe, no circular dependency
-    const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL
-    if (!productionHost) throw new Error('VERCEL_PROJECT_PRODUCTION_URL not set')
-    const albumRes = await fetch(`https://${productionHost}/album-cover.png`)
-    if (!albumRes.ok) throw new Error(`Failed to fetch album cover: ${albumRes.status}`)
-    const albumBuffer = await albumRes.arrayBuffer()
-    const base64 = Buffer.from(albumBuffer).toString('base64')
-    const inputImage = `data:image/png;base64,${base64}`
-    console.log('[generate-cover] album cover fetched, size:', albumBuffer.byteLength)
+    // Pass the album cover URL directly — Replicate fetches it themselves
+    const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || req.headers.host
+    const inputImage = `https://${productionHost}/album-cover.png`
+    console.log('[generate-cover] using album cover url:', inputImage)
 
     const prompt = buildPrompt(race, gender, specName, className, charName)
     console.log('[generate-cover] prompt:', prompt)
