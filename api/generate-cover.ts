@@ -60,14 +60,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const prompt = buildPrompt(race, gender, specName, className, charName)
     console.log('[generate-cover] prompt:', prompt)
 
-    const prediction = await fetch(
+    type Prediction = { id: string; status: string; output?: string | string[]; error?: string }
+
+    const created = await fetch(
       'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions',
       {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}`,
           'Content-Type': 'application/json',
-          Prefer: 'wait',
         },
         body: JSON.stringify({
           input: {
@@ -78,13 +79,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
         }),
       }
-    ).then(r => r.json()) as { id: string; status: string; output?: string | string[]; error?: string }
+    ).then(r => r.json()) as Prediction
 
-    console.log('[generate-cover] prediction status:', prediction.status, 'error:', prediction.error)
+    if (created.error) return res.status(500).json({ error: created.error })
+    console.log('[generate-cover] prediction created:', created.id)
+
+    // Poll until succeeded or failed (up to 240s)
+    let prediction: Prediction = created
+    const deadline = Date.now() + 240_000
+    while (prediction.status !== 'succeeded' && prediction.status !== 'failed' && Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 4000))
+      prediction = await fetch(`https://api.replicate.com/v1/predictions/${created.id}`, {
+        headers: { Authorization: `Bearer ${process.env.REPLICATE_API_TOKEN}` },
+      }).then(r => r.json()) as Prediction
+      console.log('[generate-cover] poll status:', prediction.status)
+    }
 
     if (prediction.error) return res.status(500).json({ error: prediction.error })
     if (prediction.status !== 'succeeded' || !prediction.output) {
-      return res.status(500).json({ error: 'Generation timed out', predictionId: prediction.id })
+      return res.status(500).json({ error: 'Generation timed out after 240s', predictionId: created.id })
     }
 
     const replicateUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output
