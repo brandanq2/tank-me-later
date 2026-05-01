@@ -14,12 +14,11 @@ function coverCacheKey(charKey: string) {
 const PROMPT =
   'Redraw the character from this image as the subject of a dramatic hip-hop album cover portrait. ' +
   'Keep the character\'s facial features, armor, and non-human traits fully intact and recognizable. ' +
-  'Render in extreme high contrast black and white with deep crimson red (#E43831) paint splatters and streaks as the only color accent. ' +
-  'Subject facing forward, head slightly tilted back, mouth open wide, eyes intense and half-closed — raw visceral expression. ' +
-  'Harsh directional lighting from above creating dramatic shadows on the face and armor. ' +
+  'Extreme high contrast black and white tones with deep crimson red (#E43831) paint splatters as the only color. ' +
+  'Subject facing forward, head slightly tilted back, eyes intense and half-closed, powerful expression. ' +
+  'Harsh directional lighting from above casting deep shadows across the face and armor. ' +
   'Dark distressed background with scratched film grain texture. ' +
-  'Photorealistic render, cinematic quality, square album cover composition. ' +
-  'Parental Advisory Explicit Content sticker in the bottom-left corner. ' +
+  'Photorealistic, cinematic, square album cover composition. ' +
   'No text, no names, no titles anywhere on the image.'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
