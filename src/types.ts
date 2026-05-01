@@ -11,6 +11,7 @@ export interface TopKey {
   shortName: string
   level: number
   levelDelta?: number
+  url?: string
 }
 
 export interface CharacterEntry extends CharacterInput {

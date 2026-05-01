@@ -16,6 +16,7 @@ interface RaiderIOBestRun {
   mythic_level: number
   active_spec_name: string
   active_spec_role: string
+  url?: string
 }
 
 const TANK_SPEC: Record<string, string> = {
@@ -142,7 +143,7 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
         ? r.active_spec_role === 'tank'
         : tankSpec ? r.active_spec_name === tankSpec : false
     )
-    .map((r) => ({ dungeon: r.dungeon, shortName: r.short_name, level: r.mythic_level }))
+    .map((r) => ({ dungeon: r.dungeon, shortName: r.short_name, level: r.mythic_level, url: r.url }))
     .sort((a, b) => a.shortName.localeCompare(b.shortName))
 
   return {

@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import { scoreToColor } from '../scoreColor'
 import type { CharacterEntry, TopKey } from '../types'
 
@@ -50,8 +51,12 @@ const CLASS_COLORS: Record<string, string> = {
 }
 
 function KeyChip({ topKey }: { topKey: TopKey }) {
+  const handleClick = topKey.url
+    ? (e: MouseEvent) => { e.stopPropagation(); e.preventDefault(); window.open(topKey.url, '_blank', 'noopener,noreferrer') }
+    : undefined
+
   return (
-    <span className="key-chip">
+    <span className={`key-chip${topKey.url ? ' key-chip-link' : ''}`} onClick={handleClick}>
       <span className="key-chip-name">{topKey.shortName}</span>
       <span className="key-chip-level">+{topKey.level}</span>
       {topKey.levelDelta != null && topKey.levelDelta > 0 && (
