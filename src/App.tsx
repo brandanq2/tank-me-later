@@ -30,7 +30,7 @@ function revealDelay(rank: number): number {
   if (rank === 1) return 0
   if (rank === 2) return 1.1
   if (rank === 3) return 1.9
-  return 2.5 + (rank - 4) * 0.08
+  return 2.5
 }
 
 export default function App() {
@@ -211,7 +211,7 @@ export default function App() {
               <p className="clown-subtitle">0 tank IO this season</p>
               <div className="leaderboard">
                 {clowns.map((entry, ci) => {
-                  const clownDelay = revealDelay(leaderboard.length + 1) + ci * 0.08
+                  const clownDelay = revealDelay(leaderboard.length + 1)
                   return (
                     <LeaderboardRow
                       key={entry.id}
