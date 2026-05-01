@@ -223,8 +223,13 @@ body {
 .row {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--spec-color, var(--surface)) 10%, var(--surface)) 0%,
+    var(--surface) 45%
+  );
   border: 1px solid var(--border);
+  border-left: 3px solid var(--spec-color, var(--border));
   border-radius: 8px;
   padding: 0.75rem 1rem;
   text-decoration: none;
@@ -234,7 +239,7 @@ body {
   gap: 0.6rem;
 }
 
-a.row:hover { border-color: var(--accent); background: var(--surface2); }
+a.row:hover { border-color: var(--accent); border-left-color: var(--spec-color, var(--accent)); background: var(--surface2); }
 
 .row-main {
   display: flex;
@@ -247,7 +252,13 @@ a.row:hover { border-color: var(--accent); background: var(--surface2); }
 
 .row-first {
   border-color: var(--gold);
-  background: linear-gradient(90deg, rgba(255, 215, 0, 0.08) 0%, var(--surface) 60%);
+  border-left: 3px solid var(--spec-color, var(--gold));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--spec-color, var(--gold)) 12%, var(--surface)) 0%,
+    color-mix(in srgb, var(--gold) 6%, var(--surface)) 55%,
+    var(--surface) 100%
+  );
   box-shadow: 0 0 16px rgba(255, 215, 0, 0.15);
   padding: 1rem 1rem;
   position: relative;
