@@ -50,7 +50,6 @@ export default function App() {
     const key = `${input.name}-${input.realm}-${input.region}`.toLowerCase()
     if (addedKeys.current.has(key)) return
     addedKeys.current.add(key)
-    ownedCharKeys.current.add(key)
 
     const id = makeId()
     const pending: CharacterEntry = { ...input, id, status: 'loading' }
@@ -78,6 +77,12 @@ export default function App() {
       setAnyLoading(false)
     }
   }, [])
+
+  const addOwnedCharacter = useCallback((input: CharacterInput) => {
+    const key = `${input.name}-${input.realm}-${input.region}`.toLowerCase()
+    ownedCharKeys.current.add(key)
+    addCharacter(input)
+  }, [addCharacter])
 
   useEffect(() => {
     fetchCutoff().then(setCutoff).catch(() => {})
@@ -220,7 +225,7 @@ export default function App() {
       </header>
 
       <div className="controls">
-        <AddCharacterForm onAdd={addCharacter} loading={anyLoading} />
+        <AddCharacterForm onAdd={addOwnedCharacter} loading={anyLoading} />
         {entries.length > 0 && (
           <button className="refresh-btn" onClick={refreshAll} disabled={anyLoading}>
             Refresh All
