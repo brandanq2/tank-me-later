@@ -7,6 +7,7 @@ const redis = new Redis({
 })
 
 const VOTE_TTL = 60 * 60 * 24
+const VOTES_NEEDED = 3
 const ACTIVE_SET_KEY = 'tank-me-later:votes:active'
 
 interface VoteRecord {
@@ -34,7 +35,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const votes = await Promise.all(
       activeKeys.map(async (k) => {
         const vote = await redis.get<VoteRecord>(voteKey(k))
-        if (!vote) await redis.srem(ACTIVE_SET_KEY, k)
+        if (!vote) { await redis.srem(ACTIVE_SET_KEY, k); return null }
+        if (!vote.failed && vote.noVotes.length >= VOTES_NEEDED) {
+          vote.failed = true
+          const ttlRemaining = Math.max(1, Math.ceil((vote.expiresAt - Date.now()) / 1000))
+          await redis.set(voteKey(k), vote, { ex: ttlRemaining })
+        }
         return vote
       })
     )
