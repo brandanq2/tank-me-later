@@ -217,7 +217,11 @@ export default function App() {
   return (
     <div className="app">
       <header className="header">
-        <h1 className="title">Tank Me Later</h1>
+        <h1 className="title-stack">
+          <span>Tank</span>
+          <span><span className="title-accent">BTW</span> Me</span>
+          <span>Later</span>
+        </h1>
         <p className="subtitle">Mythic+ Tank IO Leaderboard</p>
         <p className="header-disclaimer">Yeah, I know what I said.</p>
         {cutoff && (

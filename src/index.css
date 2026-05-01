@@ -37,12 +37,19 @@ body {
   margin-bottom: 2rem;
 }
 
-.title {
-  font-family: 'Oswald', sans-serif;
-  font-size: 2.6rem;
-  font-weight: 700;
-  letter-spacing: 2px;
+.title-stack {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 5.5rem;
+  line-height: 0.88;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
+  color: var(--text);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.title-accent {
   color: var(--accent);
 }
 
