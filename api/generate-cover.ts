@@ -16,7 +16,7 @@ function buildPrompt(race: string, gender: string, specName: string, className: 
   return (
     `Edit this album cover image with two changes. ` +
     `First: change the bold red word "BTW" in the title to "${nameUpper}" — same position, same bold red color, same large font size, same style. ` +
-    `Second: replace the human subject with a ${characterDesc} from World of Warcraft, preserving the dramatic pose, composition, and lighting. ` +
+    `Second: replace the human subject with a ${characterDesc} from World of Warcraft — tight close-up of the face only, chin to forehead, filling the right side of the image, preserving the dramatic upward-tilted pose and harsh overhead lighting. ` +
     'Keep "TANK", "ME", and "LATER" exactly unchanged. ' +
     'Keep the high contrast black and white style with deep crimson red as the only color. ' +
     'No other text changes.'
