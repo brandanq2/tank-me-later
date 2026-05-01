@@ -52,6 +52,14 @@ body {
   letter-spacing: 1px;
 }
 
+.header-disclaimer {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  opacity: 0.45;
+  font-style: italic;
+}
+
 .cutoff-badge {
   margin-top: 0.5rem;
   font-size: 0.8rem;

@@ -219,6 +219,7 @@ export default function App() {
       <header className="header">
         <h1 className="title">Tank Me Later</h1>
         <p className="subtitle">Mythic+ Tank IO Leaderboard</p>
+        <p className="header-disclaimer">Yeah I know what I said.</p>
         {cutoff && (
           <p className="cutoff-badge">
             {cutoff.percentile} cutoff&nbsp;
