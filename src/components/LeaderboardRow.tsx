@@ -230,8 +230,11 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
         {onGenerateCover && (
           <button
             className="generate-cover-btn"
-            onClick={(e) => { e.preventDefault(); onGenerateCover(false) }}
-            onDoubleClick={(e) => { e.preventDefault(); onGenerateCover(true) }}
+            onClick={(e) => {
+              e.preventDefault()
+              const bust = e.detail === 2
+              onGenerateCover(bust)
+            }}
             title="Generate album cover art (double-click to regenerate)"
           >
             🎵

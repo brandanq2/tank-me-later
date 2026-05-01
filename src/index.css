@@ -135,6 +135,19 @@ body {
   gap: 1.25rem;
   color: var(--muted);
   font-size: 0.9rem;
+  max-width: 320px;
+  text-align: center;
+}
+
+.album-error {
+  color: var(--red);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.album-error-sub {
+  font-size: 0.75rem;
+  opacity: 0.5;
 }
 
 .album-spinner {

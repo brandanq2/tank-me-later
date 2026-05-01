@@ -68,17 +68,20 @@ export default function App() {
   const [hiddenVoteKeys, setHiddenVoteKeys] = useState<string[]>([])
   const [albumModalImage, setAlbumModalImage] = useState<string | null>(null)
   const [generatingCover, setGeneratingCover] = useState(false)
+  const [coverError, setCoverError] = useState<string | null>(null)
 
   const handleGenerateCover = useCallback(async (thumbnailUrl: string, charKey: string, bust = false) => {
     setGeneratingCover(true)
     setAlbumModalImage(null)
+    setCoverError(null)
     try {
       const { imageUrl } = await generateCover(thumbnailUrl, charKey, bust)
       setAlbumModalImage(imageUrl)
-    } catch {
+    } catch (err) {
+      setCoverError(err instanceof Error ? err.message : 'Generation failed')
+    } finally {
       setGeneratingCover(false)
     }
-    setGeneratingCover(false)
   }, [])
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
@@ -351,10 +354,12 @@ export default function App() {
         </div>
       )}
 
-      {(albumModalImage || generatingCover) && (
-        <div className="album-overlay" onClick={() => { setAlbumModalImage(null); setGeneratingCover(false) }}>
-          {generatingCover && !albumModalImage
+      {(albumModalImage || generatingCover || coverError) && (
+        <div className="album-overlay" onClick={() => { setAlbumModalImage(null); setGeneratingCover(false); setCoverError(null) }}>
+          {generatingCover
             ? <div className="album-generating"><div className="album-spinner" /><p>Generating cover art…</p></div>
+            : coverError
+            ? <div className="album-generating"><p className="album-error">⚠ {coverError}</p><p className="album-error-sub">Click to dismiss</p></div>
             : <img src={albumModalImage!} className="album-cover" alt="Album cover" />
           }
         </div>
