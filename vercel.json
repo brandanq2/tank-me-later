@@ -4,7 +4,7 @@
   "framework": "vite",
   "functions": {
     "api/generate-cover.ts": {
-      "maxDuration": 300,
+      "maxDuration": 90,
       "includeFiles": "public/album-cover.png"
     }
   },

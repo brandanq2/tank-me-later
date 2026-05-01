@@ -83,7 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Poll until succeeded or failed (up to 240s)
     let prediction: Prediction = created
-    const deadline = Date.now() + 240_000
+    const deadline = Date.now() + 60_000
     while (prediction.status !== 'succeeded' && prediction.status !== 'failed' && Date.now() < deadline) {
       await new Promise(r => setTimeout(r, 4000))
       prediction = await fetch(`https://api.replicate.com/v1/predictions/${created.id}`, {
@@ -94,7 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (prediction.error) return res.status(500).json({ error: prediction.error })
     if (prediction.status !== 'succeeded' || !prediction.output) {
-      return res.status(500).json({ error: 'Generation timed out after 240s', predictionId: created.id })
+      return res.status(500).json({ error: 'Generation timed out after 60s', predictionId: created.id })
     }
 
     const replicateUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output
