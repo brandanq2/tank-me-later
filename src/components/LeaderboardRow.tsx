@@ -193,7 +193,6 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
   }
 
   const isFirst = rank === 1 && entry.status === 'success'
-  const hasCover = isFirst && (!!coverLoading || !!coverUrl)
 
   return (
     <a
@@ -204,21 +203,17 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
       rel="noopener noreferrer"
     >
       {isFirst && <span className="crown" aria-hidden>♛</span>}
-      {hasCover && (
-        <div
-          className="row-cover-hero"
-          onClick={(e) => { e.preventDefault(); if (coverUrl) onOpenCover?.() }}
-          title={coverUrl ? 'View full album cover' : 'Generating cover art…'}
-        >
-          {coverLoading && !coverUrl
-            ? <div className="row-cover-shimmer" />
-            : <img src={coverUrl!} className="row-cover-img" alt="Generated album cover" />
-          }
-        </div>
-      )}
       <div className="row-main">
         <RankBadge rank={rank} delta={rankDelta} />
-        {entry.thumbnailUrl ? (
+        {isFirst && coverUrl ? (
+          <img
+            className="row-avatar row-avatar-cover"
+            src={coverUrl}
+            alt="Album cover"
+            onClick={(e) => { e.preventDefault(); onOpenCover?.() }}
+            title="View full album cover"
+          />
+        ) : entry.thumbnailUrl ? (
           <img className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`} src={entry.thumbnailUrl} alt={entry.name} />
         ) : (
           <div className={`row-avatar row-avatar-placeholder${isFirst ? ' row-avatar-first' : ''}`} />

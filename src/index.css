@@ -78,35 +78,27 @@ body {
   opacity: 0.7;
 }
 
-/* Inline album cover hero on rank-1 row */
-.row-cover-hero {
-  width: 100%;
-  border-radius: 5px;
-  overflow: hidden;
+/* Album cover replacing avatar on rank-1 row */
+@keyframes cover-reveal {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.row-avatar-cover {
+  width: 68px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px var(--gold), 0 0 14px rgba(228, 56, 49, 0.4);
   cursor: pointer;
   flex-shrink: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, transform 0.15s;
+  animation: cover-reveal 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-.row-cover-hero:hover { opacity: 0.9; }
-
-@keyframes cover-reveal {
-  from { opacity: 0; transform: scaleY(0.97); transform-origin: top; }
-  to   { opacity: 1; transform: scaleY(1); }
-}
-
-.row-cover-img {
-  width: 100%;
-  height: auto;
-  display: block;
-  animation: cover-reveal 0.4s ease-out both;
-}
-
-.row-cover-shimmer {
-  width: 100%;
-  aspect-ratio: 1;
-  background: var(--surface2);
-  animation: pulse 1.2s ease-in-out infinite;
+.row-avatar-cover:hover {
+  opacity: 0.88;
+  transform: scale(1.05);
 }
 
 /* Album cover easter egg */
