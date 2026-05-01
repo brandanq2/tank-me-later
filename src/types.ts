@@ -10,6 +10,7 @@ export interface CharacterEntry extends CharacterInput {
   id: string
   status: FetchStatus
   score?: number
+  scoreDelta?: number
   className?: string
   specName?: string
   thumbnailUrl?: string

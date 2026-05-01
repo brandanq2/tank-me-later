@@ -316,6 +316,11 @@ a.row-first:hover {
 
 .row-score-err { color: var(--muted); }
 
+.score-delta {
+  color: #3fb950;
+  font-weight: 700;
+}
+
 /* Remove button */
 .remove-btn {
   background: none;

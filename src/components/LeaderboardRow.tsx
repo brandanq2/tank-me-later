@@ -109,7 +109,11 @@ export function LeaderboardRow({ entry, rank, cutoffScore, onRemove }: Props) {
         <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
           {entry.score?.toLocaleString(undefined, { maximumFractionDigits: 1 }) ?? '0'}
         </span>
-        <span className="row-score-label">Tank IO</span>
+        <span className="row-score-label">
+          {entry.scoreDelta != null && entry.scoreDelta > 0
+            ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+            : 'Tank IO'}
+        </span>
       </div>
       <button
         className="remove-btn"
