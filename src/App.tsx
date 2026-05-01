@@ -69,13 +69,15 @@ export default function App() {
   const [albumModalImage, setAlbumModalImage] = useState<string | null>(null)
   const [generatingCover, setGeneratingCover] = useState(false)
   const [coverError, setCoverError] = useState<string | null>(null)
+  const [coverCharInfo, setCoverCharInfo] = useState<{ charKey: string; race: string; gender: string; specName: string; className: string; charName: string } | null>(null)
 
-  const handleGenerateCover = useCallback(async (charKey: string, race: string, gender: string, specName: string, className: string, bust = false) => {
+  const handleGenerateCover = useCallback(async (charKey: string, race: string, gender: string, specName: string, className: string, charName: string, bust = false) => {
+    setCoverCharInfo({ charKey, race, gender, specName, className, charName })
     setGeneratingCover(true)
     setAlbumModalImage(null)
     setCoverError(null)
     try {
-      const { imageUrl } = await generateCover(charKey, race, gender, specName, className, bust)
+      const { imageUrl } = await generateCover(charKey, race, gender, specName, className, charName, bust)
       setAlbumModalImage(imageUrl)
     } catch (err) {
       setCoverError(err instanceof Error ? err.message : 'Generation failed')
@@ -319,7 +321,7 @@ export default function App() {
                   revealDelay={revealDelay(rank)}
                   onRemove={handleRemoveOrVote}
                   onGenerateCover={rank === 1 && entry.race && entry.gender && entry.specName && entry.className
-                    ? (bust) => handleGenerateCover(`${entry.name}-${entry.realm}-${entry.region}`.toLowerCase(), entry.race!, entry.gender!, entry.specName!, entry.className!, bust)
+                    ? () => handleGenerateCover(`${entry.name}-${entry.realm}-${entry.region}`.toLowerCase(), entry.race!, entry.gender!, entry.specName!, entry.className!, entry.name)
                     : undefined}
                 />
               )
@@ -366,7 +368,14 @@ export default function App() {
                 <button className="album-error-copy" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(coverError) }}>Copy error</button>
                 <p className="album-error-sub">Click anywhere to dismiss</p>
               </div>
-            : <img src={albumModalImage!} className="album-cover" alt="Album cover" />
+            : <div className="album-cover-wrap" onClick={e => e.stopPropagation()}>
+                <img src={albumModalImage!} className="album-cover" alt="Album cover" onClick={() => { setAlbumModalImage(null); setCoverCharInfo(null) }} />
+                {coverCharInfo && (
+                  <button className="album-regenerate-btn" onClick={() => handleGenerateCover(coverCharInfo.charKey, coverCharInfo.race, coverCharInfo.gender, coverCharInfo.specName, coverCharInfo.className, coverCharInfo.charName, true)}>
+                    ↺ Regenerate
+                  </button>
+                )}
+              </div>
           }
         </div>
       )}

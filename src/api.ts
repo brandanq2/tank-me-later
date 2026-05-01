@@ -142,13 +142,14 @@ export async function generateCover(
   gender: string,
   specName: string,
   className: string,
+  charName: string,
   bust = false,
 ): Promise<{ imageUrl: string }> {
   const url = bust ? '/api/generate-cover?bust=1' : '/api/generate-cover'
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ charKey, race, gender, specName, className }),
+    body: JSON.stringify({ charKey, race, gender, specName, className, charName }),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')
@@ -187,10 +188,11 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
   const currentSeason = data.mythic_plus_scores_by_season?.[0]
   const score = currentSeason?.scores?.tank ?? 0
 
+  const isFemale = data.gender === 1 || String(data.gender).toLowerCase() === 'female'
   return {
     score,
     race: data.race,
-    gender: data.gender === 1 ? 'female' : 'male',
+    gender: isFemale ? 'female' : 'male',
     className: data.class,
     specName: data.active_spec_name,
     thumbnailUrl: data.thumbnail_url,
