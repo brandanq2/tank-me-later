@@ -12,7 +12,7 @@ interface Props {
   isInitialEntry: boolean
   revealDelay: number
   onRemove: (id: string) => void
-  onGenerateCover?: () => void
+  onGenerateCover?: (bust: boolean) => void
 }
 
 function revealClass(rank: number): string {
@@ -230,8 +230,9 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
         {onGenerateCover && (
           <button
             className="generate-cover-btn"
-            onClick={(e) => { e.preventDefault(); onGenerateCover() }}
-            title="Generate album cover art"
+            onClick={(e) => { e.preventDefault(); onGenerateCover(false) }}
+            onDoubleClick={(e) => { e.preventDefault(); onGenerateCover(true) }}
+            title="Generate album cover art (double-click to regenerate)"
           >
             🎵
           </button>

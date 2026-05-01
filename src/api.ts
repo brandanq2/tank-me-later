@@ -133,8 +133,9 @@ export async function castVote(charKey: string, vote: 'yes' | 'no', sessionId: s
   return res.json()
 }
 
-export async function generateCover(thumbnailUrl: string, charKey: string): Promise<{ imageUrl: string }> {
-  const res = await fetch('/api/generate-cover', {
+export async function generateCover(thumbnailUrl: string, charKey: string, bust = false): Promise<{ imageUrl: string }> {
+  const url = bust ? '/api/generate-cover?bust=1' : '/api/generate-cover'
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ thumbnailUrl, charKey }),
