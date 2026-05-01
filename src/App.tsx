@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { fetchCharacter, fetchCutoff, fetchHistory, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote, generateCover } from './api'
+import { fetchCharacter, fetchCutoff, fetchHistory, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote } from './api'
 import type { CutoffData } from './api'
 import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
@@ -67,45 +67,15 @@ export default function App() {
   const [votes, setVotes] = useState<VoteRecord[]>([])
   const [hiddenVoteKeys, setHiddenVoteKeys] = useState<string[]>([])
   const [albumModalImage, setAlbumModalImage] = useState<string | null>(null)
-  const [generatingCover, setGeneratingCover] = useState(false)
-  const [coverError, setCoverError] = useState<string | null>(null)
-  const [coverCharInfo, setCoverCharInfo] = useState<{ charKey: string; race: string; gender: string; specName: string; className: string; charName: string } | null>(null)
-  const [rank1CoverUrl, setRank1CoverUrl] = useState<string | null>(null)
-  const [rank1CoverLoading, setRank1CoverLoading] = useState(false)
-  const rank1AutoKey = useRef<string | null>(null)
-  const coverRetried = useRef(false)
 
-  const handleGenerateCover = useCallback(async (charKey: string, race: string, gender: string, specName: string, className: string, charName: string, bust = false) => {
-    setCoverCharInfo({ charKey, race, gender, specName, className, charName })
-    setGeneratingCover(true)
-    setAlbumModalImage(null)
-    setCoverError(null)
+  const handleDisclaimerClick = useCallback(async () => {
     try {
-      const { imageUrl } = await generateCover(charKey, race, gender, specName, className, charName, bust)
-      setAlbumModalImage(imageUrl)
-      setRank1CoverUrl(imageUrl)
-    } catch (err) {
-      setCoverError(err instanceof Error ? err.message : 'Generation failed')
-    } finally {
-      setGeneratingCover(false)
+      const { imageUrl } = await fetch('/api/weekly-cover').then(r => r.json())
+      setAlbumModalImage(imageUrl ?? '/album-cover.png')
+    } catch {
+      setAlbumModalImage('/album-cover.png')
     }
   }, [])
-
-  const handleOpenCover = useCallback(() => {
-    if (rank1CoverUrl) setAlbumModalImage(rank1CoverUrl)
-  }, [rank1CoverUrl])
-
-  const handleCoverImageError = useCallback(() => {
-    if (coverRetried.current || !coverCharInfo) return
-    coverRetried.current = true
-    setRank1CoverUrl(null)
-    setRank1CoverLoading(true)
-    const { charKey, race, gender, specName, className, charName } = coverCharInfo
-    generateCover(charKey, race, gender, specName, className, charName, true)
-      .then(({ imageUrl }) => setRank1CoverUrl(imageUrl))
-      .catch(() => {})
-      .finally(() => setRank1CoverLoading(false))
-  }, [coverCharInfo])
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
   const sessionId = useRef(getSessionId())
@@ -183,26 +153,6 @@ export default function App() {
     const interval = setInterval(poll, 10_000)
     return () => clearInterval(interval)
   }, [])
-
-  useEffect(() => {
-    if (!revealed) return
-    const sorted = sortedEntries(entries)
-    const rank1 = sorted.filter(e => e.status !== 'success' || (e.score ?? 0) > 0)[0]
-    if (!rank1 || rank1.status !== 'success') return
-    if (!rank1.race || !rank1.gender || !rank1.specName || !rank1.className) return
-    const charKey = `${rank1.name}-${rank1.realm}-${rank1.region}`.toLowerCase()
-    if (rank1AutoKey.current === charKey) return
-    rank1AutoKey.current = charKey
-    coverRetried.current = false
-    setRank1CoverLoading(true)
-    generateCover(charKey, rank1.race, rank1.gender, rank1.specName, rank1.className, rank1.name)
-      .then(({ imageUrl }) => {
-        setRank1CoverUrl(imageUrl)
-        setCoverCharInfo({ charKey, race: rank1.race!, gender: rank1.gender!, specName: rank1.specName!, className: rank1.className!, charName: rank1.name })
-      })
-      .catch(() => {})
-      .finally(() => setRank1CoverLoading(false))
-  }, [revealed, entries])
 
   const removeCharacter = useCallback((id: string) => {
     setEntries((prev) => {
@@ -318,7 +268,7 @@ export default function App() {
           <span>Later</span>
         </h1>
         <p className="subtitle">Mythic+ Tank IO Leaderboard</p>
-        <p className="header-disclaimer" onClick={() => setAlbumModalImage('/album-cover.png')}>Yeah, I know what I said.</p>
+        <p className="header-disclaimer" onClick={handleDisclaimerClick}>Yeah, I know what I said.</p>
         {cutoff && (
           <p className="cutoff-badge">
             {cutoff.percentile} cutoff&nbsp;
@@ -361,10 +311,6 @@ export default function App() {
                   isInitialEntry={initialIds.current.has(entry.id)}
                   revealDelay={revealDelay(rank)}
                   onRemove={handleRemoveOrVote}
-                  coverUrl={rank === 1 ? rank1CoverUrl : undefined}
-                  coverLoading={rank === 1 ? rank1CoverLoading : undefined}
-                  onOpenCover={rank === 1 ? handleOpenCover : undefined}
-                  onCoverError={rank === 1 ? handleCoverImageError : undefined}
                 />
               )
             })}
@@ -400,20 +346,11 @@ export default function App() {
         </div>
       )}
 
-      {(albumModalImage || generatingCover || coverError) && (
-        <div className="album-overlay" onClick={() => { setAlbumModalImage(null); setGeneratingCover(false); setCoverError(null) }}>
-          {generatingCover
-            ? <div className="album-generating"><div className="album-spinner" /><p>Generating cover art…</p></div>
-            : coverError
-            ? <div className="album-generating">
-                <p className="album-error">⚠ {coverError}</p>
-                <button className="album-error-copy" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(coverError) }}>Copy error</button>
-                <p className="album-error-sub">Click anywhere to dismiss</p>
-              </div>
-            : <div className="album-cover-wrap" onClick={e => e.stopPropagation()}>
-                <img src={albumModalImage!} className="album-cover" alt="Album cover" onClick={() => { setAlbumModalImage(null); setCoverCharInfo(null) }} />
-              </div>
-          }
+      {albumModalImage && (
+        <div className="album-overlay" onClick={() => setAlbumModalImage(null)}>
+          <div className="album-cover-wrap" onClick={e => e.stopPropagation()}>
+            <img src={albumModalImage} className="album-cover" alt="Album cover" onClick={() => setAlbumModalImage(null)} />
+          </div>
         </div>
       )}
 

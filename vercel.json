@@ -3,14 +3,11 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "functions": {
-    "api/generate-cover.ts": {
-      "maxDuration": 90
-    }
+    "api/generate-cover.ts": { "maxDuration": 90 },
+    "api/cron-weekly.ts": { "maxDuration": 120 }
   },
   "crons": [
-    {
-      "path": "/api/cron",
-      "schedule": "0 0 * * *"
-    }
+    { "path": "/api/cron", "schedule": "0 0 * * *" },
+    { "path": "/api/cron-weekly", "schedule": "0 1 * * 0" }
   ]
 }

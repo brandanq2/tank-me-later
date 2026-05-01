@@ -12,10 +12,6 @@ interface Props {
   isInitialEntry: boolean
   revealDelay: number
   onRemove: (id: string) => void
-  coverUrl?: string | null
-  coverLoading?: boolean
-  onOpenCover?: () => void
-  onCoverError?: () => void
 }
 
 function revealClass(rank: number): string {
@@ -143,7 +139,7 @@ function VoteStrip({ vote }: { vote: VoteRecord }) {
   )
 }
 
-export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, coverUrl, coverLoading, onOpenCover, onCoverError }: Props) {
+export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove }: Props) {
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
     ? scoreToColor(entry.score ?? 0, 0, cutoffScore)
@@ -206,20 +202,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
       {isFirst && <span className="crown" aria-hidden>♛</span>}
       <div className="row-main">
         <RankBadge rank={rank} delta={rankDelta} />
-        {isFirst && coverLoading && !coverUrl ? (
-          <div className="row-avatar-cover-loading">
-            <div className="row-avatar-cover-spinner" />
-          </div>
-        ) : isFirst && coverUrl ? (
-          <img
-            className="row-avatar-cover"
-            src={coverUrl}
-            alt="Album cover"
-            onClick={(e) => { e.preventDefault(); onOpenCover?.() }}
-            onError={() => onCoverError?.()}
-            title="View full album cover"
-          />
-        ) : entry.thumbnailUrl ? (
+        {entry.thumbnailUrl ? (
           <img className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`} src={entry.thumbnailUrl} alt={entry.name} />
         ) : (
           <div className={`row-avatar row-avatar-placeholder${isFirst ? ' row-avatar-first' : ''}`} />
