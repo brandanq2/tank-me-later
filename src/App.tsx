@@ -397,11 +397,6 @@ export default function App() {
               </div>
             : <div className="album-cover-wrap" onClick={e => e.stopPropagation()}>
                 <img src={albumModalImage!} className="album-cover" alt="Album cover" onClick={() => { setAlbumModalImage(null); setCoverCharInfo(null) }} />
-                {coverCharInfo && (
-                  <button className="album-regenerate-btn" onClick={() => handleGenerateCover(coverCharInfo.charKey, coverCharInfo.race, coverCharInfo.gender, coverCharInfo.specName, coverCharInfo.className, coverCharInfo.charName, true)}>
-                    ↺ Regenerate
-                  </button>
-                )}
               </div>
           }
         </div>
