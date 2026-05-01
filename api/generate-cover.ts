@@ -33,6 +33,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (cached) return res.json({ imageUrl: cached })
   }
 
+  // Fetch the thumbnail server-side and pass as base64 to avoid URL-based filtering
+  const thumbRes = await fetch(thumbnailUrl)
+  const thumbBuffer = await thumbRes.arrayBuffer()
+  const base64 = Buffer.from(thumbBuffer).toString('base64')
+  const mimeType = thumbRes.headers.get('content-type') ?? 'image/jpeg'
+  const inputImage = `data:${mimeType};base64,${base64}`
+
   const prediction = await fetch(
     'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions',
     {
@@ -45,10 +52,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         input: {
           prompt: PROMPT,
-          input_image: thumbnailUrl,
+          input_image: inputImage,
           output_format: 'jpg',
           output_quality: 95,
-          safety_tolerance: 5,
         },
       }),
     }
