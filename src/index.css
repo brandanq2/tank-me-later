@@ -44,9 +44,12 @@ body {
   letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--text);
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
+  display: inline-block;
+  text-align: right;
+}
+
+.title-stack > span {
+  display: block;
 }
 
 .title-accent {
