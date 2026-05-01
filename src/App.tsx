@@ -85,11 +85,12 @@ export default function App() {
 
     setEntries((prev) => [...prev, pending])
     setAnyLoading(true)
-    persistCharacter(input).catch(() => {})
 
     try {
       const [data, history] = await Promise.all([fetchCharacter(input), fetchHistory(input)])
       const { delta: scoreDelta, prevRank } = await reportScore(input, data.score).catch(() => ({ delta: 0, prevRank: null }))
+      // Only persist once we've confirmed the character exists
+      persistCharacter(input).catch(() => {})
       setEntries((prev) =>
         prev.map((e) =>
           e.id === id
@@ -99,9 +100,18 @@ export default function App() {
       )
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error'
-      setEntries((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, status: 'error', error: msg } : e))
-      )
+      if (msg === 'Character not found') {
+        // Remove invalid entries entirely so they don't clutter the list,
+        // and clear the key so the user can retry with a corrected name
+        setEntries((prev) => prev.filter((e) => e.id !== id))
+        addedKeys.current.delete(key)
+        if (isOwned) removeOwnedKey(key)
+      } else {
+        // Temporary error (network, API down) — keep the error row visible
+        setEntries((prev) =>
+          prev.map((e) => (e.id === id ? { ...e, status: 'error', error: msg } : e))
+        )
+      }
     } finally {
       setAnyLoading(false)
     }
