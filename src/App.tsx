@@ -69,11 +69,11 @@ export default function App() {
   const [albumModalImage, setAlbumModalImage] = useState<string | null>(null)
   const [generatingCover, setGeneratingCover] = useState(false)
 
-  const handleGenerateCover = useCallback(async (thumbnailUrl: string) => {
+  const handleGenerateCover = useCallback(async (thumbnailUrl: string, charKey: string) => {
     setGeneratingCover(true)
     setAlbumModalImage(null)
     try {
-      const { imageUrl } = await generateCover(thumbnailUrl)
+      const { imageUrl } = await generateCover(thumbnailUrl, charKey)
       setAlbumModalImage(imageUrl)
     } catch {
       setGeneratingCover(false)
@@ -315,7 +315,7 @@ export default function App() {
                   isInitialEntry={initialIds.current.has(entry.id)}
                   revealDelay={revealDelay(rank)}
                   onRemove={handleRemoveOrVote}
-                  onGenerateCover={rank === 1 && entry.thumbnailUrl ? () => handleGenerateCover(entry.thumbnailUrl!) : undefined}
+                  onGenerateCover={rank === 1 && entry.thumbnailUrl ? () => handleGenerateCover(entry.thumbnailUrl!, `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()) : undefined}
                 />
               )
             })}
