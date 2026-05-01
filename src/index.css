@@ -271,6 +271,24 @@ a.row-first:hover {
 .rank-silver { color: var(--silver); }
 .rank-bronze { color: var(--bronze); }
 
+.rank-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  flex-shrink: 0;
+  width: 1.5rem;
+}
+
+.rank-delta {
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.rank-delta-up   { color: #3fb950; }
+.rank-delta-down { color: #f85149; }
+
 /* Avatar */
 .row-avatar {
   width: 44px;

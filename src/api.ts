@@ -34,18 +34,23 @@ export interface CutoffData {
   percentile: string
 }
 
+export interface ScoreReport {
+  delta: number
+  prevRank: number | null
+}
+
 export async function reportScore(
   char: CharacterInput,
   score: number,
-): Promise<number> {
+): Promise<ScoreReport> {
   const res = await fetch('/api/scores', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...char, score }),
   })
-  if (!res.ok) return 0
+  if (!res.ok) return { delta: 0, prevRank: null }
   const data = await res.json()
-  return data.delta ?? 0
+  return { delta: data.delta ?? 0, prevRank: data.prevRank ?? null }
 }
 
 export async function listCharacters(): Promise<CharacterInput[]> {

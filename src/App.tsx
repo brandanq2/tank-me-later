@@ -55,11 +55,11 @@ export default function App() {
 
     try {
       const data = await fetchCharacter(input)
-      const scoreDelta = await reportScore(input, data.score).catch(() => 0)
+      const { delta: scoreDelta, prevRank } = await reportScore(input, data.score).catch(() => ({ delta: 0, prevRank: null }))
       setEntries((prev) =>
         prev.map((e) =>
           e.id === id
-            ? { ...e, status: 'success', ...data, scoreDelta }
+            ? { ...e, status: 'success', ...data, scoreDelta, prevRank: prevRank ?? undefined }
             : e
         )
       )
@@ -128,9 +128,9 @@ export default function App() {
       allEntries.map(async (e) => {
         try {
           const data = await fetchCharacter(e)
-          const scoreDelta = await reportScore(e, data.score).catch(() => 0)
+          const { delta: scoreDelta, prevRank } = await reportScore(e, data.score).catch(() => ({ delta: 0, prevRank: null }))
           setEntries((prev) =>
-            prev.map((entry) => (entry.id === e.id ? { ...entry, status: 'success', ...data, scoreDelta } : entry))
+            prev.map((entry) => (entry.id === e.id ? { ...entry, status: 'success', ...data, scoreDelta, prevRank: prevRank ?? undefined } : entry))
           )
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Unknown error'
@@ -190,11 +190,13 @@ export default function App() {
           <div className="leaderboard">
             {leaderboard.map((entry, i) => {
               const rank = i + 1
+              const rankDelta = entry.prevRank != null ? entry.prevRank - rank : undefined
               return (
                 <LeaderboardRow
                   key={entry.id}
                   entry={entry}
                   rank={rank}
+                  rankDelta={rankDelta}
                   cutoffScore={cutoffScore}
                   revealed={revealed}
                   isInitialEntry={initialIds.current.has(entry.id)}

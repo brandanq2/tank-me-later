@@ -20,6 +20,10 @@ function dailyKey(date: Date) {
   return `tank-me-later:daily:${date.toISOString().slice(0, 10)}`
 }
 
+function rankKey(date: Date) {
+  return `tank-me-later:daily-rank:${date.toISOString().slice(0, 10)}`
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = req.headers.authorization
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -58,6 +62,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (Object.keys(scoreSnapshot).length > 0) {
     await redis.hset(dailyKey(today), scoreSnapshot)
     await redis.expire(dailyKey(today), ttl)
+
+    const rankSnapshot: Record<string, number> = {}
+    Object.entries(scoreSnapshot)
+      .filter(([, s]) => s > 0)
+      .sort(([, a], [, b]) => b - a)
+      .forEach(([key], i) => { rankSnapshot[key] = i + 1 })
+
+    if (Object.keys(rankSnapshot).length > 0) {
+      await redis.hset(rankKey(today), rankSnapshot)
+      await redis.expire(rankKey(today), ttl)
+    }
   }
 
   return res.json({ snapshotted: Object.keys(scoreSnapshot).length })

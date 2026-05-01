@@ -4,6 +4,7 @@ import type { CharacterEntry } from '../types'
 interface Props {
   entry: CharacterEntry
   rank: number
+  rankDelta?: number
   cutoffScore: number
   revealed: boolean
   isInitialEntry: boolean
@@ -43,15 +44,26 @@ const CLASS_COLORS: Record<string, string> = {
   Warrior: '#C69B3A',
 }
 
-function RankBadge({ rank }: { rank: number }) {
-  if (rank === 0) return <span className="rank">🤡</span>
-  if (rank === 1) return <span className="rank rank-gold">1</span>
-  if (rank === 2) return <span className="rank rank-silver">2</span>
-  if (rank === 3) return <span className="rank rank-bronze">3</span>
-  return <span className="rank">{rank}</span>
+function RankBadge({ rank, delta }: { rank: number; delta?: number }) {
+  const badge = rank === 0 ? <span className="rank">🤡</span>
+    : rank === 1 ? <span className="rank rank-gold">1</span>
+    : rank === 2 ? <span className="rank rank-silver">2</span>
+    : rank === 3 ? <span className="rank rank-bronze">3</span>
+    : <span className="rank">{rank}</span>
+
+  if (delta == null || delta === 0 || rank === 0) return badge
+
+  return (
+    <div className="rank-wrap">
+      {badge}
+      <span className={`rank-delta ${delta > 0 ? 'rank-delta-up' : 'rank-delta-down'}`}>
+        {delta > 0 ? `▲${delta}` : `▼${Math.abs(delta)}`}
+      </span>
+    </div>
+  )
 }
 
-export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove }: Props) {
+export function LeaderboardRow({ entry, rank, rankDelta, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove }: Props) {
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
     ? scoreToColor(entry.score ?? 0, 0, cutoffScore)
@@ -65,7 +77,7 @@ export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEn
     return (
       <div className={`row row-loading ${anim.className}`} style={anim.style}>
         <div className="row-main">
-          <RankBadge rank={rank} />
+          <RankBadge rank={rank} delta={rankDelta} />
           <div className="row-avatar skeleton" />
           <div className="row-info">
             <span className="row-name">{entry.name}</span>
@@ -85,7 +97,7 @@ export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEn
     return (
       <div className={`row row-error ${anim.className}`} style={anim.style}>
         <div className="row-main">
-          <RankBadge rank={rank} />
+          <RankBadge rank={rank} delta={rankDelta} />
           <div className="row-avatar row-avatar-err">?</div>
           <div className="row-info">
             <span className="row-name">{entry.name}</span>
@@ -113,7 +125,7 @@ export function LeaderboardRow({ entry, rank, cutoffScore, revealed, isInitialEn
     >
       {isFirst && <span className="crown" aria-hidden>♛</span>}
       <div className="row-main">
-        <RankBadge rank={rank} />
+        <RankBadge rank={rank} delta={rankDelta} />
         {entry.thumbnailUrl ? (
           <img className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`} src={entry.thumbnailUrl} alt={entry.name} />
         ) : (
