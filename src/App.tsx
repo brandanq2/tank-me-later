@@ -73,6 +73,7 @@ export default function App() {
   const [rank1CoverUrl, setRank1CoverUrl] = useState<string | null>(null)
   const [rank1CoverLoading, setRank1CoverLoading] = useState(false)
   const rank1AutoKey = useRef<string | null>(null)
+  const coverRetried = useRef(false)
 
   const handleGenerateCover = useCallback(async (charKey: string, race: string, gender: string, specName: string, className: string, charName: string, bust = false) => {
     setCoverCharInfo({ charKey, race, gender, specName, className, charName })
@@ -93,6 +94,18 @@ export default function App() {
   const handleOpenCover = useCallback(() => {
     if (rank1CoverUrl) setAlbumModalImage(rank1CoverUrl)
   }, [rank1CoverUrl])
+
+  const handleCoverImageError = useCallback(() => {
+    if (coverRetried.current || !coverCharInfo) return
+    coverRetried.current = true
+    setRank1CoverUrl(null)
+    setRank1CoverLoading(true)
+    const { charKey, race, gender, specName, className, charName } = coverCharInfo
+    generateCover(charKey, race, gender, specName, className, charName, true)
+      .then(({ imageUrl }) => setRank1CoverUrl(imageUrl))
+      .catch(() => {})
+      .finally(() => setRank1CoverLoading(false))
+  }, [coverCharInfo])
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
   const sessionId = useRef(getSessionId())
@@ -180,6 +193,7 @@ export default function App() {
     const charKey = `${rank1.name}-${rank1.realm}-${rank1.region}`.toLowerCase()
     if (rank1AutoKey.current === charKey) return
     rank1AutoKey.current = charKey
+    coverRetried.current = false
     setRank1CoverLoading(true)
     generateCover(charKey, rank1.race, rank1.gender, rank1.specName, rank1.className, rank1.name)
       .then(({ imageUrl }) => {
@@ -350,6 +364,7 @@ export default function App() {
                   coverUrl={rank === 1 ? rank1CoverUrl : undefined}
                   coverLoading={rank === 1 ? rank1CoverLoading : undefined}
                   onOpenCover={rank === 1 ? handleOpenCover : undefined}
+                  onCoverError={rank === 1 ? handleCoverImageError : undefined}
                 />
               )
             })}

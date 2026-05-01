@@ -101,6 +101,28 @@ body {
   transform: scale(1.03);
 }
 
+.row-avatar-cover-loading {
+  width: 160px;
+  height: 160px;
+  border-radius: 8px;
+  background: var(--surface2);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 35%, transparent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.row-avatar-cover-spinner {
+  width: 26px;
+  height: 26px;
+  border: 2.5px solid rgba(255, 255, 255, 0.08);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.85s linear infinite;
+}
+
 /* Album cover easter egg */
 .album-overlay {
   position: fixed;
