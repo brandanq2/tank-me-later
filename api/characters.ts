@@ -24,6 +24,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     const input = req.body as CharacterInput
+    if (!input.name?.trim() || !input.realm?.trim()) {
+      return res.status(400).json({ error: 'Name and realm are required' })
+    }
     const chars = await redis.get<CharacterInput[]>(KEY) ?? []
     const key = `${input.name}-${input.realm}-${input.region}`.toLowerCase()
     const isDupe = chars.some(
