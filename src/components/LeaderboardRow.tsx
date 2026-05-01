@@ -207,7 +207,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
         <RankBadge rank={rank} delta={rankDelta} />
         {isFirst && coverUrl ? (
           <img
-            className="row-avatar row-avatar-cover"
+            className="row-avatar-cover"
             src={coverUrl}
             alt="Album cover"
             onClick={(e) => { e.preventDefault(); onOpenCover?.() }}
