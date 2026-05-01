@@ -26,15 +26,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const sql = neon(process.env.DATABASE_URL!)
 
-  // Find the character with the highest score present in every daily snapshot for the past 7 days.
-  // This excludes anyone newly added mid-week.
+  // Find the character with the highest score present in every daily snapshot in the past week.
+  // The threshold is the actual number of snapshots that exist (not hardcoded to 7), so the
+  // first run is still valid even if the data only goes back a few days.
   const rows = await sql`
     SELECT char_key, name, realm, region, MAX(score) AS max_score
     FROM score_history
     WHERE snapped_on > CURRENT_DATE - INTERVAL '8 days'
       AND score > 0
     GROUP BY char_key, name, realm, region
-    HAVING COUNT(DISTINCT snapped_on) >= 7
+    HAVING COUNT(DISTINCT snapped_on) = (
+      SELECT COUNT(DISTINCT snapped_on)
+      FROM score_history
+      WHERE snapped_on > CURRENT_DATE - INTERVAL '8 days'
+    )
     ORDER BY max_score DESC
     LIMIT 1
   `
