@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { fetchCharacter, fetchCutoff, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote } from './api'
+import { fetchCharacter, fetchCutoff, fetchHistory, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote } from './api'
 import type { CutoffData } from './api'
 import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
@@ -59,12 +59,12 @@ export default function App() {
     persistCharacter(input).catch(() => {})
 
     try {
-      const data = await fetchCharacter(input)
+      const [data, history] = await Promise.all([fetchCharacter(input), fetchHistory(input)])
       const { delta: scoreDelta, prevRank } = await reportScore(input, data.score).catch(() => ({ delta: 0, prevRank: null }))
       setEntries((prev) =>
         prev.map((e) =>
           e.id === id
-            ? { ...e, status: 'success', ...data, scoreDelta, prevRank: prevRank ?? undefined }
+            ? { ...e, status: 'success', ...data, scoreDelta, prevRank: prevRank ?? undefined, history }
             : e
         )
       )
@@ -152,10 +152,10 @@ export default function App() {
     await Promise.allSettled(
       allEntries.map(async (e) => {
         try {
-          const data = await fetchCharacter(e)
+          const [data, history] = await Promise.all([fetchCharacter(e), fetchHistory(e)])
           const { delta: scoreDelta, prevRank } = await reportScore(e, data.score).catch(() => ({ delta: 0, prevRank: null }))
           setEntries((prev) =>
-            prev.map((entry) => (entry.id === e.id ? { ...entry, status: 'success', ...data, scoreDelta, prevRank: prevRank ?? undefined } : entry))
+            prev.map((entry) => (entry.id === e.id ? { ...entry, status: 'success', ...data, scoreDelta, prevRank: prevRank ?? undefined, history } : entry))
           )
         } catch (err) {
           const msg = err instanceof Error ? err.message : 'Unknown error'

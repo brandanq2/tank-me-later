@@ -377,6 +377,13 @@ a.row-first:hover {
 
 .row-error-msg { color: var(--red); }
 
+/* Sparkline */
+.sparkline {
+  flex-shrink: 0;
+  opacity: 0.75;
+  overflow: visible;
+}
+
 /* Score */
 .row-score-wrap {
   display: flex;

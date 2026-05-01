@@ -1,5 +1,5 @@
 import { scoreToColor } from '../scoreColor'
-import type { CharacterEntry, VoteRecord } from '../types'
+import type { CharacterEntry, HistoryPoint, VoteRecord } from '../types'
 
 interface Props {
   entry: CharacterEntry
@@ -62,6 +62,40 @@ function RankBadge({ rank, delta }: { rank: number; delta?: number }) {
         {delta > 0 ? `▲${delta}` : `▼${Math.abs(delta)}`}
       </span>
     </div>
+  )
+}
+
+function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: string; id: string }) {
+  const points = history.filter(h => h.score !== null) as { date: string; score: number }[]
+  if (points.length < 2) return null
+
+  const W = 72, H = 34, PAD = 3
+  const scores = points.map(p => p.score)
+  const min = Math.min(...scores)
+  const max = Math.max(...scores)
+  const range = max - min || 1
+
+  const px = (i: number) => PAD + (i / (points.length - 1)) * (W - PAD * 2)
+  const py = (s: number) => H - PAD - ((s - min) / range) * (H - PAD * 2)
+
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${px(i).toFixed(1)},${py(p.score).toFixed(1)}`).join(' ')
+  const fillPath = `${linePath} L${px(points.length - 1).toFixed(1)},${H} L${px(0).toFixed(1)},${H} Z`
+  const gradId = `sg-${id}`
+
+  return (
+    <svg width={W} height={H} className="sparkline">
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={fillPath} fill={`url(#${gradId})`} />
+      <path d={linePath} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
+      {points.map((p, i) => (
+        <circle key={i} cx={px(i)} cy={py(p.score)} r="2" fill={color} />
+      ))}
+    </svg>
   )
 }
 
@@ -160,6 +194,9 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
             {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className} — {entry.realm} ({entry.region.toUpperCase()})
           </span>
         </div>
+        {entry.history && (
+          <Sparkline history={entry.history} color={classColor} id={entry.id} />
+        )}
         <div className="row-score-wrap">
           <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
             {entry.score?.toLocaleString(undefined, { maximumFractionDigits: 1 }) ?? '0'}
