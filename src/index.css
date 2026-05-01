@@ -26,9 +26,37 @@ body {
 }
 
 .app {
-  max-width: 760px;
+  max-width: 1040px;
   margin: 0 auto;
   padding: 2rem 1rem 4rem;
+}
+
+.content-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.content-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.weekly-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 1.5rem;
+}
+
+@media (max-width: 780px) {
+  .content-layout {
+    flex-direction: column-reverse;
+  }
+  .weekly-sidebar {
+    width: 100%;
+    position: static;
+  }
 }
 
 /* Header */
@@ -240,7 +268,6 @@ body {
 
 .weekly-image-wrap {
   width: 100%;
-  max-width: 240px;
 }
 
 .weekly-image {

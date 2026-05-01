@@ -279,74 +279,80 @@ export default function App() {
         )}
       </header>
 
-      <WeeklyLeaderCard data={weeklyCover} />
-
-      <div className="controls">
-        <AddCharacterForm onAdd={(input) => addCharacter(input, true)} loading={anyLoading} />
-        {entries.length > 0 && (
-          <button className="refresh-btn" onClick={refreshAll} disabled={anyLoading}>
-            Refresh All
-          </button>
-        )}
-      </div>
-
-      {entries.length === 0 ? (
-        <p className="empty">Add characters above to build your leaderboard.</p>
-      ) : (
-        <div className={revealed && !isRefreshing ? undefined : 'pre-reveal'}>
-          <div className="leaderboard">
-            {leaderboard.map((entry, i) => {
-              const rank = i + 1
-              const rankDelta = entry.prevRank != null ? entry.prevRank - rank : undefined
-              const charKey = `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()
-              const activeVote = votes.find(v => v.charKey === charKey)
-              return (
-                <LeaderboardRow
-                  key={entry.id}
-                  entry={entry}
-                  rank={rank}
-                  rankDelta={rankDelta}
-                  activeVote={activeVote}
-                  sessionId={sessionId.current}
-                  cutoffScore={cutoffScore}
-                  revealed={revealed}
-                  isInitialEntry={initialIds.current.has(entry.id)}
-                  revealDelay={revealDelay(rank)}
-                  onRemove={handleRemoveOrVote}
-                />
-              )
-            })}
+      <div className="content-layout">
+        <div className="content-main">
+          <div className="controls">
+            <AddCharacterForm onAdd={(input) => addCharacter(input, true)} loading={anyLoading} />
+            {entries.length > 0 && (
+              <button className="refresh-btn" onClick={refreshAll} disabled={anyLoading}>
+                Refresh All
+              </button>
+            )}
           </div>
 
-          {clowns.length > 0 && (
-            <div className="clown-section">
-              <h2 className="clown-title">🤡 Clown List</h2>
-              <p className="clown-subtitle">0 tank IO this season</p>
+          {entries.length === 0 ? (
+            <p className="empty">Add characters above to build your leaderboard.</p>
+          ) : (
+            <div className={revealed && !isRefreshing ? undefined : 'pre-reveal'}>
               <div className="leaderboard">
-                {clowns.map((entry) => {
-                  const clownDelay = revealDelay(leaderboard.length + 1)
+                {leaderboard.map((entry, i) => {
+                  const rank = i + 1
+                  const rankDelta = entry.prevRank != null ? entry.prevRank - rank : undefined
                   const charKey = `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()
                   const activeVote = votes.find(v => v.charKey === charKey)
                   return (
                     <LeaderboardRow
                       key={entry.id}
                       entry={entry}
-                      rank={0}
+                      rank={rank}
+                      rankDelta={rankDelta}
                       activeVote={activeVote}
                       sessionId={sessionId.current}
                       cutoffScore={cutoffScore}
                       revealed={revealed}
                       isInitialEntry={initialIds.current.has(entry.id)}
-                      revealDelay={clownDelay}
+                      revealDelay={revealDelay(rank)}
                       onRemove={handleRemoveOrVote}
                     />
                   )
                 })}
               </div>
+
+              {clowns.length > 0 && (
+                <div className="clown-section">
+                  <h2 className="clown-title">🤡 Clown List</h2>
+                  <p className="clown-subtitle">0 tank IO this season</p>
+                  <div className="leaderboard">
+                    {clowns.map((entry) => {
+                      const clownDelay = revealDelay(leaderboard.length + 1)
+                      const charKey = `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()
+                      const activeVote = votes.find(v => v.charKey === charKey)
+                      return (
+                        <LeaderboardRow
+                          key={entry.id}
+                          entry={entry}
+                          rank={0}
+                          activeVote={activeVote}
+                          sessionId={sessionId.current}
+                          cutoffScore={cutoffScore}
+                          revealed={revealed}
+                          isInitialEntry={initialIds.current.has(entry.id)}
+                          revealDelay={clownDelay}
+                          onRemove={handleRemoveOrVote}
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+
+        <aside className="weekly-sidebar">
+          <WeeklyLeaderCard data={weeklyCover} />
+        </aside>
+      </div>
 
       {albumModalImage && (
         <div className="album-overlay" onClick={() => setAlbumModalImage(null)}>
