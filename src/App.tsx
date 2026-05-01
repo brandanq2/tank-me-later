@@ -70,6 +70,9 @@ export default function App() {
   const [generatingCover, setGeneratingCover] = useState(false)
   const [coverError, setCoverError] = useState<string | null>(null)
   const [coverCharInfo, setCoverCharInfo] = useState<{ charKey: string; race: string; gender: string; specName: string; className: string; charName: string } | null>(null)
+  const [rank1CoverUrl, setRank1CoverUrl] = useState<string | null>(null)
+  const [rank1CoverLoading, setRank1CoverLoading] = useState(false)
+  const rank1AutoKey = useRef<string | null>(null)
 
   const handleGenerateCover = useCallback(async (charKey: string, race: string, gender: string, specName: string, className: string, charName: string, bust = false) => {
     setCoverCharInfo({ charKey, race, gender, specName, className, charName })
@@ -79,12 +82,17 @@ export default function App() {
     try {
       const { imageUrl } = await generateCover(charKey, race, gender, specName, className, charName, bust)
       setAlbumModalImage(imageUrl)
+      setRank1CoverUrl(imageUrl)
     } catch (err) {
       setCoverError(err instanceof Error ? err.message : 'Generation failed')
     } finally {
       setGeneratingCover(false)
     }
   }, [])
+
+  const handleOpenCover = useCallback(() => {
+    if (rank1CoverUrl) setAlbumModalImage(rank1CoverUrl)
+  }, [rank1CoverUrl])
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
   const sessionId = useRef(getSessionId())
@@ -162,6 +170,25 @@ export default function App() {
     const interval = setInterval(poll, 10_000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    if (!revealed) return
+    const sorted = sortedEntries(entries)
+    const rank1 = sorted.filter(e => e.status !== 'success' || (e.score ?? 0) > 0)[0]
+    if (!rank1 || rank1.status !== 'success') return
+    if (!rank1.race || !rank1.gender || !rank1.specName || !rank1.className) return
+    const charKey = `${rank1.name}-${rank1.realm}-${rank1.region}`.toLowerCase()
+    if (rank1AutoKey.current === charKey) return
+    rank1AutoKey.current = charKey
+    setRank1CoverLoading(true)
+    generateCover(charKey, rank1.race, rank1.gender, rank1.specName, rank1.className, rank1.name)
+      .then(({ imageUrl }) => {
+        setRank1CoverUrl(imageUrl)
+        setCoverCharInfo({ charKey, race: rank1.race!, gender: rank1.gender!, specName: rank1.specName!, className: rank1.className!, charName: rank1.name })
+      })
+      .catch(() => {})
+      .finally(() => setRank1CoverLoading(false))
+  }, [revealed, entries])
 
   const removeCharacter = useCallback((id: string) => {
     setEntries((prev) => {
@@ -320,9 +347,9 @@ export default function App() {
                   isInitialEntry={initialIds.current.has(entry.id)}
                   revealDelay={revealDelay(rank)}
                   onRemove={handleRemoveOrVote}
-                  onGenerateCover={rank === 1 && entry.race && entry.gender && entry.specName && entry.className
-                    ? () => handleGenerateCover(`${entry.name}-${entry.realm}-${entry.region}`.toLowerCase(), entry.race!, entry.gender!, entry.specName!, entry.className!, entry.name)
-                    : undefined}
+                  coverUrl={rank === 1 ? rank1CoverUrl : undefined}
+                  coverLoading={rank === 1 ? rank1CoverLoading : undefined}
+                  onOpenCover={rank === 1 ? handleOpenCover : undefined}
                 />
               )
             })}
