@@ -235,6 +235,9 @@ export default function App() {
       setHiddenVoteKeys(prev => prev.filter(k => k !== charKey))
     } else {
       setVotes(prev => prev.map(v => v.charKey === charKey ? result : v))
+      if (result.failed) {
+        setHiddenVoteKeys(prev => [...new Set([...prev, charKey])])
+      }
     }
   }, [])
 
@@ -334,7 +337,7 @@ export default function App() {
       )}
 
       <VoteModal
-        votes={votes.filter(v => !hiddenVoteKeys.includes(v.charKey))}
+        votes={votes.filter(v => !hiddenVoteKeys.includes(v.charKey) && !v.failed)}
         sessionId={sessionId.current}
         onVote={handleVoteCast}
         onClose={() => {

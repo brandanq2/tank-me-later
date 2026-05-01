@@ -20,6 +20,7 @@ interface VoteRecord {
   yesVotes: string[]
   noVotes: string[]
   expiresAt: number
+  failed?: boolean
 }
 
 function voteKey(charKey: string) {

@@ -99,6 +99,25 @@ function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: str
   )
 }
 
+function formatRemaining(expiresAt: number): string {
+  const ms = expiresAt - Date.now()
+  if (ms <= 0) return 'expired'
+  const totalSecs = Math.ceil(ms / 1000)
+  const h = Math.floor(totalSecs / 3600)
+  const m = Math.ceil((totalSecs % 3600) / 60)
+  return h > 0 ? `${h}h ${m}m remaining` : `${m}m remaining`
+}
+
+function FailedStrip({ vote }: { vote: VoteRecord }) {
+  return (
+    <div className="vote-failed-strip">
+      <span className="vote-failed-label">Vote Failed</span>
+      <span className="vote-failed-sep">·</span>
+      <span className="vote-failed-time">{formatRemaining(vote.expiresAt)}</span>
+    </div>
+  )
+}
+
 function VoteStrip({ vote }: { vote: VoteRecord }) {
   const slots: Array<'yes' | 'no' | 'pending'> = []
   for (let i = 0; i < 5; i++) {
@@ -208,13 +227,16 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
           </span>
         </div>
         <button
-          className="remove-btn"
-          onClick={(e) => { e.preventDefault(); onRemove(entry.id) }}
+          className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}`}
+          disabled={!!activeVote?.failed}
+          onClick={(e) => { e.preventDefault(); if (!activeVote?.failed) onRemove(entry.id) }}
+          title={activeVote?.failed ? 'Vote to remove failed — on cooldown' : undefined}
         >
-          ✕
+          {activeVote?.failed ? '🔒' : '✕'}
         </button>
       </div>
-      {activeVote && <VoteStrip vote={activeVote} />}
+      {activeVote && !activeVote.failed && <VoteStrip vote={activeVote} />}
+      {activeVote?.failed && <FailedStrip vote={activeVote} />}
     </a>
   )
 }

@@ -429,7 +429,13 @@ a.row-first:hover {
   transition: color 0.15s, background 0.15s;
 }
 
-.remove-btn:hover { color: var(--red); background: rgba(248, 81, 73, 0.1); }
+.remove-btn:hover:not(:disabled) { color: var(--red); background: rgba(248, 81, 73, 0.1); }
+
+.remove-btn-locked {
+  color: var(--muted);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* Vote Modal */
 .vote-overlay {
@@ -671,3 +677,32 @@ a.row-first:hover {
 .vote-strip-icon-yes { color: #3fb950; }
 .vote-strip-icon-no { color: #f85149; }
 .vote-strip-icon-pending { color: rgba(255, 255, 255, 0.15); }
+
+/* Vote failed strip */
+.vote-failed-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(248, 81, 73, 0.2);
+}
+
+.vote-failed-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #f85149;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.vote-failed-sep {
+  font-size: 0.62rem;
+  color: var(--muted);
+  opacity: 0.5;
+}
+
+.vote-failed-time {
+  font-size: 0.62rem;
+  color: var(--muted);
+}

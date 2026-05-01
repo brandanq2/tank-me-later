@@ -38,4 +38,5 @@ export interface VoteRecord {
   noVotes: string[]
   expiresAt: number
   resolved?: boolean
+  failed?: boolean
 }

@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:raider.io)",
+      "WebSearch",
+      "Bash(npm create *)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npx vite *)",
+      "WebFetch(domain:publicapi.dev)",
+      "WebFetch(domain:support.raider.io)",
+      "WebFetch(domain:github.com)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(curl -s \"https://raider.io/api/v1/characters/profile?region=us&realm=thrall&name=vokeox&fields=mythic_plus_best_runs,mythic_plus_alternate_runs\")",
+      "Bash(python -m json.tool)",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const j=JSON.parse\\(d\\); console.log\\(JSON.stringify\\({best_runs: j.mythic_plus_best_runs, alt_runs: j.mythic_plus_alternate_runs}, null, 2\\)\\)\")",
+      "Bash(curl -s \"https://raider.io/api/v1/characters/profile?region=us&realm=thrall&name=vokeox&fields=mythic_plus_best_runs,mythic_plus_alternate_runs\" -o C:/Temp/rio_response.json)",
+      "Bash(node -e \"const j=require\\('C:/Temp/rio_response.json'\\); console.log\\(JSON.stringify\\({best_runs: j.mythic_plus_best_runs?.slice\\(0,3\\), alt_runs: j.mythic_plus_alternate_runs?.slice\\(0,3\\)}, null, 2\\)\\)\")",
+      "Bash(curl -s \"https://raider.io/api/v1/characters/profile?region=us&realm=zuljin&name=jacob&fields=mythic_plus_best_runs,mythic_plus_alternate_runs\" -o C:/Temp/rio_jacob.json)",
+      "Bash(node -e ' *)",
+      "Bash(node *)",
+      "Bash(curl -s \"https://raider.io/api/v1/characters/profile?region=us&realm=zuljin&name=jacob&fields=mythic_plus_best_runs%3Atank_score\" -o C:/Temp/rio_jacob_tank.json)",
+      "Bash(curl -s \"https://raider.io/api/v1/characters/profile?region=us&realm=zuljin&name=jacob&fields=mythic_plus_best_runs%2Cmythic_plus_highest_level_runs%2Cmythic_plus_recent_runs\" -o C:/Temp/rio_jacob_all.json)",
+      "Bash(curl -s \"https://raider.io/api/v1/characters/profile?region=us&realm=zuljin&name=jacob&fields=mythic_plus_best_runs%3Aspec_protection_paladin\" -o C:/Temp/rio_jacob_prot.json)",
+      "Bash(curl -s \"https://raider.io/api/v1/mythic-plus/runs?season=season-mn-1&region=us&realm=zuljin&character_name=jacob&role=tank&per_page=20\" -o C:/Temp/rio_runs.json)",
+      "Bash(curl -s \"https://raider.io/api/v1/mythic-plus/runs?season=season-mn-1&region=us&per_page=5\" -o C:/Temp/rio_runs2.json)",
+      "Bash(curl -s \"https://raider.io/api/v1/mythic-plus/run-details?season=season-mn-1&id=9237805\" -o C:/Temp/rio_run_detail.json)",
+      "Bash(curl -s \"https://raider.io/api/v1/characters/profile?region=us&realm=zuljin&name=jacob&fields=mythic_plus_score_breakdowns\" -o C:/Temp/rio_breakdowns.json)",
+      "Bash(curl -s \"https://raider.io/api/v1/characters/profile?region=us&realm=zuljin&name=jacob&fields=mythic_plus_best_runs%2Cmythic_plus_scores_by_season%3Acurrent\" -o C:/Temp/rio_jacob_full.json)",
+      "Bash(curl -s \"https://raider.io/api/v1/characters/profile?region=us&realm=zuljin&name=jacob&fields=mythic_plus_ranks\" -o C:/Temp/rio_ranks.json)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\brand\\\\tank-me-later\" -Recurse -File)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Format-Table FullName)",
+      "Bash(curl *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

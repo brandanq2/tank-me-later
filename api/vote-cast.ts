@@ -21,6 +21,7 @@ interface VoteRecord {
   yesVotes: string[]
   noVotes: string[]
   expiresAt: number
+  failed?: boolean
 }
 
 interface CharacterInput {
@@ -49,6 +50,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     record.yesVotes.push(sessionId)
   } else {
     record.noVotes.push(sessionId)
+  }
+
+  if (record.noVotes.length >= VOTES_NEEDED) {
+    record.failed = true
+    const ttlRemaining = Math.max(1, Math.ceil((record.expiresAt - Date.now()) / 1000))
+    await redis.set(voteKey(charKey), record, { ex: ttlRemaining })
+    return res.json(record)
   }
 
   if (record.yesVotes.length >= VOTES_NEEDED) {
