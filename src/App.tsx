@@ -186,7 +186,7 @@ export default function App() {
       {entries.length === 0 ? (
         <p className="empty">Add characters above to build your leaderboard.</p>
       ) : (
-        <>
+        <div className={revealed ? undefined : 'pre-reveal'}>
           <div className="leaderboard">
             {leaderboard.map((entry, i) => {
               const rank = i + 1
@@ -228,7 +228,7 @@ export default function App() {
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   )

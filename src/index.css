@@ -161,6 +161,10 @@ body {
   margin-top: 3rem;
 }
 
+.pre-reveal {
+  visibility: hidden;
+}
+
 /* Reveal animations */
 @keyframes reveal-rank1 {
   0%   { opacity: 0; transform: scale(0.78) translateY(-24px); filter: brightness(1); }
