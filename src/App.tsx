@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { fetchCharacter, fetchCutoff, fetchHistory, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote } from './api'
+import { fetchCharacter, fetchCutoff, fetchHistory, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote, generateCover } from './api'
 import type { CutoffData } from './api'
 import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
@@ -66,7 +66,20 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [votes, setVotes] = useState<VoteRecord[]>([])
   const [hiddenVoteKeys, setHiddenVoteKeys] = useState<string[]>([])
-  const [albumVisible, setAlbumVisible] = useState(false)
+  const [albumModalImage, setAlbumModalImage] = useState<string | null>(null)
+  const [generatingCover, setGeneratingCover] = useState(false)
+
+  const handleGenerateCover = useCallback(async (thumbnailUrl: string) => {
+    setGeneratingCover(true)
+    setAlbumModalImage(null)
+    try {
+      const { imageUrl } = await generateCover(thumbnailUrl)
+      setAlbumModalImage(imageUrl)
+    } catch {
+      setGeneratingCover(false)
+    }
+    setGeneratingCover(false)
+  }, [])
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
   const sessionId = useRef(getSessionId())
@@ -259,7 +272,7 @@ export default function App() {
           <span>Later</span>
         </h1>
         <p className="subtitle">Mythic+ Tank IO Leaderboard</p>
-        <p className="header-disclaimer" onClick={() => setAlbumVisible(true)}>Yeah, I know what I said.</p>
+        <p className="header-disclaimer" onClick={() => setAlbumModalImage('/album-cover.png')}>Yeah, I know what I said.</p>
         {cutoff && (
           <p className="cutoff-badge">
             {cutoff.percentile} cutoff&nbsp;
@@ -302,6 +315,7 @@ export default function App() {
                   isInitialEntry={initialIds.current.has(entry.id)}
                   revealDelay={revealDelay(rank)}
                   onRemove={handleRemoveOrVote}
+                  onGenerateCover={rank === 1 && entry.thumbnailUrl ? () => handleGenerateCover(entry.thumbnailUrl!) : undefined}
                 />
               )
             })}
@@ -337,9 +351,12 @@ export default function App() {
         </div>
       )}
 
-      {albumVisible && (
-        <div className="album-overlay" onClick={() => setAlbumVisible(false)}>
-          <img src="/album-cover.png" className="album-cover" alt="Tank BTW Me Later" />
+      {(albumModalImage || generatingCover) && (
+        <div className="album-overlay" onClick={() => { setAlbumModalImage(null); setGeneratingCover(false) }}>
+          {generatingCover && !albumModalImage
+            ? <div className="album-generating"><div className="album-spinner" /><p>Generating cover art…</p></div>
+            : <img src={albumModalImage!} className="album-cover" alt="Album cover" />
+          }
         </div>
       )}
 

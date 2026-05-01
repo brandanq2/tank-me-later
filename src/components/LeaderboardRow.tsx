@@ -12,6 +12,7 @@ interface Props {
   isInitialEntry: boolean
   revealDelay: number
   onRemove: (id: string) => void
+  onGenerateCover?: () => void
 }
 
 function revealClass(rank: number): string {
@@ -139,7 +140,7 @@ function VoteStrip({ vote }: { vote: VoteRecord }) {
   )
 }
 
-export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove }: Props) {
+export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, onGenerateCover }: Props) {
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
     ? scoreToColor(entry.score ?? 0, 0, cutoffScore)
@@ -226,6 +227,15 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
               : 'Tank IO'}
           </span>
         </div>
+        {onGenerateCover && (
+          <button
+            className="generate-cover-btn"
+            onClick={(e) => { e.preventDefault(); onGenerateCover() }}
+            title="Generate album cover art"
+          >
+            🎵
+          </button>
+        )}
         <button
           className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}`}
           disabled={!!activeVote?.failed}

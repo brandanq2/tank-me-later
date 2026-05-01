@@ -133,6 +133,19 @@ export async function castVote(charKey: string, vote: 'yes' | 'no', sessionId: s
   return res.json()
 }
 
+export async function generateCover(thumbnailUrl: string): Promise<{ imageUrl: string }> {
+  const res = await fetch('/api/generate-cover', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ thumbnailUrl }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string }
+    throw new Error(err.error ?? 'Generation failed')
+  }
+  return res.json()
+}
+
 export async function fetchHistory(char: CharacterInput): Promise<HistoryPoint[]> {
   const params = new URLSearchParams({ name: char.name, realm: char.realm, region: char.region })
   const res = await fetch(`/api/history?${params}`)
