@@ -39,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         region: char.region,
         realm: char.realm,
         name: char.name,
-        fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs',
+        fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs:tank_score',
       })
       const upstream = await fetch(`https://raider.io/api/v1/characters/profile?${params}`)
       if (!upstream.ok) throw new Error(`${char.name}: ${upstream.status}`)
