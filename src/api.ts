@@ -14,6 +14,17 @@ interface RaiderIOBestRun {
   dungeon: string
   short_name: string
   mythic_level: number
+  active_spec_name: string
+  active_spec_role: string
+}
+
+const TANK_SPEC: Record<string, string> = {
+  'Death Knight': 'Blood',
+  'Demon Hunter': 'Vengeance',
+  Druid: 'Guardian',
+  Monk: 'Brewmaster',
+  Paladin: 'Protection',
+  Warrior: 'Protection',
 }
 
 interface RaiderIOResponse {
@@ -124,9 +135,15 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
   const currentSeason = data.mythic_plus_scores_by_season?.[0]
   const score = currentSeason?.scores?.tank ?? 0
 
+  const tankSpec = TANK_SPEC[data.class]
   const topKeys: TopKey[] = (data.mythic_plus_best_runs ?? [])
+    .filter((r) =>
+      r.active_spec_role
+        ? r.active_spec_role === 'tank'
+        : tankSpec ? r.active_spec_name === tankSpec : false
+    )
     .map((r) => ({ dungeon: r.dungeon, shortName: r.short_name, level: r.mythic_level }))
-    .sort((a, b) => b.level - a.level)
+    .sort((a, b) => a.shortName.localeCompare(b.shortName))
 
   return {
     score,
