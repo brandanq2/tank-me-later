@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { Redis } from '@upstash/redis'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
@@ -20,12 +21,21 @@ interface VoteRecord {
   thumbnailUrl?: string
   yesVotes: string[]
   noVotes: string[]
+  ipHashes: string[]
   expiresAt: number
   failed?: boolean
 }
 
 function voteKey(charKey: string) {
   return `tank-me-later:vote:${charKey}`
+}
+
+function clientIpHash(req: VercelRequest): string | null {
+  const fwd = req.headers['x-forwarded-for']
+  const raw = Array.isArray(fwd) ? fwd[0] : fwd
+  const ip = raw?.split(',')[0].trim()
+  if (!ip) return null
+  return createHash('sha256').update(`tml:vote:${ip}`).digest('hex').slice(0, 16)
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -52,10 +62,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const existing = await redis.get(voteKey(charKey))
     if (existing) return res.status(409).json({ error: 'Vote already active' })
 
+    const ipHash = clientIpHash(req)
     const vote: VoteRecord = {
       charKey, name, realm, region, className, specName, thumbnailUrl,
       yesVotes: [sessionId],
       noVotes: [],
+      ipHashes: ipHash ? [ipHash] : [],
       expiresAt: Date.now() + VOTE_TTL * 1000,
     }
     await redis.set(voteKey(charKey), vote, { ex: VOTE_TTL })

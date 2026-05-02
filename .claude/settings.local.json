@@ -35,7 +35,8 @@
       "Bash(Select-Object -First 50)",
       "Bash(Format-Table FullName)",
       "Bash(curl *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(ls *)"
     ]
   }
 }

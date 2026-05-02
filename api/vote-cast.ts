@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { Redis } from '@upstash/redis'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
@@ -20,8 +21,17 @@ interface VoteRecord {
   thumbnailUrl?: string
   yesVotes: string[]
   noVotes: string[]
+  ipHashes: string[]
   expiresAt: number
   failed?: boolean
+}
+
+function clientIpHash(req: VercelRequest): string | null {
+  const fwd = req.headers['x-forwarded-for']
+  const raw = Array.isArray(fwd) ? fwd[0] : fwd
+  const ip = raw?.split(',')[0].trim()
+  if (!ip) return null
+  return createHash('sha256').update(`tml:vote:${ip}`).digest('hex').slice(0, 16)
 }
 
 interface CharacterInput {
@@ -42,7 +52,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const record = await redis.get<VoteRecord>(voteKey(charKey))
   if (!record) return res.status(404).json({ error: 'Vote not found' })
 
-  if (record.yesVotes.includes(sessionId) || record.noVotes.includes(sessionId)) {
+  const ipHash = clientIpHash(req)
+  const ipHashes = record.ipHashes ?? []
+
+  if (
+    record.yesVotes.includes(sessionId) || record.noVotes.includes(sessionId) ||
+    (ipHash !== null && ipHashes.includes(ipHash))
+  ) {
     return res.status(409).json({ error: 'Already voted' })
   }
 
@@ -51,6 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } else {
     record.noVotes.push(sessionId)
   }
+  record.ipHashes = ipHash ? [...ipHashes, ipHash] : ipHashes
 
   if (record.noVotes.length >= VOTES_NEEDED) {
     record.failed = true
