@@ -13,8 +13,8 @@ function coverCacheKey(charKey: string) {
   return `tank-me-later:cover:${charKey}`
 }
 
-function insetUrl(thumbnailUrl: string) {
-  return thumbnailUrl.replace(/-avatar\.jpg/, '-inset.jpg')
+function mainRenderUrl(thumbnailUrl: string) {
+  return thumbnailUrl.replace(/-avatar\.jpg/, '-main.jpg')
 }
 
 async function fetchBuffer(url: string): Promise<Buffer> {
@@ -29,7 +29,7 @@ async function buildComposite(coverBuf: Buffer, portraitBuf: Buffer): Promise<{ 
   const coverH = coverMeta.height!
 
   const scaledPortrait = await sharp(portraitBuf)
-    .resize({ height: coverH })
+    .resize({ height: coverH, fit: 'cover', position: 'top' })
     .toBuffer()
   const portraitMeta = await sharp(scaledPortrait).metadata()
   const portraitW = portraitMeta.width!
@@ -50,19 +50,31 @@ async function buildComposite(coverBuf: Buffer, portraitBuf: Buffer): Promise<{ 
 function buildPrompt(race: string, gender: string, specName: string, className: string, charName: string, hasPortrait: boolean) {
   const characterDesc = `${gender} ${race} ${specName} ${className}`.trim()
   const nameUpper = charName.toUpperCase()
-  const subjectRef = hasPortrait
-    ? `the ${characterDesc} character shown in the left reference panel — match their exact face, colors, and features`
-    : `a ${characterDesc} from World of Warcraft`
+
+  if (hasPortrait) {
+    return (
+      `This image has two panels side by side. ` +
+      `The LEFT panel is a reference portrait of a World of Warcraft character — a ${characterDesc}. ` +
+      `The RIGHT panel is an album cover that must be edited. Do not alter the left panel at all. ` +
+      `Make exactly two changes to the RIGHT panel only: ` +
+      `First: change the bold red word "BTW" to "${nameUpper}" — same position, same bold red color, same font size and style. ` +
+      `Second: replace the face of the human subject in the right panel with the face of the character from the LEFT panel. ` +
+      `Copy their exact appearance: skin color, facial structure, racial features, non-human characteristics (pointy ears, tusks, markings, animal features, etc.), eye color, and any visible armor or accessories around the face. ` +
+      `Do NOT make the character look human — they are a fantasy ${race} and must retain every non-human racial feature exactly as shown in the left panel. ` +
+      `Keep the same dramatic upward-tilted pose and harsh high-contrast overhead lighting from the original right panel. ` +
+      `Keep "TANK", "ME", and "LATER" exactly unchanged. ` +
+      `Maintain the high contrast black and white style with deep crimson red as the only color. ` +
+      `No other changes.`
+    )
+  }
 
   return (
-    (hasPortrait
-      ? 'This image has two panels. The left panel is a character portrait for visual reference only — do not modify it. Edit only the right panel (the album cover). '
-      : 'Edit this album cover image with two changes. ') +
+    `Edit this album cover image with two changes. ` +
     `First: change the bold red word "BTW" in the title to "${nameUpper}" — same position, same bold red color, same large font size, same style. ` +
-    `Second: replace the human subject with ${subjectRef} — tight close-up of the face only, chin to forehead, filling the right side of the image, preserving the dramatic upward-tilted pose and harsh overhead lighting. ` +
-    'Keep "TANK", "ME", and "LATER" exactly unchanged. ' +
-    'Keep the high contrast black and white style with deep crimson red as the only color. ' +
-    'No other text changes.'
+    `Second: replace the human subject with a ${characterDesc} from World of Warcraft — tight close-up of the face only, chin to forehead, filling the right side of the image, preserving the dramatic upward-tilted pose and harsh overhead lighting. Preserve all non-human racial features of a ${race}. ` +
+    `Keep "TANK", "ME", and "LATER" exactly unchanged. ` +
+    `Keep the high contrast black and white style with deep crimson red as the only color. ` +
+    `No other text changes.`
   )
 }
 
@@ -99,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (thumbnailUrl) {
       try {
-        const portraitSrc = insetUrl(thumbnailUrl)
+        const portraitSrc = mainRenderUrl(thumbnailUrl)
         console.log('[generate-cover] fetching portrait:', portraitSrc)
         const [coverBuf, portraitBuf] = await Promise.all([
           fetchBuffer(albumCoverUrl),

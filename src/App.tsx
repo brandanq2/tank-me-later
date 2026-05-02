@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { fetchCharacter, fetchCutoff, fetchHistory, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote, generateCover } from './api'
+import { fetchCharacter, fetchCutoff, fetchHistory, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote, generateCover, insetAvatarUrl } from './api'
 import type { CutoffData } from './api'
 import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
@@ -396,24 +396,43 @@ export default function App() {
       )}
 
       <div className="dev-panel-wrap">
-        {devOpen && (
-          <div className="dev-panel">
-            <p className="dev-panel-title">Generate Cover</p>
-            <select
-              className="dev-panel-select"
-              value={devCharId}
-              onChange={e => setDevCharId(e.target.value)}
-            >
-              {entries.filter(e => e.status === 'success').map(e => (
-                <option key={e.id} value={e.id}>{e.name}</option>
-              ))}
-            </select>
-            {devError && <p className="dev-panel-error">{devError}</p>}
-            <button className="dev-panel-btn" onClick={handleDevGenerate} disabled={devGenerating}>
-              {devGenerating ? 'Generating…' : 'Generate'}
-            </button>
-          </div>
-        )}
+        {devOpen && (() => {
+          const successEntries = entries.filter(e => e.status === 'success')
+          const selected = successEntries.find(e => e.id === devCharId) ?? successEntries[0]
+          const portraitSrc = selected?.thumbnailUrl ? selected.thumbnailUrl.replace(/-avatar\.jpg/, '-main.jpg') : null
+          return (
+            <div className="dev-panel">
+              <p className="dev-panel-title">Generate Cover</p>
+              <select
+                className="dev-panel-select"
+                value={devCharId || selected?.id || ''}
+                onChange={e => setDevCharId(e.target.value)}
+              >
+                {successEntries.map(e => (
+                  <option key={e.id} value={e.id}>{e.name}</option>
+                ))}
+              </select>
+              {selected && (
+                <div className="dev-panel-inputs">
+                  <div className="dev-panel-input-img">
+                    <span className="dev-panel-input-label">Portrait</span>
+                    {portraitSrc
+                      ? <img src={portraitSrc} alt="portrait" className="dev-panel-img" />
+                      : <div className="dev-panel-img dev-panel-img-empty" />}
+                  </div>
+                  <div className="dev-panel-input-img">
+                    <span className="dev-panel-input-label">Album Cover</span>
+                    <img src="/album-cover.png" alt="album cover" className="dev-panel-img" />
+                  </div>
+                </div>
+              )}
+              {devError && <p className="dev-panel-error">{devError}</p>}
+              <button className="dev-panel-btn" onClick={handleDevGenerate} disabled={devGenerating}>
+                {devGenerating ? 'Generating…' : 'Generate'}
+              </button>
+            </div>
+          )
+        })()}
         <button className="dev-panel-toggle" onClick={() => setDevOpen(o => !o)} title="Dev: test cover generation">
           🎨
         </button>
