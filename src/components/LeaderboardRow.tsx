@@ -69,17 +69,17 @@ function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: str
   const points = history.filter(h => h.score !== null) as { date: string; score: number }[]
   if (points.length < 2) return null
 
-  const W = 72, H = 34, PAD = 3
+  const W = 110, CHART_H = 32, LABEL_H = 14, H = CHART_H + LABEL_H, PAD = 3
   const scores = points.map(p => p.score)
   const min = Math.min(...scores)
   const max = Math.max(...scores)
   const range = max - min || 1
 
   const px = (i: number) => PAD + (i / (points.length - 1)) * (W - PAD * 2)
-  const py = (s: number) => H - PAD - ((s - min) / range) * (H - PAD * 2)
+  const py = (s: number) => CHART_H - PAD - ((s - min) / range) * (CHART_H - PAD * 2)
 
   const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${px(i).toFixed(1)},${py(p.score).toFixed(1)}`).join(' ')
-  const fillPath = `${linePath} L${px(points.length - 1).toFixed(1)},${H} L${px(0).toFixed(1)},${H} Z`
+  const fillPath = `${linePath} L${px(points.length - 1).toFixed(1)},${CHART_H} L${px(0).toFixed(1)},${CHART_H} Z`
   const gradId = `sg-${id}`
 
   return (
@@ -95,6 +95,14 @@ function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: str
       {points.map((p, i) => (
         <circle key={i} cx={px(i)} cy={py(p.score)} r="2" fill={color} />
       ))}
+      {points.map((p, i) => {
+        const [, m, d] = p.date.split('-')
+        return (
+          <text key={i} x={px(i).toFixed(1)} y={H - 2} textAnchor="middle" fontSize="6" fill={color} opacity="0.6">
+            {m}/{d}
+          </text>
+        )
+      })}
     </svg>
   )
 }
