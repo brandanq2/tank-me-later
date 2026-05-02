@@ -25,21 +25,16 @@ export default function AugsPage() {
     <div className="app page-augs">
       <Nav />
       <header className="aug-page-header">
-        <div className="aug-album-text">
-          <p className="aug-album-title">For All</p>
-          <p className="aug-album-title">the Augs</p>
-          <p className="aug-album-artist">BTW</p>
-        </div>
-        <img src="/fata.png" className="aug-album-cover" alt="For All the Augs" />
+        <img src="/header-image.png" className="aug-header-img" alt="For All the Augs — BTW" />
+        {lb.cutoff && (
+          <p className="cutoff-badge">
+            {lb.cutoff.percentile} cutoff&nbsp;
+            <span className="cutoff-score">
+              {lb.cutoff.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+            </span>
+          </p>
+        )}
       </header>
-      {lb.cutoff && (
-        <p className="cutoff-badge aug-cutoff">
-          {lb.cutoff.percentile} cutoff&nbsp;
-          <span className="cutoff-score">
-            {lb.cutoff.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
-          </span>
-        </p>
-      )}
 
       <div className="controls">
         <AddCharacterForm onAdd={(input) => lb.addCharacter(input, true)} loading={lb.anyLoading} />

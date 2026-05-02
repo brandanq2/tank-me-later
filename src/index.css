@@ -45,12 +45,12 @@ body {
 
 /* Aug theme overrides */
 .page-augs {
-  --surface: #0e1917;
-  --surface2: #142420;
-  --border: #1e3630;
-  --text: #ddecea;
-  --muted: #6b9e97;
-  --accent: #2ec4a4;
+  --surface: #161616;
+  --surface2: #202020;
+  --border: #303030;
+  --text: #e8e6e3;
+  --muted: #8a8480;
+  --accent: #c94f3a;
 }
 
 /* Nav */
@@ -154,53 +154,16 @@ body {
 
 /* Aug page header */
 .aug-page-header {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
   margin-bottom: 1.75rem;
-  border-radius: 10px;
-  overflow: hidden;
-  max-width: 560px;
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.6);
 }
 
-.aug-album-text {
-  flex: 1;
-  background: #0d0d0d;
-  padding: 1.75rem 1.5rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0;
-}
-
-.aug-album-title {
-  font-family: 'Caveat', cursive;
-  font-size: 3.2rem;
-  font-weight: 700;
-  color: #e8e6e3;
-  line-height: 1.05;
-  letter-spacing: 0.01em;
-}
-
-.aug-album-artist {
-  font-family: 'Caveat', cursive;
-  font-size: 1.9rem;
-  font-weight: 400;
-  color: var(--accent);
-  margin-top: 0.3rem;
-  letter-spacing: 0.02em;
-}
-
-.aug-album-cover {
-  width: 220px;
-  flex-shrink: 0;
+.aug-header-img {
+  width: 100%;
+  max-width: 640px;
   display: block;
-  object-fit: cover;
-}
-
-.aug-cutoff {
-  margin-bottom: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.6);
+  margin-bottom: 0.75rem;
 }
 
 /* Controls */
