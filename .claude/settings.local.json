@@ -37,7 +37,8 @@
       "Bash(curl *)",
       "Bash(git commit *)",
       "Bash(ls *)",
-      "Bash(findstr *)"
+      "Bash(findstr *)",
+      "Bash(npm run *)"
     ]
   }
 }

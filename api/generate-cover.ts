@@ -1,3 +1,6 @@
+import { createHash } from 'crypto'
+import sharp from 'sharp'
+import { put, del } from '@vercel/blob'
 import { Redis } from '@upstash/redis'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
@@ -10,13 +13,53 @@ function coverCacheKey(charKey: string) {
   return `tank-me-later:cover:${charKey}`
 }
 
-function buildPrompt(race: string, gender: string, specName: string, className: string, charName: string) {
+function insetUrl(thumbnailUrl: string) {
+  return thumbnailUrl.replace(/-avatar\.jpg/, '-inset.jpg')
+}
+
+async function fetchBuffer(url: string): Promise<Buffer> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`Failed to fetch image ${url}: ${res.status}`)
+  return Buffer.from(await res.arrayBuffer())
+}
+
+async function buildComposite(coverBuf: Buffer, portraitBuf: Buffer): Promise<{ buf: Buffer; portraitW: number; coverW: number; coverH: number }> {
+  const coverMeta = await sharp(coverBuf).metadata()
+  const coverW = coverMeta.width!
+  const coverH = coverMeta.height!
+
+  const scaledPortrait = await sharp(portraitBuf)
+    .resize({ height: coverH })
+    .toBuffer()
+  const portraitMeta = await sharp(scaledPortrait).metadata()
+  const portraitW = portraitMeta.width!
+
+  const buf = await sharp({
+    create: { width: portraitW + coverW, height: coverH, channels: 3, background: { r: 0, g: 0, b: 0 } },
+  })
+    .composite([
+      { input: scaledPortrait, left: 0, top: 0 },
+      { input: coverBuf, left: portraitW, top: 0 },
+    ])
+    .jpeg({ quality: 90 })
+    .toBuffer()
+
+  return { buf, portraitW, coverW, coverH }
+}
+
+function buildPrompt(race: string, gender: string, specName: string, className: string, charName: string, hasPortrait: boolean) {
   const characterDesc = `${gender} ${race} ${specName} ${className}`.trim()
   const nameUpper = charName.toUpperCase()
+  const subjectRef = hasPortrait
+    ? `the ${characterDesc} character shown in the left reference panel — match their exact face, colors, and features`
+    : `a ${characterDesc} from World of Warcraft`
+
   return (
-    `Edit this album cover image with two changes. ` +
+    (hasPortrait
+      ? 'This image has two panels. The left panel is a character portrait for visual reference only — do not modify it. Edit only the right panel (the album cover). '
+      : 'Edit this album cover image with two changes. ') +
     `First: change the bold red word "BTW" in the title to "${nameUpper}" — same position, same bold red color, same large font size, same style. ` +
-    `Second: replace the human subject with a ${characterDesc} from World of Warcraft — tight close-up of the face only, chin to forehead, filling the right side of the image, preserving the dramatic upward-tilted pose and harsh overhead lighting. ` +
+    `Second: replace the human subject with ${subjectRef} — tight close-up of the face only, chin to forehead, filling the right side of the image, preserving the dramatic upward-tilted pose and harsh overhead lighting. ` +
     'Keep "TANK", "ME", and "LATER" exactly unchanged. ' +
     'Keep the high contrast black and white style with deep crimson red as the only color. ' +
     'No other text changes.'
@@ -26,31 +69,58 @@ function buildPrompt(race: string, gender: string, specName: string, className: 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end()
 
-  const { charKey, race, gender, specName, className, charName } = req.body as {
+  const { charKey, race, gender, specName, className, charName, thumbnailUrl } = req.body as {
     charKey?: string
     race?: string
     gender?: string
     specName?: string
     className?: string
     charName?: string
+    thumbnailUrl?: string
   }
   if (!charKey || !race || !gender || !specName || !className || !charName) {
     return res.status(400).json({ error: 'charKey, race, gender, specName, className, and charName are required' })
   }
 
-  console.log('[generate-cover] handler called, charKey:', charKey, 'bust:', req.query.bust)
+  console.log('[generate-cover] handler called, charKey:', charKey)
+  let tempCompositeUrl: string | null = null
+
   try {
     const bust = req.query.bust === '1'
     const cached = await redis.get<string>(coverCacheKey(charKey))
-    console.log('[generate-cover] cache hit:', !!cached, 'bust:', bust)
+    console.log('[generate-cover] cache hit:', !!cached)
     if (!bust && cached) return res.json({ imageUrl: cached })
 
-    // Pass the album cover URL directly — Replicate fetches it themselves
     const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL || req.headers.host
-    const inputImage = `https://${productionHost}/album-cover.png`
-    console.log('[generate-cover] using album cover url:', inputImage)
+    const albumCoverUrl = `https://${productionHost}/album-cover.png`
 
-    const prompt = buildPrompt(race, gender, specName, className, charName)
+    let inputImage = albumCoverUrl
+    let compositeInfo: { portraitW: number; coverW: number; coverH: number } | null = null
+
+    if (thumbnailUrl) {
+      try {
+        const portraitSrc = insetUrl(thumbnailUrl)
+        console.log('[generate-cover] fetching portrait:', portraitSrc)
+        const [coverBuf, portraitBuf] = await Promise.all([
+          fetchBuffer(albumCoverUrl),
+          fetchBuffer(portraitSrc),
+        ])
+        const composite = await buildComposite(coverBuf, portraitBuf)
+        const blob = await put(
+          `covers/tmp-${createHash('sha256').update(charKey).digest('hex').slice(0, 8)}.jpg`,
+          composite.buf,
+          { access: 'public', contentType: 'image/jpeg', addRandomSuffix: true },
+        )
+        tempCompositeUrl = blob.url
+        inputImage = blob.url
+        compositeInfo = { portraitW: composite.portraitW, coverW: composite.coverW, coverH: composite.coverH }
+        console.log('[generate-cover] composite uploaded:', blob.url, 'portraitW:', composite.portraitW)
+      } catch (err) {
+        console.warn('[generate-cover] portrait composite failed, falling back to album cover only:', err)
+      }
+    }
+
+    const prompt = buildPrompt(race, gender, specName, className, charName, !!compositeInfo)
     console.log('[generate-cover] prompt:', prompt)
 
     type Prediction = { id: string; status: string; output?: string | string[]; error?: string }
@@ -65,12 +135,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           'Prefer': 'respond-async',
         },
         body: JSON.stringify({
-          input: {
-            prompt,
-            input_image: inputImage,
-            output_format: 'jpg',
-            output_quality: 95,
-          },
+          input: { prompt, input_image: inputImage, output_format: 'jpg', output_quality: 95 },
         }),
       }
     )
@@ -79,9 +144,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const createError = created.error ?? created.detail ?? (createRes.ok ? null : `HTTP ${createRes.status}`)
     if (createError || !created.id) return res.status(500).json({ error: createError ?? 'No prediction ID returned', raw: created })
-    console.log('[generate-cover] prediction created:', created.id)
 
-    // Poll until succeeded or failed (up to 240s)
+    // Poll until succeeded or failed (up to 60s)
     let prediction: Prediction = created
     const deadline = Date.now() + 60_000
     while (prediction.status !== 'succeeded' && prediction.status !== 'failed' && Date.now() < deadline) {
@@ -99,12 +163,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const replicateUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output
 
-    await redis.set(coverCacheKey(charKey), replicateUrl, { ex: 60 * 60 * 24 * 7 })
+    // If we used a composite input, crop the album cover portion out of the output and store permanently
+    let finalUrl = replicateUrl
+    if (compositeInfo) {
+      try {
+        const outputBuf = await fetchBuffer(replicateUrl)
+        const croppedBuf = await sharp(outputBuf)
+          .extract({ left: compositeInfo.portraitW, top: 0, width: compositeInfo.coverW, height: compositeInfo.coverH })
+          .jpeg({ quality: 95 })
+          .toBuffer()
+        const resultBlob = await put(
+          `covers/${createHash('sha256').update(charKey).digest('hex').slice(0, 8)}.jpg`,
+          croppedBuf,
+          { access: 'public', contentType: 'image/jpeg', addRandomSuffix: false },
+        )
+        finalUrl = resultBlob.url
+        console.log('[generate-cover] cropped result stored:', finalUrl)
+      } catch (err) {
+        console.warn('[generate-cover] crop/store failed, using raw Replicate URL:', err)
+      }
+    }
 
-    return res.json({ imageUrl: replicateUrl })
+    await redis.set(coverCacheKey(charKey), finalUrl, { ex: 60 * 60 * 24 * 7 })
+    return res.json({ imageUrl: finalUrl })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[generate-cover] unhandled error:', message)
     return res.status(500).json({ error: message })
+  } finally {
+    if (tempCompositeUrl) {
+      del(tempCompositeUrl).catch(() => {})
+    }
   }
 }

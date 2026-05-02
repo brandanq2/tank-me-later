@@ -972,3 +972,82 @@ a.row-first:hover {
   font-size: 0.62rem;
   color: var(--muted);
 }
+
+/* ── Dev panel ───────────────────────────────────────────── */
+.dev-panel-wrap {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  z-index: 9000;
+}
+
+.dev-panel-toggle {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(20,14,13,0.7);
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0.2;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dev-panel-toggle:hover { opacity: 1; }
+
+.dev-panel {
+  background: #1a1210;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 180px;
+}
+
+.dev-panel-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+
+.dev-panel-select {
+  background: #110c0b;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  color: #e8e0d8;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.4rem;
+  cursor: pointer;
+}
+
+.dev-panel-btn {
+  background: #c41e1e;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.dev-panel-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.dev-panel-btn:not(:disabled):hover { opacity: 0.85; }
+
+.dev-panel-error {
+  font-size: 0.68rem;
+  color: #ff6b6b;
+  margin: 0;
+  word-break: break-word;
+}

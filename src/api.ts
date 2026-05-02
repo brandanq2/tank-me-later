@@ -143,13 +143,14 @@ export async function generateCover(
   specName: string,
   className: string,
   charName: string,
+  thumbnailUrl?: string,
   bust = false,
 ): Promise<{ imageUrl: string }> {
   const url = bust ? '/api/generate-cover?bust=1' : '/api/generate-cover'
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ charKey, race, gender, specName, className, charName }),
+    body: JSON.stringify({ charKey, race, gender, specName, className, charName, thumbnailUrl }),
   })
   if (!res.ok) {
     const text = await res.text().catch(() => '')

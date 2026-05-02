@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { fetchCharacter, fetchCutoff, fetchHistory, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote } from './api'
+import { fetchCharacter, fetchCutoff, fetchHistory, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote, generateCover } from './api'
 import type { CutoffData } from './api'
 import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
@@ -261,6 +261,29 @@ export default function App() {
     }
   }, [])
 
+  const [devOpen, setDevOpen] = useState(false)
+  const [devCharId, setDevCharId] = useState('')
+  const [devGenerating, setDevGenerating] = useState(false)
+  const [devError, setDevError] = useState<string | null>(null)
+
+  const handleDevGenerate = useCallback(async () => {
+    const successEntries = entries.filter(e => e.status === 'success')
+    const entry = successEntries.find(e => e.id === devCharId) ?? successEntries[0]
+    if (!entry || entry.status !== 'success') return
+    const charKey = `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()
+    setDevGenerating(true)
+    setDevError(null)
+    try {
+      const result = await generateCover(charKey, entry.race ?? '', entry.gender ?? '', entry.specName ?? '', entry.className ?? '', entry.name, entry.thumbnailUrl, true)
+      setAlbumModalImage(result.imageUrl)
+      setDevOpen(false)
+    } catch (err) {
+      setDevError(err instanceof Error ? err.message : 'Generation failed')
+    } finally {
+      setDevGenerating(false)
+    }
+  }, [entries, devCharId])
+
   const sorted = sortedEntries(entries)
   const leaderboard = sorted.filter((e) => e.status !== 'success' || (e.score ?? 0) > 0)
   const clowns = sorted.filter((e) => e.status === 'success' && (e.score ?? 0) === 0)
@@ -371,6 +394,30 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <div className="dev-panel-wrap">
+        {devOpen && (
+          <div className="dev-panel">
+            <p className="dev-panel-title">Generate Cover</p>
+            <select
+              className="dev-panel-select"
+              value={devCharId}
+              onChange={e => setDevCharId(e.target.value)}
+            >
+              {entries.filter(e => e.status === 'success').map(e => (
+                <option key={e.id} value={e.id}>{e.name}</option>
+              ))}
+            </select>
+            {devError && <p className="dev-panel-error">{devError}</p>}
+            <button className="dev-panel-btn" onClick={handleDevGenerate} disabled={devGenerating}>
+              {devGenerating ? 'Generating…' : 'Generate'}
+            </button>
+          </div>
+        )}
+        <button className="dev-panel-toggle" onClick={() => setDevOpen(o => !o)} title="Dev: test cover generation">
+          🎨
+        </button>
+      </div>
 
       <VoteModal
         votes={votes.filter(v => !hiddenVoteKeys.includes(v.charKey) && !v.failed)}
