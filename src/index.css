@@ -993,7 +993,7 @@ a.row-first:hover {
   background: rgba(20,14,13,0.7);
   font-size: 1rem;
   cursor: pointer;
-  opacity: 0.2;
+  opacity: 0;
   transition: opacity 0.2s;
   display: flex;
   align-items: center;
