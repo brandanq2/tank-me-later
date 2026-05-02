@@ -68,6 +68,7 @@ export default function AugsPage() {
                   isInitialEntry={lb.initialIds.has(entry.id)}
                   revealDelay={revealDelay(rank)}
                   onRemove={lb.handleRemoveOrVote}
+                  scoreLabel=""
                 />
               )
             })}

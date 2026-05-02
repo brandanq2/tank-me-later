@@ -14,6 +14,7 @@ interface Props {
   isInitialEntry: boolean
   revealDelay: number
   onRemove: (id: string) => void
+  scoreLabel?: string
 }
 
 function revealClass(rank: number): string {
@@ -236,7 +237,7 @@ function VoteStrip({ vote }: { vote: VoteRecord }) {
   )
 }
 
-export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove }: Props) {
+export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO' }: Props) {
   const [historyOpen, setHistoryOpen] = useState(false)
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
@@ -334,7 +335,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
             <span className="row-score-label">
               {entry.scoreDelta != null && entry.scoreDelta > 0
                 ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
-                : 'Tank IO'}
+                : scoreLabel}
             </span>
           </div>
           <button
