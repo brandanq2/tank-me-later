@@ -58,7 +58,7 @@ export function VoteModal({ votes, sessionId, onVote, onClose }: Props) {
                   <img
                     className="vote-avatar"
                     src={insetAvatarUrl(vote.thumbnailUrl)}
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = vote.thumbnailUrl }}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = vote.thumbnailUrl! }}
                     alt={vote.name}
                   />
                 ) : (

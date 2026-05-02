@@ -36,7 +36,8 @@
       "Bash(Format-Table FullName)",
       "Bash(curl *)",
       "Bash(git commit *)",
-      "Bash(ls *)"
+      "Bash(ls *)",
+      "Bash(findstr *)"
     ]
   }
 }

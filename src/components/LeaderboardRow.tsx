@@ -305,7 +305,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
             <img
               className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`}
               src={insetAvatarUrl(entry.thumbnailUrl)}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).src = entry.thumbnailUrl }}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = entry.thumbnailUrl! }}
               alt={entry.name}
             />
           ) : (
