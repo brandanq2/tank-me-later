@@ -23,29 +23,29 @@ function insetUrl(thumbnailUrl: string): string {
   return thumbnailUrl.replace(/-avatar\.jpg/, '-inset.jpg')
 }
 
+const PORTRAIT_STRIP_W = 200
+
 async function buildComposite(coverBuf: Buffer, portraitBuf: Buffer): Promise<{ buf: Buffer; portraitW: number; coverW: number; coverH: number }> {
   const coverMeta = await sharp(coverBuf).metadata()
   const coverW = coverMeta.width!
   const coverH = coverMeta.height!
 
+  // Scale portrait to a narrow fixed-width strip so the album cover dominates (~80% of composite)
   const scaledPortrait = await sharp(portraitBuf)
-    .resize({ height: coverH, fit: 'cover', position: 'top' })
-    .normalize()
+    .resize({ width: PORTRAIT_STRIP_W, height: coverH, fit: 'cover', position: 'top' })
     .toBuffer()
-  const portraitMeta = await sharp(scaledPortrait).metadata()
-  const portraitW = portraitMeta.width!
 
   const buf = await sharp({
-    create: { width: portraitW + coverW, height: coverH, channels: 3, background: { r: 0, g: 0, b: 0 } },
+    create: { width: PORTRAIT_STRIP_W + coverW, height: coverH, channels: 3, background: { r: 0, g: 0, b: 0 } },
   })
     .composite([
       { input: scaledPortrait, left: 0, top: 0 },
-      { input: coverBuf, left: portraitW, top: 0 },
+      { input: coverBuf, left: PORTRAIT_STRIP_W, top: 0 },
     ])
     .jpeg({ quality: 90 })
     .toBuffer()
 
-  return { buf, portraitW, coverW, coverH }
+  return { buf, portraitW: PORTRAIT_STRIP_W, coverW, coverH }
 }
 
 function buildPrompt(race: string, gender: string, specName: string, className: string, charName: string, hasPortrait: boolean) {
@@ -54,16 +54,17 @@ function buildPrompt(race: string, gender: string, specName: string, className: 
 
   if (hasPortrait) {
     return (
-      `This image has two panels. The LEFT panel is a character portrait used as a visual reference. The RIGHT panel is an album cover to edit. Do not change the left panel. ` +
-      `Make exactly two changes to the RIGHT panel: ` +
-      `First: change the bold red word "BTW" to "${nameUpper}" — identical position, same bold red color, same font size and style. ` +
-      `Second: replace the human subject in the RIGHT panel with the character from the LEFT panel. ` +
-      `The character in the right panel must be an exact visual match to the left panel portrait — identical hair color and style, identical eye color, identical skin tone, identical facial markings and tattoos, identical ear shape, identical armor and shoulder pieces visible around the face and neck. ` +
-      `Do not generalize or simplify the character's appearance. Reproduce every specific detail from the left panel precisely. ` +
-      `Keep the dramatic upward-tilted pose and harsh overhead lighting. ` +
-      `Keep "TANK", "ME", and "LATER" exactly unchanged. ` +
-      `Keep the high contrast black and white style with deep crimson red as the only color. ` +
-      `No other changes.`
+      `This image has two panels side by side. The narrow LEFT strip is a color character portrait for reference only — do not touch it. ` +
+      `The large RIGHT panel is an album cover. Your job is to edit the RIGHT panel only, making exactly two changes and preserving everything else pixel-perfect. ` +
+      `\n\nWhat must stay completely unchanged in the RIGHT panel: ` +
+      `the solid black background, the CD jewel case frame, the bold white stacked text "TANK" / "ME" / "LATER", the parental advisory sticker, ` +
+      `the high-contrast black-and-white photographic style, deep crimson red as the sole color accent, the dramatic upward-tilted face pose, harsh overhead rim lighting. ` +
+      `\n\nChange 1: Replace only the bold red word "BTW" with "${nameUpper}" — same position, same bold red color, same font size and style. ` +
+      `\n\nChange 2: Replace the human face/head in the RIGHT panel with the character shown in the LEFT strip. ` +
+      `Render the replacement in the same high-contrast black-and-white style as the rest of the album cover. ` +
+      `Match every visual detail from the reference: hair color and style, eye color, skin tone, facial markings and tattoos, ear shape, any visible armor around the neck and shoulders. ` +
+      `Do not generalize racial features — reproduce them exactly. ` +
+      `\n\nAll other elements of the RIGHT panel must be untouched. No background changes. No style changes. No new elements.`
     )
   }
 
