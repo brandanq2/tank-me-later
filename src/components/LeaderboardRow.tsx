@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { scoreToColor } from '../scoreColor'
 import type { CharacterEntry, HistoryPoint, VoteRecord } from '../types'
 
@@ -108,6 +109,65 @@ function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: str
   )
 }
 
+function HistoryModal({ entry, color, onClose }: { entry: CharacterEntry; color: string; onClose: () => void }) {
+  const points = (entry.history ?? []).filter(h => h.score !== null) as { date: string; score: number }[]
+  if (points.length < 2) return null
+
+  const W = 380, SCORE_H = 24, CHART_H = 140, LABEL_H = 24, H = SCORE_H + CHART_H + LABEL_H, PAD = 20
+  const scores = points.map(p => p.score)
+  const min = Math.min(...scores)
+  const max = Math.max(...scores)
+  const range = max - min || 1
+
+  const px = (i: number) => PAD + (i / (points.length - 1)) * (W - PAD * 2)
+  const py = (s: number) => SCORE_H + PAD + ((max - s) / range) * (CHART_H - PAD * 2)
+
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${px(i).toFixed(1)},${py(p.score).toFixed(1)}`).join(' ')
+  const fillPath = `${linePath} L${px(points.length - 1).toFixed(1)},${SCORE_H + CHART_H} L${px(0).toFixed(1)},${SCORE_H + CHART_H} Z`
+  const gradId = `hm-${entry.id}`
+
+  return (
+    <div className="history-overlay" onClick={onClose}>
+      <div className="history-modal" onClick={e => e.stopPropagation()}>
+        <div className="history-modal-header">
+          <div>
+            <span className="history-modal-name" style={{ color }}>{entry.name}</span>
+            <span className="history-modal-sub">7-day score history</span>
+          </div>
+          <button className="history-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <svg width={W} height={H} className="history-chart">
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={color} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width={W} height={H} rx="8" fill="#110c0b" />
+          <path d={fillPath} fill={`url(#${gradId})`} />
+          <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+          {points.map((p, i) => (
+            <circle key={i} cx={px(i)} cy={py(p.score)} r="4" fill={color} />
+          ))}
+          {points.map((p, i) => (
+            <text key={i} x={px(i).toFixed(1)} y={(py(p.score) - 9).toFixed(1)} textAnchor="middle" fontSize="11" fill={color} opacity="0.9">
+              {p.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+            </text>
+          ))}
+          {points.map((p, i) => {
+            const [, m, d] = p.date.split('-')
+            return (
+              <text key={i} x={px(i).toFixed(1)} y={H - 6} textAnchor="middle" fontSize="11" fill={color} opacity="0.7">
+                {m}/{d}
+              </text>
+            )
+          })}
+        </svg>
+      </div>
+    </div>
+  )
+}
+
 function formatRemaining(expiresAt: number): string {
   const ms = expiresAt - Date.now()
   if (ms <= 0) return 'expired'
@@ -149,6 +209,7 @@ function VoteStrip({ vote }: { vote: VoteRecord }) {
 }
 
 export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove }: Props) {
+  const [historyOpen, setHistoryOpen] = useState(false)
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
     ? scoreToColor(entry.score ?? 0, 0, cutoffScore)
@@ -201,51 +262,61 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
   const isFirst = rank === 1 && entry.status === 'success'
 
   return (
-    <a
-      className={`row${isFirst ? ' row-first' : ''} ${anim.className}`}
-      style={{ ...anim.style, '--spec-color': classColor } as unknown as React.CSSProperties}
-      href={entry.profileUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {isFirst && <span className="crown" aria-hidden>♛</span>}
-      <div className="row-main">
-        <RankBadge rank={rank} delta={rankDelta} />
-        {entry.thumbnailUrl ? (
-          <img className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`} src={entry.thumbnailUrl} alt={entry.name} />
-        ) : (
-          <div className={`row-avatar row-avatar-placeholder${isFirst ? ' row-avatar-first' : ''}`} />
-        )}
-        <div className="row-info">
-          <span className="row-name" style={{ color: classColor }}>{entry.name}</span>
-          <span className="row-sub">
-            {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className}
-          </span>
+    <>
+      <a
+        className={`row${isFirst ? ' row-first' : ''} ${anim.className}`}
+        style={{ ...anim.style, '--spec-color': classColor } as unknown as React.CSSProperties}
+        href={entry.profileUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {isFirst && <span className="crown" aria-hidden>♛</span>}
+        <div className="row-main">
+          <RankBadge rank={rank} delta={rankDelta} />
+          {entry.thumbnailUrl ? (
+            <img className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`} src={entry.thumbnailUrl} alt={entry.name} />
+          ) : (
+            <div className={`row-avatar row-avatar-placeholder${isFirst ? ' row-avatar-first' : ''}`} />
+          )}
+          <div className="row-info">
+            <span className="row-name" style={{ color: classColor }}>{entry.name}</span>
+            <span className="row-sub">
+              {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className}
+            </span>
+          </div>
+          {entry.history && (
+            <div
+              className="sparkline-btn"
+              role="button"
+              title="View score history"
+              onClick={e => { e.preventDefault(); e.stopPropagation(); setHistoryOpen(true) }}
+            >
+              <Sparkline history={entry.history} color={classColor} id={entry.id} />
+            </div>
+          )}
+          <div className="row-score-wrap">
+            <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
+              {entry.score?.toLocaleString(undefined, { maximumFractionDigits: 1 }) ?? '0'}
+            </span>
+            <span className="row-score-label">
+              {entry.scoreDelta != null && entry.scoreDelta > 0
+                ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
+                : 'Tank IO'}
+            </span>
+          </div>
+          <button
+            className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}`}
+            disabled={!!activeVote?.failed}
+            onClick={(e) => { e.preventDefault(); if (!activeVote?.failed) onRemove(entry.id) }}
+            title={activeVote?.failed ? 'Vote to remove failed — on cooldown' : undefined}
+          >
+            {activeVote?.failed ? '🔒' : '✕'}
+          </button>
         </div>
-        {entry.history && (
-          <Sparkline history={entry.history} color={classColor} id={entry.id} />
-        )}
-        <div className="row-score-wrap">
-          <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
-            {entry.score?.toLocaleString(undefined, { maximumFractionDigits: 1 }) ?? '0'}
-          </span>
-          <span className="row-score-label">
-            {entry.scoreDelta != null && entry.scoreDelta > 0
-              ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
-              : 'Tank IO'}
-          </span>
-        </div>
-        <button
-          className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}`}
-          disabled={!!activeVote?.failed}
-          onClick={(e) => { e.preventDefault(); if (!activeVote?.failed) onRemove(entry.id) }}
-          title={activeVote?.failed ? 'Vote to remove failed — on cooldown' : undefined}
-        >
-          {activeVote?.failed ? '🔒' : '✕'}
-        </button>
-      </div>
-      {activeVote && !activeVote.failed && <VoteStrip vote={activeVote} />}
-      {activeVote?.failed && <FailedStrip vote={activeVote} />}
-    </a>
+        {activeVote && !activeVote.failed && <VoteStrip vote={activeVote} />}
+        {activeVote?.failed && <FailedStrip vote={activeVote} />}
+      </a>
+      {historyOpen && <HistoryModal entry={entry} color={classColor} onClose={() => setHistoryOpen(false)} />}
+    </>
   )
 }
