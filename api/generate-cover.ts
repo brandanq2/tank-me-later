@@ -54,17 +54,15 @@ function buildPrompt(race: string, gender: string, specName: string, className: 
 
   if (hasPortrait) {
     return (
-      `This image has two panels side by side. The narrow LEFT strip is a color character portrait for reference only — do not touch it. ` +
-      `The large RIGHT panel is an album cover. Your job is to edit the RIGHT panel only, making exactly two changes and preserving everything else pixel-perfect. ` +
-      `\n\nWhat must stay completely unchanged in the RIGHT panel: ` +
-      `the solid black background, the CD jewel case frame, the bold white stacked text "TANK" / "ME" / "LATER", the parental advisory sticker, ` +
-      `the high-contrast black-and-white photographic style, deep crimson red as the sole color accent, the dramatic upward-tilted face pose, harsh overhead rim lighting. ` +
-      `\n\nChange 1: Replace only the bold red word "BTW" with "${nameUpper}" — same position, same bold red color, same font size and style. ` +
-      `\n\nChange 2: Replace the human face/head in the RIGHT panel with the character shown in the LEFT strip. ` +
-      `Render the replacement in the same high-contrast black-and-white style as the rest of the album cover. ` +
-      `Match every visual detail from the reference: hair color and style, eye color, skin tone, facial markings and tattoos, ear shape, any visible armor around the neck and shoulders. ` +
-      `Do not generalize racial features — reproduce them exactly. ` +
-      `\n\nAll other elements of the RIGHT panel must be untouched. No background changes. No style changes. No new elements.`
+      `This image has two panels. The narrow LEFT strip is a color character portrait — use it as a visual reference only, do not modify it. ` +
+      `The RIGHT panel is a high-contrast black-and-white album cover with crimson red accents. Make exactly two edits to the RIGHT panel:\n\n` +
+      `EDIT 1: Change the bold red word "BTW" to "${nameUpper}". Keep the exact same position, bold red color, font size, and lettering style. This text change is mandatory.\n\n` +
+      `EDIT 2: Replace the face and head of the person in the RIGHT panel with the character shown in the LEFT strip. ` +
+      `The character must keep the same dramatic upward-tilted pose and harsh overhead rim lighting as the original. ` +
+      `Convert the character's appearance into the same high-contrast black-and-white photographic style as the rest of the album cover — deep shadows, blown-out highlights, no color except the existing crimson red elements. ` +
+      `Faithfully reproduce all distinctive features from the LEFT reference: exact hair shape and length, eye shape and any glow effects (rendered in B&W), facial markings and tattoos, non-human ear shape, skin texture, and any armor or shoulder pieces visible at the neck. ` +
+      `Do not simplify or humanize the character's non-human racial features.\n\n` +
+      `Everything else in the RIGHT panel stays exactly as-is: black background, CD jewel case frame, "TANK" / "ME" / "LATER" text, parental advisory sticker, overall composition. No new elements, no background changes.`
     )
   }
 
