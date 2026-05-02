@@ -19,22 +19,8 @@ async function fetchBuffer(url: string): Promise<Buffer> {
   return Buffer.from(await res.arrayBuffer())
 }
 
-async function fetchPortraitBuffer(thumbnailUrl: string): Promise<Buffer> {
-  // Strip ?alt= so missing renders return 403/404 instead of the 2D class silhouette,
-  // which is large enough to silently pass a size check.
-  const baseUrl = thumbnailUrl.split('?')[0]
-  const mainUrl = baseUrl.replace(/-avatar\.jpg$/, '-main.jpg')
-  const insetUrl = baseUrl.replace(/-avatar\.jpg$/, '-inset.jpg')
-
-  for (const url of [mainUrl, insetUrl]) {
-    try {
-      const buf = await fetchBuffer(url)
-      if (buf.length > 10_000) return buf
-    } catch {}
-  }
-
-  // Last resort: original URL with ?alt= intact — always returns something
-  return fetchBuffer(thumbnailUrl)
+function insetUrl(thumbnailUrl: string): string {
+  return thumbnailUrl.replace(/-avatar\.jpg/, '-inset.jpg')
 }
 
 async function buildComposite(coverBuf: Buffer, portraitBuf: Buffer): Promise<{ buf: Buffer; portraitW: number; coverW: number; coverH: number }> {
@@ -126,10 +112,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (thumbnailUrl) {
       try {
-        console.log('[generate-cover] fetching portrait for:', thumbnailUrl)
+        const portraitSrc = insetUrl(thumbnailUrl)
+        console.log('[generate-cover] fetching portrait:', portraitSrc)
         const [coverBuf, portraitBuf] = await Promise.all([
           fetchBuffer(albumCoverUrl),
-          fetchPortraitBuffer(thumbnailUrl),
+          fetchBuffer(portraitSrc),
         ])
         const composite = await buildComposite(coverBuf, portraitBuf)
         const blob = await put(

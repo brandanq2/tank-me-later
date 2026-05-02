@@ -399,9 +399,8 @@ export default function App() {
         {devOpen && (() => {
           const successEntries = entries.filter(e => e.status === 'success')
           const selected = successEntries.find(e => e.id === devCharId) ?? successEntries[0]
-          const portraitMainSrc = selected?.thumbnailUrl ? selected.thumbnailUrl.replace(/-avatar\.jpg/, '-main.jpg') : null
-          const portraitFallbackSrc = selected?.thumbnailUrl ? insetAvatarUrl(selected.thumbnailUrl) : null
-          const portraitSrc = portraitMainSrc
+          const portraitSrc = selected?.thumbnailUrl ? insetAvatarUrl(selected.thumbnailUrl) : null
+          const portraitFallbackSrc = selected?.thumbnailUrl ?? null
           return (
             <div className="dev-panel">
               <p className="dev-panel-title">Generate Cover</p>
