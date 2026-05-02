@@ -167,6 +167,10 @@ export async function fetchHistory(char: CharacterInput): Promise<HistoryPoint[]
   return res.json()
 }
 
+export function insetAvatarUrl(url: string): string {
+  return url.replace(/-avatar\.jpg/, '-inset.jpg')
+}
+
 export async function fetchCharacter(char: CharacterInput): Promise<CharacterData> {
   const params = new URLSearchParams({
     region: char.region,

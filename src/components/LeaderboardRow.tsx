@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { scoreToColor } from '../scoreColor'
+import { insetAvatarUrl } from '../api'
 import type { CharacterEntry, HistoryPoint, VoteRecord } from '../types'
 
 interface Props {
@@ -301,7 +302,12 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
         <div className="row-main">
           <RankBadge rank={rank} delta={rankDelta} />
           {entry.thumbnailUrl ? (
-            <img className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`} src={entry.thumbnailUrl} alt={entry.name} />
+            <img
+              className={`row-avatar${isFirst ? ' row-avatar-first' : ''}`}
+              src={insetAvatarUrl(entry.thumbnailUrl)}
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = entry.thumbnailUrl }}
+              alt={entry.name}
+            />
           ) : (
             <div className={`row-avatar row-avatar-placeholder${isFirst ? ' row-avatar-first' : ''}`} />
           )}

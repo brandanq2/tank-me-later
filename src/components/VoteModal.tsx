@@ -1,4 +1,5 @@
 import type { VoteRecord } from '../types'
+import { insetAvatarUrl } from '../api'
 
 const CLASS_COLORS: Record<string, string> = {
   'Death Knight': '#C41E3A',
@@ -54,7 +55,12 @@ export function VoteModal({ votes, sessionId, onVote, onClose }: Props) {
             <div key={vote.charKey} className="vote-card">
               <div className="vote-char-info">
                 {vote.thumbnailUrl ? (
-                  <img className="vote-avatar" src={vote.thumbnailUrl} alt={vote.name} />
+                  <img
+                    className="vote-avatar"
+                    src={insetAvatarUrl(vote.thumbnailUrl)}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = vote.thumbnailUrl }}
+                    alt={vote.name}
+                  />
                 ) : (
                   <div className="vote-avatar-placeholder" />
                 )}
