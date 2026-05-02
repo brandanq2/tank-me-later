@@ -69,7 +69,7 @@ function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: str
   const points = history.filter(h => h.score !== null) as { date: string; score: number }[]
   if (points.length < 2) return null
 
-  const W = 110, CHART_H = 32, LABEL_H = 14, H = CHART_H + LABEL_H, PAD = 3
+  const W = 130, CHART_H = 34, LABEL_H = 16, H = CHART_H + LABEL_H, PAD = 4
   const scores = points.map(p => p.score)
   const min = Math.min(...scores)
   const max = Math.max(...scores)
@@ -90,6 +90,7 @@ function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: str
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
+      <rect x="0" y="0" width={W} height={H} rx="4" fill="#110c0b" opacity="0.75" />
       <path d={fillPath} fill={`url(#${gradId})`} />
       <path d={linePath} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
       {points.map((p, i) => (
@@ -98,7 +99,7 @@ function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: str
       {points.map((p, i) => {
         const [, m, d] = p.date.split('-')
         return (
-          <text key={i} x={px(i).toFixed(1)} y={H - 2} textAnchor="middle" fontSize="6" fill={color} opacity="0.6">
+          <text key={i} x={px(i).toFixed(1)} y={H - 3} textAnchor="middle" fontSize="8" fill={color} opacity="0.85">
             {m}/{d}
           </text>
         )
