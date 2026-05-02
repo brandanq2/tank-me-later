@@ -23,7 +23,7 @@ function insetUrl(thumbnailUrl: string): string {
   return thumbnailUrl.replace(/-avatar\.jpg/, '-inset.jpg')
 }
 
-const PORTRAIT_STRIP_W = 200
+const PORTRAIT_STRIP_W = 350
 
 async function buildComposite(coverBuf: Buffer, portraitBuf: Buffer): Promise<{ buf: Buffer; portraitW: number; coverW: number; coverH: number }> {
   const coverMeta = await sharp(coverBuf).metadata()
