@@ -66,8 +66,16 @@ function RankBadge({ rank, delta }: { rank: number; delta?: number }) {
   )
 }
 
-function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: string; id: string }) {
-  const points = history.filter(h => h.score !== null) as { date: string; score: number }[]
+function Sparkline({ history, color, id, currentScore }: { history: HistoryPoint[]; color: string; id: string; currentScore?: number }) {
+  const today = new Date().toISOString().split('T')[0]
+  const histPoints = history.filter(h => h.score !== null) as { date: string; score: number }[]
+
+  const lastIsToday = histPoints.length > 0 && histPoints[histPoints.length - 1].date === today
+  const points = (currentScore != null && !lastIsToday)
+    ? [...histPoints, { date: today, score: currentScore }]
+    : histPoints
+  const currentIdx = (currentScore != null && !lastIsToday) ? points.length - 1 : -1
+
   if (points.length < 2) return null
 
   const W = 130, CHART_H = 34, LABEL_H = 16, H = CHART_H + LABEL_H, PAD = 10
@@ -95,13 +103,18 @@ function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: str
       <path d={fillPath} fill={`url(#${gradId})`} />
       <path d={linePath} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
       {points.map((p, i) => (
-        <circle key={i} cx={px(i)} cy={py(p.score)} r="2" fill={color} />
+        i === currentIdx
+          ? <g key={i}>
+              <circle cx={px(i)} cy={py(p.score)} r="4" fill="none" stroke={color} strokeWidth="1.5" opacity="0.5" />
+              <circle cx={px(i)} cy={py(p.score)} r="2.5" fill="#fff" />
+            </g>
+          : <circle key={i} cx={px(i)} cy={py(p.score)} r="2" fill={color} />
       ))}
       {points.map((p, i) => {
-        const [, m, d] = p.date.split('-')
+        const label = i === currentIdx ? 'Now' : (() => { const [, m, d] = p.date.split('-'); return `${m}/${d}` })()
         return (
-          <text key={i} x={px(i).toFixed(1)} y={H - 3} textAnchor="middle" fontSize="8" fill={color} opacity="0.85">
-            {m}/{d}
+          <text key={i} x={px(i).toFixed(1)} y={H - 3} textAnchor="middle" fontSize="8" fill={i === currentIdx ? '#fff' : color} opacity="0.85">
+            {label}
           </text>
         )
       })}
@@ -110,7 +123,16 @@ function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: str
 }
 
 function HistoryModal({ entry, color, onClose }: { entry: CharacterEntry; color: string; onClose: () => void }) {
-  const points = (entry.history ?? []).filter(h => h.score !== null) as { date: string; score: number }[]
+  const today = new Date().toISOString().split('T')[0]
+  const histPoints = (entry.history ?? []).filter(h => h.score !== null) as { date: string; score: number }[]
+
+  const lastIsToday = histPoints.length > 0 && histPoints[histPoints.length - 1].date === today
+  const currentScore = entry.score ?? undefined
+  const points = (currentScore != null && !lastIsToday)
+    ? [...histPoints, { date: today, score: currentScore }]
+    : histPoints
+  const currentIdx = (currentScore != null && !lastIsToday) ? points.length - 1 : -1
+
   if (points.length < 2) return null
 
   const W = 380, SCORE_H = 24, CHART_H = 140, LABEL_H = 24, H = SCORE_H + CHART_H + LABEL_H, PAD = 20
@@ -147,18 +169,23 @@ function HistoryModal({ entry, color, onClose }: { entry: CharacterEntry; color:
           <path d={fillPath} fill={`url(#${gradId})`} />
           <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
           {points.map((p, i) => (
-            <circle key={i} cx={px(i)} cy={py(p.score)} r="4" fill={color} />
+            i === currentIdx
+              ? <g key={i}>
+                  <circle cx={px(i)} cy={py(p.score)} r="8" fill="none" stroke={color} strokeWidth="1.5" opacity="0.35" />
+                  <circle cx={px(i)} cy={py(p.score)} r="5" fill="#fff" />
+                </g>
+              : <circle key={i} cx={px(i)} cy={py(p.score)} r="4" fill={color} />
           ))}
           {points.map((p, i) => (
-            <text key={i} x={px(i).toFixed(1)} y={(py(p.score) - 9).toFixed(1)} textAnchor="middle" fontSize="11" fill={color} opacity="0.9">
+            <text key={i} x={px(i).toFixed(1)} y={(py(p.score) - 12).toFixed(1)} textAnchor="middle" fontSize="11" fill={i === currentIdx ? '#fff' : color} opacity="0.9" fontWeight={i === currentIdx ? 'bold' : 'normal'}>
               {p.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
             </text>
           ))}
           {points.map((p, i) => {
-            const [, m, d] = p.date.split('-')
+            const label = i === currentIdx ? 'Now' : (() => { const [, m, d] = p.date.split('-'); return `${m}/${d}` })()
             return (
-              <text key={i} x={px(i).toFixed(1)} y={H - 6} textAnchor="middle" fontSize="11" fill={color} opacity="0.7">
-                {m}/{d}
+              <text key={i} x={px(i).toFixed(1)} y={H - 6} textAnchor="middle" fontSize="11" fill={i === currentIdx ? '#fff' : color} opacity={i === currentIdx ? 0.9 : 0.7}>
+                {label}
               </text>
             )
           })}
@@ -291,7 +318,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
               title="View score history"
               onClick={e => { e.preventDefault(); e.stopPropagation(); setHistoryOpen(true) }}
             >
-              <Sparkline history={entry.history} color={classColor} id={entry.id} />
+              <Sparkline history={entry.history} color={classColor} id={entry.id} currentScore={entry.score ?? undefined} />
             </div>
           )}
           <div className="row-score-wrap">
