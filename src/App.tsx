@@ -1,10 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { fetchCharacter, fetchCutoff, fetchHistory, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote, generateCover, insetAvatarUrl } from './api'
+import { fetchCharacter, fetchCutoff, fetchHistory, listCharacters, persistCharacter, removePersistedCharacter, reportScore, getSessionId, fetchVotes, initiateVote, castVote } from './api'
 import type { CutoffData } from './api'
 import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
 import { VoteModal } from './components/VoteModal'
-import { WeeklyLeaderCard } from './components/WeeklyLeaderCard'
 import type { CharacterEntry, CharacterInput, VoteRecord } from './types'
 
 function makeId() {
@@ -67,8 +66,6 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [votes, setVotes] = useState<VoteRecord[]>([])
   const [hiddenVoteKeys, setHiddenVoteKeys] = useState<string[]>([])
-  const [albumModalImage, setAlbumModalImage] = useState<string | null>(null)
-  const [weeklyCover, setWeeklyCover] = useState<{ imageUrl: string | null; weekNumber: number | null; charName: string | null; score: number | null } | null>(null)
   const addedKeys = useRef(new Set<string>())
   const initialIds = useRef(new Set<string>())
   const sessionId = useRef(getSessionId())
@@ -115,13 +112,6 @@ export default function App() {
     } finally {
       setAnyLoading(false)
     }
-  }, [])
-
-  useEffect(() => {
-    fetch('/api/weekly-cover')
-      .then(r => r.json())
-      .then(setWeeklyCover)
-      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -261,29 +251,6 @@ export default function App() {
     }
   }, [])
 
-  const [devOpen, setDevOpen] = useState(false)
-  const [devCharId, setDevCharId] = useState('')
-  const [devGenerating, setDevGenerating] = useState(false)
-  const [devError, setDevError] = useState<string | null>(null)
-
-  const handleDevGenerate = useCallback(async () => {
-    const successEntries = entries.filter(e => e.status === 'success')
-    const entry = successEntries.find(e => e.id === devCharId) ?? successEntries[0]
-    if (!entry || entry.status !== 'success') return
-    const charKey = `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()
-    setDevGenerating(true)
-    setDevError(null)
-    try {
-      const result = await generateCover(charKey, entry.race ?? '', entry.gender ?? '', entry.specName ?? '', entry.className ?? '', entry.name, entry.thumbnailUrl, true)
-      setAlbumModalImage(result.imageUrl)
-      setDevOpen(false)
-    } catch (err) {
-      setDevError(err instanceof Error ? err.message : 'Generation failed')
-    } finally {
-      setDevGenerating(false)
-    }
-  }, [entries, devCharId])
-
   const sorted = sortedEntries(entries)
   const leaderboard = sorted.filter((e) => e.status !== 'success' || (e.score ?? 0) > 0)
   const clowns = sorted.filter((e) => e.status === 'success' && (e.score ?? 0) === 0)
@@ -301,7 +268,7 @@ export default function App() {
           <span>Later</span>
         </h1>
         <p className="subtitle">Mythic+ Tank IO Leaderboard</p>
-        <p className="header-disclaimer" onClick={() => setAlbumModalImage('/album-cover.png')}>Yeah, I know what I said.</p>
+        <p className="header-disclaimer">Yeah, I know what I said.</p>
         {cutoff && (
           <p className="cutoff-badge">
             {cutoff.percentile} cutoff&nbsp;
@@ -382,66 +349,6 @@ export default function App() {
           )}
         </div>
 
-        <aside className="weekly-sidebar">
-          <WeeklyLeaderCard data={weeklyCover} />
-        </aside>
-      </div>
-
-      {albumModalImage && (
-        <div className="album-overlay" onClick={() => setAlbumModalImage(null)}>
-          <div className="album-cover-wrap" onClick={e => e.stopPropagation()}>
-            <img src={albumModalImage} className="album-cover" alt="Album cover" onClick={() => setAlbumModalImage(null)} />
-          </div>
-        </div>
-      )}
-
-      <div className="dev-panel-wrap">
-        {devOpen && (() => {
-          const successEntries = entries.filter(e => e.status === 'success')
-          const selected = successEntries.find(e => e.id === devCharId) ?? successEntries[0]
-          const portraitSrc = selected?.thumbnailUrl ? insetAvatarUrl(selected.thumbnailUrl) : null
-          const portraitFallbackSrc = selected?.thumbnailUrl ?? null
-          return (
-            <div className="dev-panel">
-              <p className="dev-panel-title">Generate Cover</p>
-              <select
-                className="dev-panel-select"
-                value={devCharId || selected?.id || ''}
-                onChange={e => setDevCharId(e.target.value)}
-              >
-                {successEntries.map(e => (
-                  <option key={e.id} value={e.id}>{e.name}</option>
-                ))}
-              </select>
-              {selected && (
-                <div className="dev-panel-inputs">
-                  <div className="dev-panel-input-img">
-                    <span className="dev-panel-input-label">Portrait</span>
-                    {portraitSrc
-                      ? <img
-                          src={portraitSrc}
-                          alt="portrait"
-                          className="dev-panel-img"
-                          onError={(e) => { if (portraitFallbackSrc) (e.currentTarget as HTMLImageElement).src = portraitFallbackSrc }}
-                        />
-                      : <div className="dev-panel-img dev-panel-img-empty" />}
-                  </div>
-                  <div className="dev-panel-input-img">
-                    <span className="dev-panel-input-label">Album Cover</span>
-                    <img src="/album-cover.png" alt="album cover" className="dev-panel-img" />
-                  </div>
-                </div>
-              )}
-              {devError && <p className="dev-panel-error">{devError}</p>}
-              <button className="dev-panel-btn" onClick={handleDevGenerate} disabled={devGenerating}>
-                {devGenerating ? 'Generating…' : 'Generate'}
-              </button>
-            </div>
-          )
-        })()}
-        <button className="dev-panel-toggle" onClick={() => setDevOpen(o => !o)} title="Dev: test cover generation">
-          🎨
-        </button>
       </div>
 
       <VoteModal

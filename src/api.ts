@@ -136,30 +136,6 @@ export async function castVote(charKey: string, vote: 'yes' | 'no', sessionId: s
   return res.json()
 }
 
-export async function generateCover(
-  charKey: string,
-  race: string,
-  gender: string,
-  specName: string,
-  className: string,
-  charName: string,
-  thumbnailUrl?: string,
-  bust = false,
-): Promise<{ imageUrl: string }> {
-  const url = bust ? '/api/generate-cover?bust=1' : '/api/generate-cover'
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ charKey, race, gender, specName, className, charName, thumbnailUrl }),
-  })
-  if (!res.ok) {
-    const text = await res.text().catch(() => '')
-    let message = 'Generation failed'
-    try { message = (JSON.parse(text) as { error?: string }).error ?? text } catch { message = text || 'Generation failed' }
-    throw new Error(message)
-  }
-  return res.json()
-}
 
 export async function fetchHistory(char: CharacterInput): Promise<HistoryPoint[]> {
   const params = new URLSearchParams({ name: char.name, realm: char.realm, region: char.region })
