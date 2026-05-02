@@ -69,7 +69,7 @@ function Sparkline({ history, color, id }: { history: HistoryPoint[]; color: str
   const points = history.filter(h => h.score !== null) as { date: string; score: number }[]
   if (points.length < 2) return null
 
-  const W = 130, CHART_H = 34, LABEL_H = 16, H = CHART_H + LABEL_H, PAD = 4
+  const W = 130, CHART_H = 34, LABEL_H = 16, H = CHART_H + LABEL_H, PAD = 10
   const scores = points.map(p => p.score)
   const min = Math.min(...scores)
   const max = Math.max(...scores)
