@@ -54,17 +54,15 @@ function buildPrompt(race: string, gender: string, specName: string, className: 
 
   if (hasPortrait) {
     return (
-      `This image has two panels side by side. ` +
-      `The LEFT panel is a reference portrait of a World of Warcraft character — a ${characterDesc}. ` +
-      `The RIGHT panel is an album cover that must be edited. Do not alter the left panel at all. ` +
-      `Make exactly two changes to the RIGHT panel only: ` +
-      `First: change the bold red word "BTW" to "${nameUpper}" — same position, same bold red color, same font size and style. ` +
-      `Second: replace the face of the human subject in the right panel with the face of the character from the LEFT panel. ` +
-      `Copy their exact appearance: skin color, facial structure, racial features, non-human characteristics (pointy ears, tusks, markings, animal features, etc.), eye color, and any visible armor or accessories around the face. ` +
-      `Do NOT make the character look human — they are a fantasy ${race} and must retain every non-human racial feature exactly as shown in the left panel. ` +
-      `Keep the same dramatic upward-tilted pose and harsh high-contrast overhead lighting from the original right panel. ` +
+      `This image has two panels. The LEFT panel is a character portrait used as a visual reference. The RIGHT panel is an album cover to edit. Do not change the left panel. ` +
+      `Make exactly two changes to the RIGHT panel: ` +
+      `First: change the bold red word "BTW" to "${nameUpper}" — identical position, same bold red color, same font size and style. ` +
+      `Second: replace the human subject in the RIGHT panel with the character from the LEFT panel. ` +
+      `The character in the right panel must be an exact visual match to the left panel portrait — identical hair color and style, identical eye color, identical skin tone, identical facial markings and tattoos, identical ear shape, identical armor and shoulder pieces visible around the face and neck. ` +
+      `Do not generalize or simplify the character's appearance. Reproduce every specific detail from the left panel precisely. ` +
+      `Keep the dramatic upward-tilted pose and harsh overhead lighting. ` +
       `Keep "TANK", "ME", and "LATER" exactly unchanged. ` +
-      `Maintain the high contrast black and white style with deep crimson red as the only color. ` +
+      `Keep the high contrast black and white style with deep crimson red as the only color. ` +
       `No other changes.`
     )
   }
@@ -181,8 +179,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (compositeInfo) {
       try {
         const outputBuf = await fetchBuffer(replicateUrl)
+        const outputMeta = await sharp(outputBuf).metadata()
+        const outW = outputMeta.width!
+        const outH = outputMeta.height!
+        const totalInputW = compositeInfo.portraitW + compositeInfo.coverW
+        const cropX = Math.round(outW * compositeInfo.portraitW / totalInputW)
+        console.log('[generate-cover] crop: outW', outW, 'cropX', cropX, 'cropW', outW - cropX)
         const croppedBuf = await sharp(outputBuf)
-          .extract({ left: compositeInfo.portraitW, top: 0, width: compositeInfo.coverW, height: compositeInfo.coverH })
+          .extract({ left: cropX, top: 0, width: outW - cropX, height: outH })
           .jpeg({ quality: 95 })
           .toBuffer()
         const resultBlob = await put(
