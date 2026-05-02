@@ -399,7 +399,9 @@ export default function App() {
         {devOpen && (() => {
           const successEntries = entries.filter(e => e.status === 'success')
           const selected = successEntries.find(e => e.id === devCharId) ?? successEntries[0]
-          const portraitSrc = selected?.thumbnailUrl ? selected.thumbnailUrl.replace(/-avatar\.jpg/, '-main.jpg') : null
+          const portraitMainSrc = selected?.thumbnailUrl ? selected.thumbnailUrl.replace(/-avatar\.jpg/, '-main.jpg') : null
+          const portraitFallbackSrc = selected?.thumbnailUrl ? insetAvatarUrl(selected.thumbnailUrl) : null
+          const portraitSrc = portraitMainSrc
           return (
             <div className="dev-panel">
               <p className="dev-panel-title">Generate Cover</p>
@@ -417,7 +419,12 @@ export default function App() {
                   <div className="dev-panel-input-img">
                     <span className="dev-panel-input-label">Portrait</span>
                     {portraitSrc
-                      ? <img src={portraitSrc} alt="portrait" className="dev-panel-img" />
+                      ? <img
+                          src={portraitSrc}
+                          alt="portrait"
+                          className="dev-panel-img"
+                          onError={(e) => { if (portraitFallbackSrc) (e.currentTarget as HTMLImageElement).src = portraitFallbackSrc }}
+                        />
                       : <div className="dev-panel-img dev-panel-img-empty" />}
                   </div>
                   <div className="dev-panel-input-img">

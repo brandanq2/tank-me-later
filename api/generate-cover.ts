@@ -13,14 +13,28 @@ function coverCacheKey(charKey: string) {
   return `tank-me-later:cover:${charKey}`
 }
 
-function mainRenderUrl(thumbnailUrl: string) {
-  return thumbnailUrl.replace(/-avatar\.jpg/, '-main.jpg')
-}
-
 async function fetchBuffer(url: string): Promise<Buffer> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Failed to fetch image ${url}: ${res.status}`)
   return Buffer.from(await res.arrayBuffer())
+}
+
+async function fetchPortraitBuffer(thumbnailUrl: string): Promise<Buffer> {
+  // Strip ?alt= so missing renders return 403/404 instead of the 2D class silhouette,
+  // which is large enough to silently pass a size check.
+  const baseUrl = thumbnailUrl.split('?')[0]
+  const mainUrl = baseUrl.replace(/-avatar\.jpg$/, '-main.jpg')
+  const insetUrl = baseUrl.replace(/-avatar\.jpg$/, '-inset.jpg')
+
+  for (const url of [mainUrl, insetUrl]) {
+    try {
+      const buf = await fetchBuffer(url)
+      if (buf.length > 10_000) return buf
+    } catch {}
+  }
+
+  // Last resort: original URL with ?alt= intact — always returns something
+  return fetchBuffer(thumbnailUrl)
 }
 
 async function buildComposite(coverBuf: Buffer, portraitBuf: Buffer): Promise<{ buf: Buffer; portraitW: number; coverW: number; coverH: number }> {
@@ -30,6 +44,7 @@ async function buildComposite(coverBuf: Buffer, portraitBuf: Buffer): Promise<{ 
 
   const scaledPortrait = await sharp(portraitBuf)
     .resize({ height: coverH, fit: 'cover', position: 'top' })
+    .normalize()
     .toBuffer()
   const portraitMeta = await sharp(scaledPortrait).metadata()
   const portraitW = portraitMeta.width!
@@ -111,11 +126,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (thumbnailUrl) {
       try {
-        const portraitSrc = mainRenderUrl(thumbnailUrl)
-        console.log('[generate-cover] fetching portrait:', portraitSrc)
+        console.log('[generate-cover] fetching portrait for:', thumbnailUrl)
         const [coverBuf, portraitBuf] = await Promise.all([
           fetchBuffer(albumCoverUrl),
-          fetchBuffer(portraitSrc),
+          fetchPortraitBuffer(thumbnailUrl),
         ])
         const composite = await buildComposite(coverBuf, portraitBuf)
         const blob = await put(
