@@ -12,13 +12,21 @@ const redis = new Redis({
   token: process.env.KV_REST_API_TOKEN!,
 })
 
-const KEY = 'tank-me-later:characters'
+const KEYS: Record<string, string> = {
+  tanks: 'tank-me-later:characters',
+  augs:  'tank-me-later:characters:augs',
+}
+
+function listKey(req: VercelRequest): string {
+  const list = req.query.list as string
+  return KEYS[list] ?? KEYS.tanks
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
 
   if (req.method === 'GET') {
-    const chars = await redis.get<CharacterInput[]>(KEY) ?? []
+    const chars = await redis.get<CharacterInput[]>(listKey(req)) ?? []
     return res.json(chars)
   }
 
@@ -27,19 +35,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!input.name?.trim() || !input.realm?.trim()) {
       return res.status(400).json({ error: 'Name and realm are required' })
     }
-    const chars = await redis.get<CharacterInput[]>(KEY) ?? []
-    const key = `${input.name}-${input.realm}-${input.region}`.toLowerCase()
+    const key = listKey(req)
+    const chars = await redis.get<CharacterInput[]>(key) ?? []
+    const charId = `${input.name}-${input.realm}-${input.region}`.toLowerCase()
     const isDupe = chars.some(
-      (c) => `${c.name}-${c.realm}-${c.region}`.toLowerCase() === key
+      (c) => `${c.name}-${c.realm}-${c.region}`.toLowerCase() === charId
     )
     if (isDupe) return res.status(409).json({ error: 'Already exists' })
-    await redis.set(KEY, [...chars, input])
+    await redis.set(key, [...chars, input])
     return res.status(201).json(input)
   }
 
   if (req.method === 'DELETE') {
     const { name, realm, region } = req.query as Record<string, string>
-    const chars = await redis.get<CharacterInput[]>(KEY) ?? []
+    const key = listKey(req)
+    const chars = await redis.get<CharacterInput[]>(key) ?? []
     const updated = chars.filter(
       (c) => !(
         c.name.toLowerCase() === name?.toLowerCase() &&
@@ -47,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         c.region.toLowerCase() === region?.toLowerCase()
       )
     )
-    await redis.set(KEY, updated)
+    await redis.set(key, updated)
     return res.json(updated)
   }
 

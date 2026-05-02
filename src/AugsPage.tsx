@@ -3,45 +3,43 @@ import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
 import { VoteModal } from './components/VoteModal'
 import { Nav } from './components/Nav'
-import type { CharacterInput } from './types'
+import type { CharacterData } from './api'
 
-const INITIAL_CHARACTERS: CharacterInput[] = [
-  { name: 'Vokeox',     realm: 'thrall',  region: 'us' },
-  { name: 'Jacob',      realm: 'zuljin',  region: 'us' },
-  { name: 'Hazzyipa',   realm: 'zuljin',  region: 'us' },
-  { name: 'Prev',       realm: 'thrall',  region: 'us' },
-  { name: 'Volgorion',  realm: 'khadgar', region: 'us' },
-  { name: 'Woodworker', realm: 'zuljin',  region: 'us' },
-]
+function validateAug(data: CharacterData): string | null {
+  if (data.className !== 'Evoker' || data.specName !== 'Augmentation') {
+    return 'Not an Augmentation Evoker'
+  }
+  return null
+}
 
-export default function App() {
+export default function AugsPage() {
   const lb = useLeaderboard({
-    listId: 'tanks',
-    ownedStorageKey: 'tank-me-later:owned',
-    initialCharacters: INITIAL_CHARACTERS,
-    scoreField: 'tank',
+    listId: 'augs',
+    ownedStorageKey: 'tank-me-later:owned:augs',
+    initialCharacters: [],
+    scoreField: 'dps',
+    validate: validateAug,
   })
 
   return (
-    <div className="app">
+    <div className="app page-augs">
       <Nav />
-      <header className="header">
-        <h1 className="title-stack">
-          <span>Tank</span>
-          <span><span className="title-accent">BTW</span> Me</span>
-          <span>Later</span>
-        </h1>
-        <p className="subtitle">Mythic+ Tank IO Leaderboard</p>
-        <p className="header-disclaimer">Yeah, I know what I said.</p>
-        {lb.cutoff && (
-          <p className="cutoff-badge">
-            {lb.cutoff.percentile} cutoff&nbsp;
-            <span className="cutoff-score">
-              {lb.cutoff.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
-            </span>
-          </p>
-        )}
+      <header className="aug-page-header">
+        <div className="aug-album-text">
+          <p className="aug-album-title">For All</p>
+          <p className="aug-album-title">the Augs</p>
+          <p className="aug-album-artist">BTW</p>
+        </div>
+        <img src="/fata.png" className="aug-album-cover" alt="For All the Augs" />
       </header>
+      {lb.cutoff && (
+        <p className="cutoff-badge aug-cutoff">
+          {lb.cutoff.percentile} cutoff&nbsp;
+          <span className="cutoff-score">
+            {lb.cutoff.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+          </span>
+        </p>
+      )}
 
       <div className="controls">
         <AddCharacterForm onAdd={(input) => lb.addCharacter(input, true)} loading={lb.anyLoading} />
@@ -53,7 +51,7 @@ export default function App() {
       </div>
 
       {lb.entries.length === 0 ? (
-        <p className="empty">Add characters above to build your leaderboard.</p>
+        <p className="empty">Add an Augmentation Evoker above to get started.</p>
       ) : (
         <div className={lb.revealed && !lb.isRefreshing ? undefined : 'pre-reveal'}>
           <div className="leaderboard">
@@ -82,8 +80,8 @@ export default function App() {
 
           {lb.clowns.length > 0 && (
             <div className="clown-section">
-              <h2 className="clown-title">🤡 Clown List</h2>
-              <p className="clown-subtitle">0 tank IO this season</p>
+              <h2 className="clown-title">🥚 Zero Aug IO</h2>
+              <p className="clown-subtitle">0 DPS IO this season</p>
               <div className="leaderboard">
                 {lb.clowns.map((entry) => {
                   const charKey = `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()

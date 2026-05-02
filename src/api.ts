@@ -56,22 +56,22 @@ export async function reportScore(
   return { delta: data.delta ?? 0, prevRank: data.prevRank ?? null }
 }
 
-export async function listCharacters(): Promise<CharacterInput[]> {
-  const res = await fetch('/api/characters')
+export async function listCharacters(list = 'tanks'): Promise<CharacterInput[]> {
+  const res = await fetch(`/api/characters?list=${list}`)
   if (!res.ok) return []
   return res.json()
 }
 
-export async function persistCharacter(char: CharacterInput): Promise<void> {
-  await fetch('/api/characters', {
+export async function persistCharacter(char: CharacterInput, list = 'tanks'): Promise<void> {
+  await fetch(`/api/characters?list=${list}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(char),
   })
 }
 
-export async function removePersistedCharacter(char: CharacterInput): Promise<void> {
-  const params = new URLSearchParams({ name: char.name, realm: char.realm, region: char.region })
+export async function removePersistedCharacter(char: CharacterInput, list = 'tanks'): Promise<void> {
+  const params = new URLSearchParams({ name: char.name, realm: char.realm, region: char.region, list })
   await fetch(`/api/characters?${params}`, { method: 'DELETE' })
 }
 
@@ -148,7 +148,7 @@ export function insetAvatarUrl(url: string): string {
   return url.replace(/-avatar\.jpg/, '-inset.jpg')
 }
 
-export async function fetchCharacter(char: CharacterInput): Promise<CharacterData> {
+export async function fetchCharacter(char: CharacterInput, scoreField: 'tank' | 'dps' | 'all' = 'tank'): Promise<CharacterData> {
   const params = new URLSearchParams({
     region: char.region,
     realm: char.realm,
@@ -167,7 +167,7 @@ export async function fetchCharacter(char: CharacterInput): Promise<CharacterDat
 
   const data: RaiderIOResponse = await res.json()
   const currentSeason = data.mythic_plus_scores_by_season?.[0]
-  const score = currentSeason?.scores?.tank ?? 0
+  const score = currentSeason?.scores?.[scoreField] ?? 0
 
   const isFemale = data.gender === 1 || String(data.gender).toLowerCase() === 'female'
   return {
