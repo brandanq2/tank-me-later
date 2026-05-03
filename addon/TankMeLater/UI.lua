@@ -3,26 +3,29 @@
 TankMeLater = TankMeLater or {}
 local TML = TankMeLater
 
-local BORDER_THICKNESS = 2
+local BORDER_THICKNESS = 2   -- default static edge thickness
 local BORDER_ALPHA      = 0.95
+local CORNER_ARM        = 10  -- px: L-bracket arm length along each edge
+local CORNER_THICK      = 3   -- px: L-bracket arm thickness (fixed, doesn't pulse)
+local GLOW_PAD          = 5   -- px: outer glow ring width
 
--- Tiers that get a pulsing shimmer on their border.
+-- Thickness pulse config for top tiers (minT → maxT and back).
 local SHIMMER_CFG = {
-    Challenger  = { speed = 2.8, lo = 0.0,  hi = 1.0 },
-    Grandmaster = { speed = 2.0, lo = 0.0,  hi = 1.0 },
-    Master      = { speed = 1.4, lo = 0.08, hi = 1.0 },
+    Challenger  = { speed = 2.2, minT = 1, maxT = 5 },
+    Grandmaster = { speed = 1.6, minT = 1, maxT = 4 },
+    Master      = { speed = 1.1, minT = 1, maxT = 3 },
 }
-local GLOW_PAD = 5  -- outer glow extends this many px beyond the border frame
 
 -- ── Border ────────────────────────────────────────────────────────────────────
 
--- 8-piece border: 4 corners + 4 edges that don't overlap the corners.
+-- Border with L-bracket corner ornaments and resizable main edges.
+-- Corner brackets are fixed at CORNER_THICK × CORNER_ARM and sit at all four
+-- corners.  The four main edges run between the brackets and pulse in thickness
+-- for shimmer tiers via overlay:SetThickness(t).
 local function CreateBorderOverlay(parent, name)
     local overlay = CreateFrame("Frame", name, parent)
     overlay:SetAllPoints(parent)
     overlay:SetFrameLevel(parent:GetFrameLevel() + 10)
-
-    local S = BORDER_THICKNESS
 
     local function Tex()
         local t = overlay:CreateTexture(nil, "OVERLAY")
@@ -30,57 +33,87 @@ local function CreateBorderOverlay(parent, name)
         return t
     end
 
-    local tl = Tex(); tl:SetSize(S, S); tl:SetPoint("TOPLEFT",     overlay, "TOPLEFT",     0, 0)
-    local tr = Tex(); tr:SetSize(S, S); tr:SetPoint("TOPRIGHT",    overlay, "TOPRIGHT",    0, 0)
-    local bl = Tex(); bl:SetSize(S, S); bl:SetPoint("BOTTOMLEFT",  overlay, "BOTTOMLEFT",  0, 0)
-    local br = Tex(); br:SetSize(S, S); br:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", 0, 0)
-
-    local top = Tex(); top:SetHeight(S)
-    top:SetPoint("TOPLEFT",  overlay, "TOPLEFT",   S,  0)
-    top:SetPoint("TOPRIGHT", overlay, "TOPRIGHT", -S,  0)
-
-    local bot = Tex(); bot:SetHeight(S)
-    bot:SetPoint("BOTTOMLEFT",  overlay, "BOTTOMLEFT",   S, 0)
-    bot:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", -S, 0)
-
-    local lft = Tex(); lft:SetWidth(S)
-    lft:SetPoint("TOPLEFT",    overlay, "TOPLEFT",    0, -S)
-    lft:SetPoint("BOTTOMLEFT", overlay, "BOTTOMLEFT", 0,  S)
-
-    local rgt = Tex(); rgt:SetWidth(S)
-    rgt:SetPoint("TOPRIGHT",    overlay, "TOPRIGHT",    0, -S)
-    rgt:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", 0,  S)
-
-    local all = { tl, tr, bl, br, top, bot, lft, rgt }
-
-    function overlay:SetColor(r, g, b)
-        for _, t in ipairs(all) do t:SetColorTexture(r, g, b, BORDER_ALPHA) end
+    -- L-bracket arms: one horizontal + one vertical per corner.
+    local function Bracket(anchor, isHoriz)
+        local t = Tex()
+        if isHoriz then t:SetSize(CORNER_ARM, CORNER_THICK)
+        else             t:SetSize(CORNER_THICK, CORNER_ARM) end
+        t:SetPoint(anchor, overlay, anchor, 0, 0)
+        return t
     end
 
+    local brackets = {
+        Bracket("TOPLEFT",     true),  Bracket("TOPLEFT",     false),
+        Bracket("TOPRIGHT",    true),  Bracket("TOPRIGHT",    false),
+        Bracket("BOTTOMLEFT",  true),  Bracket("BOTTOMLEFT",  false),
+        Bracket("BOTTOMRIGHT", true),  Bracket("BOTTOMRIGHT", false),
+    }
+
+    -- Main edges — start/end at CORNER_ARM inset so they don't overlap brackets.
+    local top = Tex(); top:SetHeight(BORDER_THICKNESS)
+    top:SetPoint("TOPLEFT",  overlay, "TOPLEFT",   CORNER_ARM, 0)
+    top:SetPoint("TOPRIGHT", overlay, "TOPRIGHT", -CORNER_ARM, 0)
+
+    local bot = Tex(); bot:SetHeight(BORDER_THICKNESS)
+    bot:SetPoint("BOTTOMLEFT",  overlay, "BOTTOMLEFT",   CORNER_ARM, 0)
+    bot:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", -CORNER_ARM, 0)
+
+    local lft = Tex(); lft:SetWidth(BORDER_THICKNESS)
+    lft:SetPoint("TOPLEFT",    overlay, "TOPLEFT",    0, -CORNER_ARM)
+    lft:SetPoint("BOTTOMLEFT", overlay, "BOTTOMLEFT", 0,  CORNER_ARM)
+
+    local rgt = Tex(); rgt:SetWidth(BORDER_THICKNESS)
+    rgt:SetPoint("TOPRIGHT",    overlay, "TOPRIGHT",    0, -CORNER_ARM)
+    rgt:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", 0,  CORNER_ARM)
+
+    function overlay:SetColor(r, g, b)
+        for _, t in ipairs(brackets) do t:SetColorTexture(r, g, b, BORDER_ALPHA) end
+        top:SetColorTexture(r, g, b, BORDER_ALPHA)
+        bot:SetColorTexture(r, g, b, BORDER_ALPHA)
+        lft:SetColorTexture(r, g, b, BORDER_ALPHA)
+        rgt:SetColorTexture(r, g, b, BORDER_ALPHA)
+    end
+
+    -- Called every ~33 ms by the shimmer ticker to resize the main edges.
+    function overlay:SetThickness(t)
+        local s = math.max(1, t)
+        top:SetHeight(s); top:ClearAllPoints()
+        top:SetPoint("TOPLEFT",  overlay, "TOPLEFT",   CORNER_ARM, 0)
+        top:SetPoint("TOPRIGHT", overlay, "TOPRIGHT", -CORNER_ARM, 0)
+
+        bot:SetHeight(s); bot:ClearAllPoints()
+        bot:SetPoint("BOTTOMLEFT",  overlay, "BOTTOMLEFT",   CORNER_ARM, 0)
+        bot:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", -CORNER_ARM, 0)
+
+        lft:SetWidth(s); lft:ClearAllPoints()
+        lft:SetPoint("TOPLEFT",    overlay, "TOPLEFT",    0, -CORNER_ARM)
+        lft:SetPoint("BOTTOMLEFT", overlay, "BOTTOMLEFT", 0,  CORNER_ARM)
+
+        rgt:SetWidth(s); rgt:ClearAllPoints()
+        rgt:SetPoint("TOPRIGHT",    overlay, "TOPRIGHT",    0, -CORNER_ARM)
+        rgt:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", 0,  CORNER_ARM)
+    end
+
+    overlay.defaultThickness = BORDER_THICKNESS
     return overlay
 end
 
 -- ── Shimmer ───────────────────────────────────────────────────────────────────
 
--- r,g,b needed to color the outer glow that pulses alongside the border.
 local function StartShimmer(overlay, tier, r, g, b)
     local cfg = SHIMMER_CFG[tier]
     if not cfg then
-        overlay:SetAlpha(1)
+        overlay:SetThickness(overlay.defaultThickness)
         if overlay.glowFrame then overlay.glowFrame:Hide() end
         return
     end
 
-    -- Build the outer glow frame once (parented to overlay's parent so it
-    -- escapes the overlay's clipping rect and can extend beyond the frame edge).
     if not overlay.glowFrame then
-        local parent = overlay:GetParent()
-        local gf = CreateFrame("Frame", nil, parent)
+        local gf = CreateFrame("Frame", nil, overlay:GetParent())
         gf:SetFrameLevel(overlay:GetFrameLevel() - 1)
         gf:SetPoint("TOPLEFT",     overlay, "TOPLEFT",     -GLOW_PAD,  GLOW_PAD)
         gf:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT",  GLOW_PAD, -GLOW_PAD)
 
-        -- Four edge textures covering only the outer ring (no center fill).
         local function GT()
             local t = gf:CreateTexture(nil, "BACKGROUND")
             t:SetColorTexture(r, g, b, 0)
@@ -106,19 +139,15 @@ local function StartShimmer(overlay, tier, r, g, b)
         overlay.glowFrame = gf
     end
 
-    -- Re-color glow edges for the current tier.
-    for _, t in ipairs(overlay.glowFrame.edges) do
-        t:SetColorTexture(r, g, b, 0)
-    end
+    for _, t in ipairs(overlay.glowFrame.edges) do t:SetColorTexture(r, g, b, 0) end
     overlay.glowFrame:Show()
 
     local elapsed = 0
     overlay.shimmerTicker = C_Timer.NewTicker(0.033, function()
         elapsed = elapsed + 0.033 * cfg.speed
-        local alpha = cfg.lo + (cfg.hi - cfg.lo) * (0.5 + 0.5 * math.sin(elapsed))
-        overlay:SetAlpha(alpha)
-        -- Glow peaks at ~22% alpha, perfectly in step with the border.
-        local glowAlpha = alpha * 0.22
+        local progress = 0.5 + 0.5 * math.sin(elapsed)
+        overlay:SetThickness(cfg.minT + (cfg.maxT - cfg.minT) * progress)
+        local glowAlpha = progress * 0.25
         for _, t in ipairs(overlay.glowFrame.edges) do
             t:SetColorTexture(r, g, b, glowAlpha)
         end
@@ -130,7 +159,7 @@ local function StopShimmer(overlay)
         overlay.shimmerTicker:Cancel()
         overlay.shimmerTicker = nil
     end
-    overlay:SetAlpha(1)
+    overlay:SetThickness(overlay.defaultThickness or BORDER_THICKNESS)
     if overlay.glowFrame then overlay.glowFrame:Hide() end
 end
 
