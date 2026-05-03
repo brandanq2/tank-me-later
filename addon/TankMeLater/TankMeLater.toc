@@ -1,0 +1,13 @@
+## Interface: 110107
+## Title: TankMeLater
+## Notes: Tank-Me-Later rank display and M+ window theming
+## Author: Brandan Quinn
+## Version: 2026.05.03
+## OptionalDeps: RaiderIO
+## SavedVariables: TankMeLaterDB
+## X-Website: https://github.com/brandanq2/tank-me-later
+
+RankData.lua
+Core.lua
+UI.lua
+TankMeLater.lua

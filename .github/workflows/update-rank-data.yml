@@ -1,0 +1,79 @@
+name: Update Addon Rank Data
+
+on:
+  schedule:
+    # Every Sunday at 06:00 UTC — shortly after Raider.io updates weekly cutoffs.
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Raider.io season slug'
+        default: 'season-tww-2'
+        required: false
+      region:
+        description: 'Region (world / us / eu / kr / tw)'
+        default: 'world'
+        required: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Generate RankData.lua
+        run: |
+          node scripts/generate-rank-data.mjs \
+            "${{ github.event.inputs.season || 'season-tww-2' }}" \
+            "${{ github.event.inputs.region || 'world' }}"
+
+      - name: Check for changes
+        id: diff
+        run: |
+          git diff --quiet addon/TankMeLater/RankData.lua \
+            && echo "changed=false" >> "$GITHUB_OUTPUT" \
+            || echo "changed=true"  >> "$GITHUB_OUTPUT"
+
+      - name: Bump .toc version and commit
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          TODAY=$(date -u +"%Y.%m.%d")
+
+          # Update ## Version line in TankMeLater.toc
+          sed -i "s/^## Version: .*/## Version: ${TODAY}/" \
+            addon/TankMeLater/TankMeLater.toc
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add addon/TankMeLater/RankData.lua \
+                  addon/TankMeLater/TankMeLater.toc
+          git commit -m "chore: update addon rank data ${TODAY}"
+          git push
+
+      - name: Package addon zip
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          TODAY=$(date -u +"%Y.%m.%d")
+          mkdir -p dist
+          zip -r "dist/TankMeLater-${TODAY}.zip" addon/TankMeLater/
+          echo "ADDON_ZIP=dist/TankMeLater-${TODAY}.zip" >> "$GITHUB_ENV"
+          echo "ADDON_VERSION=${TODAY}"                  >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        if: steps.diff.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "addon-${{ env.ADDON_VERSION }}"
+          name: "TankMeLater ${{ env.ADDON_VERSION }}"
+          body: |
+            Weekly rank data update for **${{ github.event.inputs.season || 'season-tww-2' }}**.
+
+            Install by extracting `TankMeLater/` into your `Interface/AddOns/` folder.
+          files: ${{ env.ADDON_ZIP }}
