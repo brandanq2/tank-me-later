@@ -6,6 +6,7 @@ import { VoteModal } from './components/VoteModal'
 import { Nav } from './components/Nav'
 import { useFlag } from './hooks/useFlags'
 import { fetchSoloQueueAnchors } from './api'
+import { SoloQueueTiers } from './components/SoloQueueTiers'
 import type { ScoreAnchor } from './solo-queue'
 import type { CharacterInput } from './types'
 
@@ -53,6 +54,10 @@ export default function App() {
           </p>
         )}
       </header>
+
+      {soloQueueEnabled && soloAnchors.length > 0 && (
+        <SoloQueueTiers anchors={soloAnchors} />
+      )}
 
       <div className="controls">
         <AddCharacterForm onAdd={(input) => lb.addCharacter(input, true)} loading={lb.anyLoading} />

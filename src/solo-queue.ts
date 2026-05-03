@@ -105,6 +105,60 @@ export function scoreToRank(score: number, anchors: ScoreAnchor[]): Rank {
   return { tier: 'Iron', division: 'IV', label: 'Iron IV' }
 }
 
+// Inverse of scoreToTopPercent: given a topPercent boundary, return the minimum score for that rank.
+function topPercentToScore(topPercent: number, anchors: ScoreAnchor[]): number {
+  const pts = [...anchors].sort((a, b) => a.topPercent - b.topPercent)
+  const top = pts[0]
+  const bottom = pts[pts.length - 1]
+
+  if (topPercent <= top.topPercent) {
+    if (pts.length >= 2) {
+      const next = pts[1]
+      const slope = (next.score - top.score) / (next.topPercent - top.topPercent)
+      return top.score + (topPercent - top.topPercent) * slope
+    }
+    return top.score
+  }
+
+  if (topPercent >= bottom.topPercent) {
+    if (pts.length >= 2) {
+      const prev = pts[pts.length - 2]
+      const slope = (bottom.score - prev.score) / (bottom.topPercent - prev.topPercent)
+      return Math.max(0, bottom.score + (topPercent - bottom.topPercent) * slope)
+    }
+    return 0
+  }
+
+  for (let i = 0; i < pts.length - 1; i++) {
+    const lo = pts[i]
+    const hi = pts[i + 1]
+    if (topPercent >= lo.topPercent && topPercent <= hi.topPercent) {
+      const t = (topPercent - lo.topPercent) / (hi.topPercent - lo.topPercent)
+      return lo.score + t * (hi.score - lo.score)
+    }
+  }
+
+  return 0
+}
+
+export interface RankCutoff {
+  tier: string
+  division: Division
+  label: string
+  minScore: number
+  topPercent: number
+}
+
+export function getRankCutoffs(anchors: ScoreAnchor[]): RankCutoff[] {
+  return RANK_THRESHOLDS.map(r => ({
+    tier: r.tier,
+    division: r.division,
+    label: r.division ? `${r.tier} ${r.division}` : r.tier,
+    minScore: Math.max(0, Math.round(topPercentToScore(r.topPercent, anchors))),
+    topPercent: r.topPercent,
+  }))
+}
+
 // Parse the 5 percentile anchors out of a Raider.io season-cutoffs API response.
 export function extractAnchors(data: unknown): ScoreAnchor[] {
   const d = data as Record<string, unknown>

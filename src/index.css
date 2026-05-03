@@ -539,6 +539,71 @@ a.row-first:hover {
 
 .row-score-err { color: var(--muted); }
 
+/* Solo Queue tier reference */
+.sq-tiers {
+  margin: 2rem 0;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.sq-tiers-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.sq-tiers-sub {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.sq-tiers-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.35rem 1.5rem;
+}
+
+@media (min-width: 600px) {
+  .sq-tiers-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.sq-tier-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sq-tier-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 5.5rem;
+  text-align: center;
+}
+
+.sq-tier-score {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text);
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
 .solo-rank-badge {
   font-size: 0.6rem;
   font-weight: 700;
