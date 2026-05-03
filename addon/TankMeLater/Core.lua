@@ -40,16 +40,43 @@ end
 function TML:GetPlayerScore()
     if not RaiderIO then return nil end
 
-    local ok, profile = pcall(RaiderIO.GetProfile, "player", "PLAYER", {
-        mythicKeystoneProfile = true,
-    })
+    local ok, profile = pcall(RaiderIO.GetProfile, "player", "PLAYER")
     if not ok or type(profile) ~= "table" then return nil end
 
-    local mkp = profile.mythicKeystoneProfile
-    if not mkp then return nil end
+    -- Try every known field path across RaiderIO versions.
+    return profile.mythicPlusScore
+        or (profile.mythicPlusScoreRoles and profile.mythicPlusScoreRoles.all and profile.mythicPlusScoreRoles.all.score)
+        or (profile.mythicKeystoneProfile and (
+                profile.mythicKeystoneProfile.currentScore
+             or profile.mythicKeystoneProfile.mainScore
+           ))
+end
 
-    -- The score field name has varied across RaiderIO versions.
-    return mkp.currentScore
-        or mkp.mainScore
-        or (mkp.roles and mkp.roles.all and mkp.roles.all.score)
+-- Dumps the raw RaiderIO profile to chat — run /tml debug to call this.
+function TML:DebugProfile()
+    if not RaiderIO then
+        print("|cff4fc3f7TankMeLater|r: RaiderIO global not found")
+        return
+    end
+
+    local ok, profile = pcall(RaiderIO.GetProfile, "player", "PLAYER")
+    if not ok or type(profile) ~= "table" then
+        print("|cff4fc3f7TankMeLater|r: GetProfile failed or returned nil")
+        print("  ok=" .. tostring(ok) .. "  type=" .. type(profile))
+        return
+    end
+
+    print("|cff4fc3f7TankMeLater|r: RaiderIO profile keys:")
+    for k, v in pairs(profile) do
+        local vtype = type(v)
+        if vtype == "table" then
+            print(string.format("  [%s] = table {", k))
+            for k2, v2 in pairs(v) do
+                print(string.format("    [%s] = %s (%s)", k2, tostring(v2), type(v2)))
+            end
+            print("  }")
+        else
+            print(string.format("  [%s] = %s (%s)", k, tostring(v), vtype))
+        end
+    end
 end

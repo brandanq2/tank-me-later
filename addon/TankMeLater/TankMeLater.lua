@@ -48,6 +48,9 @@ SlashCmdList["TANKMELATER"] = function(msg)
             print(string.format("|cff4fc3f7TankMeLater|r: %sMax Rank — Challenger!|r", hex))
         end
 
+    elseif cmd == "debug" then
+        TML:DebugProfile()
+
     elseif cmd == "data" then
         local d = TML.Data
         print(string.format("|cff4fc3f7TankMeLater|r: Season %s | Updated %s",
@@ -55,7 +58,8 @@ SlashCmdList["TANKMELATER"] = function(msg)
 
     else
         print("|cff4fc3f7TankMeLater|r commands:")
-        print("  |cffffff00/tml info|r  — your current rank and next-rank progress")
-        print("  |cffffff00/tml data|r  — season and data-freshness info")
+        print("  |cffffff00/tml info|r   — your current rank and next-rank progress")
+        print("  |cffffff00/tml data|r   — season and data-freshness info")
+        print("  |cffffff00/tml debug|r  — dump raw RaiderIO profile to chat")
     end
 end
