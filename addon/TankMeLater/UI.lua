@@ -11,9 +11,9 @@ local GLOW_PAD          = 5   -- px: outer glow ring width
 
 -- Thickness pulse config for top tiers (minT → maxT and back).
 local SHIMMER_CFG = {
-    Challenger  = { speed = 2.2, minT = 1, maxT = 5 },
-    Grandmaster = { speed = 1.6, minT = 1, maxT = 4 },
-    Master      = { speed = 1.1, minT = 1, maxT = 3 },
+    Challenger  = { speed = 2.2, minT = 0, maxT = 5 },
+    Grandmaster = { speed = 1.6, minT = 0, maxT = 4 },
+    Master      = { speed = 1.1, minT = 0, maxT = 3 },
 }
 
 -- ── Border ────────────────────────────────────────────────────────────────────
@@ -49,20 +49,20 @@ local function CreateBorderOverlay(parent, name)
         Bracket("BOTTOMRIGHT", true),  Bracket("BOTTOMRIGHT", false),
     }
 
-    -- Main edges — start/end at CORNER_ARM inset so they don't overlap brackets.
-    local top = Tex(); top:SetHeight(BORDER_THICKNESS)
+    -- Main edges — hidden by default; pulse in via SetThickness during shimmer.
+    local top = Tex(); top:SetHeight(0)
     top:SetPoint("TOPLEFT",  overlay, "TOPLEFT",   CORNER_ARM, 0)
     top:SetPoint("TOPRIGHT", overlay, "TOPRIGHT", -CORNER_ARM, 0)
 
-    local bot = Tex(); bot:SetHeight(BORDER_THICKNESS)
+    local bot = Tex(); bot:SetHeight(0)
     bot:SetPoint("BOTTOMLEFT",  overlay, "BOTTOMLEFT",   CORNER_ARM, 0)
     bot:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", -CORNER_ARM, 0)
 
-    local lft = Tex(); lft:SetWidth(BORDER_THICKNESS)
+    local lft = Tex(); lft:SetWidth(0)
     lft:SetPoint("TOPLEFT",    overlay, "TOPLEFT",    0, -CORNER_ARM)
     lft:SetPoint("BOTTOMLEFT", overlay, "BOTTOMLEFT", 0,  CORNER_ARM)
 
-    local rgt = Tex(); rgt:SetWidth(BORDER_THICKNESS)
+    local rgt = Tex(); rgt:SetWidth(0)
     rgt:SetPoint("TOPRIGHT",    overlay, "TOPRIGHT",    0, -CORNER_ARM)
     rgt:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", 0,  CORNER_ARM)
 
@@ -76,7 +76,7 @@ local function CreateBorderOverlay(parent, name)
 
     -- Called every ~33 ms by the shimmer ticker to resize the main edges.
     function overlay:SetThickness(t)
-        local s = math.max(1, t)
+        local s = math.max(0, t)
         top:SetHeight(s); top:ClearAllPoints()
         top:SetPoint("TOPLEFT",  overlay, "TOPLEFT",   CORNER_ARM, 0)
         top:SetPoint("TOPRIGHT", overlay, "TOPRIGHT", -CORNER_ARM, 0)
@@ -94,7 +94,7 @@ local function CreateBorderOverlay(parent, name)
         rgt:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", 0,  CORNER_ARM)
     end
 
-    overlay.defaultThickness = BORDER_THICKNESS
+    overlay.defaultThickness = 0
     return overlay
 end
 
