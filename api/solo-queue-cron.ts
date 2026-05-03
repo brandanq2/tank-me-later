@@ -113,21 +113,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).end()
   }
 
-  const upstream = await fetch(
-    'https://raider.io/api/v1/mythic-plus/season-cutoffs?season=season-tww-2&region=us'
-  )
-  if (!upstream.ok) {
-    return res.status(502).json({ error: `Raider.io returned ${upstream.status}` })
+  const CANDIDATES = ['season-mn-1', 'season-tww-3', 'season-tww-2']
+  let anchors: ScoreAnchor[] = []
+  let activeSeason = ''
+
+  for (const slug of CANDIDATES) {
+    const r = await fetch(
+      `https://raider.io/api/v1/mythic-plus/season-cutoffs?season=${slug}&region=us`
+    )
+    if (!r.ok) continue
+    const a = extractAnchors(await r.json())
+    if (a.length >= 3) { anchors = a; activeSeason = slug; break }
   }
 
-  const anchors = extractAnchors(await upstream.json())
-  if (anchors.length < 3) {
-    return res.status(502).json({ error: 'Insufficient anchor points from Raider.io' })
+  if (!activeSeason) {
+    return res.status(502).json({ error: 'No live season found on Raider.io' })
   }
 
   const mapping = {
     updatedAt: new Date().toISOString(),
-    season: 'season-tww-2',
+    season: activeSeason,
     region: 'us',
     ranks: computeRankCutoffs(anchors),
   }
