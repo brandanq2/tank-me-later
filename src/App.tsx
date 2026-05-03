@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react'
 import { useLeaderboard, revealDelay } from './hooks/useLeaderboard'
 import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
 import { VoteModal } from './components/VoteModal'
 import { Nav } from './components/Nav'
+import { useFlag } from './hooks/useFlags'
+import { fetchSoloQueueAnchors } from './api'
+import type { ScoreAnchor } from './solo-queue'
 import type { CharacterInput } from './types'
 
 const INITIAL_CHARACTERS: CharacterInput[] = [
@@ -15,6 +19,13 @@ const INITIAL_CHARACTERS: CharacterInput[] = [
 ]
 
 export default function App() {
+  const soloQueueEnabled = useFlag('solo-queue')
+  const [soloAnchors, setSoloAnchors] = useState<ScoreAnchor[]>([])
+
+  useEffect(() => {
+    if (soloQueueEnabled) fetchSoloQueueAnchors().then(setSoloAnchors)
+  }, [soloQueueEnabled])
+
   const lb = useLeaderboard({
     listId: 'tanks',
     ownedStorageKey: 'tank-me-later:owned',
@@ -75,6 +86,7 @@ export default function App() {
                   isInitialEntry={lb.initialIds.has(entry.id)}
                   revealDelay={revealDelay(rank)}
                   onRemove={lb.handleRemoveOrVote}
+                  soloAnchors={soloQueueEnabled ? soloAnchors : undefined}
                 />
               )
             })}
@@ -100,6 +112,7 @@ export default function App() {
                       isInitialEntry={lb.initialIds.has(entry.id)}
                       revealDelay={revealDelay(lb.leaderboard.length + 1)}
                       onRemove={lb.handleRemoveOrVote}
+                      soloAnchors={soloQueueEnabled ? soloAnchors : undefined}
                     />
                   )
                 })}

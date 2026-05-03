@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { scoreToColor } from '../scoreColor'
 import { insetAvatarUrl } from '../api'
+import { scoreToRank } from '../solo-queue'
+import type { ScoreAnchor } from '../solo-queue'
 import type { CharacterEntry, HistoryPoint, VoteRecord } from '../types'
 
 interface Props {
@@ -15,6 +17,30 @@ interface Props {
   revealDelay: number
   onRemove: (id: string) => void
   scoreLabel?: string
+  soloAnchors?: ScoreAnchor[]
+}
+
+const TIER_COLORS: Record<string, string> = {
+  Challenger:  '#f4d03f',
+  Grandmaster: '#e8253b',
+  Master:      '#9b59b6',
+  Diamond:     '#4fc3f7',
+  Emerald:     '#2ecc71',
+  Platinum:    '#1abc9c',
+  Gold:        '#f39c12',
+  Silver:      '#95a5a6',
+  Bronze:      '#cd7f32',
+  Iron:        '#7f8c8d',
+}
+
+function SoloRankBadge({ score, anchors }: { score: number; anchors: ScoreAnchor[] }) {
+  const rank = scoreToRank(score, anchors)
+  const color = TIER_COLORS[rank.tier] ?? '#aaa'
+  return (
+    <span className="solo-rank-badge" style={{ color, borderColor: color }}>
+      {rank.label}
+    </span>
+  )
 }
 
 function revealClass(rank: number): string {
@@ -237,7 +263,7 @@ function VoteStrip({ vote }: { vote: VoteRecord }) {
   )
 }
 
-export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO' }: Props) {
+export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO', soloAnchors }: Props) {
   const [historyOpen, setHistoryOpen] = useState(false)
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
@@ -337,6 +363,9 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
                 ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
                 : scoreLabel}
             </span>
+            {soloAnchors && soloAnchors.length > 0 && entry.score != null && (
+              <SoloRankBadge score={entry.score} anchors={soloAnchors} />
+            )}
           </div>
           <button
             className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}`}
