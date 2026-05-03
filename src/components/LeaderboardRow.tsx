@@ -19,6 +19,7 @@ interface Props {
   onRemove: (id: string) => void
   scoreLabel?: string
   soloMapping?: RankCutoff[]
+  votingEnabled?: boolean
 }
 
 const TIER_COLORS: Record<string, string> = {
@@ -125,7 +126,7 @@ function VoteStrip({ vote }: { vote: VoteRecord }) {
   )
 }
 
-export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO', soloMapping }: Props) {
+export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO', soloMapping, votingEnabled }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
@@ -158,7 +159,9 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
             <span className="row-score">...</span>
             <span className="row-score-label">Tank IO</span>
           </div>
-          <button className="remove-btn" onClick={() => onRemove(entry.id)}>✕</button>
+          {(votingEnabled || entry.isOwned) && (
+            <button className="remove-btn" onClick={() => onRemove(entry.id)}>✕</button>
+          )}
         </div>
       </div>
     )
@@ -178,7 +181,9 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
             <span className="row-score row-score-err">—</span>
             <span className="row-score-label">Tank IO</span>
           </div>
-          <button className="remove-btn" onClick={() => onRemove(entry.id)}>✕</button>
+          {(votingEnabled || entry.isOwned) && (
+            <button className="remove-btn" onClick={() => onRemove(entry.id)}>✕</button>
+          )}
         </div>
       </div>
     )
@@ -237,17 +242,19 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
               </span>
             </div>
           </div>
-          <button
-            className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}`}
-            disabled={!!activeVote?.failed}
-            onClick={e => { e.stopPropagation(); if (!activeVote?.failed) onRemove(entry.id) }}
-            title={activeVote?.failed ? 'Vote to remove failed — on cooldown' : undefined}
-          >
-            {activeVote?.failed ? '🔒' : '✕'}
-          </button>
+          {(votingEnabled || entry.isOwned) && (
+            <button
+              className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}`}
+              disabled={!!activeVote?.failed}
+              onClick={e => { e.stopPropagation(); if (!activeVote?.failed) onRemove(entry.id) }}
+              title={activeVote?.failed ? 'Vote to remove failed — on cooldown' : undefined}
+            >
+              {activeVote?.failed ? '🔒' : '✕'}
+            </button>
+          )}
         </div>
-        {activeVote && !activeVote.failed && <VoteStrip vote={activeVote} />}
-        {activeVote?.failed && <FailedStrip vote={activeVote} />}
+        {votingEnabled && activeVote && !activeVote.failed && <VoteStrip vote={activeVote} />}
+        {votingEnabled && activeVote?.failed && <FailedStrip vote={activeVote} />}
       </div>
 
       {modalOpen && (

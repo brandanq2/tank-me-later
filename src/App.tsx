@@ -21,6 +21,7 @@ const INITIAL_CHARACTERS: CharacterInput[] = [
 
 export default function App() {
   const soloQueueEnabled = useFlag('solo-queue')
+  const votingEnabled = useFlag('vote-to-kick')
   const [soloMapping, setSoloMapping] = useState<RankCutoff[]>([])
 
   useEffect(() => {
@@ -90,6 +91,7 @@ export default function App() {
                       revealDelay={revealDelay(rank)}
                       onRemove={lb.handleRemoveOrVote}
                       soloMapping={soloQueueEnabled ? soloMapping : undefined}
+                      votingEnabled={votingEnabled}
                     />
                   )
                 })}
@@ -116,6 +118,7 @@ export default function App() {
                           revealDelay={revealDelay(lb.leaderboard.length + 1)}
                           onRemove={lb.handleRemoveOrVote}
                           soloMapping={soloQueueEnabled ? soloMapping : undefined}
+                          votingEnabled={votingEnabled}
                         />
                       )
                     })}
