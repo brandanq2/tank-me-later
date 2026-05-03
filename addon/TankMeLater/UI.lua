@@ -8,7 +8,7 @@ local BORDER_INSET = 3   -- px the overlay frame extends outside its parent
 -- ── Border ────────────────────────────────────────────────────────────────────
 
 local function CreateBorderOverlay(parent, name)
-    local overlay = CreateFrame("Frame", name, parent)
+    local overlay = CreateFrame("Frame", name, parent, "BackdropTemplate")
     overlay:SetFrameLevel(parent:GetFrameLevel() + 10)
     overlay:SetPoint("TOPLEFT",     parent, "TOPLEFT",     -BORDER_INSET,  BORDER_INSET)
     overlay:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT",  BORDER_INSET, -BORDER_INSET)
