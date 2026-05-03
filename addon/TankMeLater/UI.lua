@@ -18,10 +18,15 @@ local function CreateBorderOverlay(parent, name)
         edgeSize = 16,
         insets   = { left = 4, right = 4, top = 4, bottom = 4 },
     })
-    overlay:SetBackdropBorderColor(1, 1, 1, 0.9)
+    overlay:SetBackdropBorderColor(1, 1, 1, 1)
 
     function overlay:SetColor(r, g, b)
-        overlay:SetBackdropBorderColor(r, g, b, 0.9)
+        local boost = 1.4
+        overlay:SetBackdropBorderColor(
+            math.min(1, r * boost),
+            math.min(1, g * boost),
+            math.min(1, b * boost),
+            1)
     end
 
     return overlay
