@@ -43,13 +43,9 @@ function TML:GetPlayerScore()
     local ok, profile = pcall(RaiderIO.GetProfile, "player", "PLAYER")
     if not ok or type(profile) ~= "table" then return nil end
 
-    -- Try every known field path across RaiderIO versions.
-    return profile.mythicPlusScore
-        or (profile.mythicPlusScoreRoles and profile.mythicPlusScoreRoles.all and profile.mythicPlusScoreRoles.all.score)
-        or (profile.mythicKeystoneProfile and (
-                profile.mythicKeystoneProfile.currentScore
-             or profile.mythicKeystoneProfile.mainScore
-           ))
+    local mkp = profile.mythicKeystoneProfile
+    if not mkp then return nil end
+    return mkp.currentScore
 end
 
 -- Dumps the raw RaiderIO profile to chat — run /tml debug to call this.
