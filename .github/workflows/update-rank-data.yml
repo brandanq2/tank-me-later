@@ -8,7 +8,7 @@ on:
     inputs:
       season:
         description: 'Raider.io season slug'
-        default: 'season-tww-2'
+        default: ''
         required: false
       region:
         description: 'Region (world / us / eu / kr / tw)'
@@ -32,7 +32,7 @@ jobs:
         run: |
           for attempt in 1 2 3; do
             node scripts/generate-rank-data.mjs \
-              "${{ github.event.inputs.season || 'season-tww-2' }}" \
+              "${{ github.event.inputs.season }}" \
               "${{ github.event.inputs.region || 'world' }}" && break
             echo "Attempt $attempt failed — retrying in 30s…"
             [ $attempt -lt 3 ] && sleep 30
@@ -76,7 +76,7 @@ jobs:
           tag_name: "addon-${{ env.ADDON_VERSION }}"
           name: "TankMeLater ${{ env.ADDON_VERSION }}"
           body: |
-            Weekly rank data update for **${{ github.event.inputs.season || 'season-tww-2' }}**.
+            Weekly rank data update — season auto-detected from live Raider.io data.
 
             Install by extracting `TankMeLater/` into your `Interface/AddOns/` folder.
           files: ${{ env.ADDON_ZIP }}

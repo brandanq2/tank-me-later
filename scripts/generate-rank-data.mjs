@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Fetches live Raider.io season-cutoffs data and regenerates addon/TankMeLater/RankData.lua.
 // Usage: node scripts/generate-rank-data.mjs [season-slug] [region]
-//   season-slug  default: season-tww-2
+//   season-slug  default: auto-detected (probes tww-4 → tww-1)
 //   region       default: world
 
 import { writeFileSync } from 'node:fs'
@@ -11,17 +11,45 @@ import { fileURLToPath } from 'node:url'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_PATH  = resolve(__dirname, '../addon/TankMeLater/RankData.lua')
 
-const season = process.argv[2] || 'season-tww-2'
 const region = process.argv[3] || 'world'
 const today  = new Date().toISOString().slice(0, 10)
 
-// ── Fetch ────────────────────────────────────────────────────────────────────
+// ── Auto-detect season if not specified ──────────────────────────────────────
 
-console.log(`Fetching Raider.io cutoffs for ${season} / ${region}…`)
-const url  = `https://raider.io/api/v1/mythic-plus/season-cutoffs?season=${season}&region=${region}`
-const resp = await fetch(url)
-if (!resp.ok) throw new Error(`Raider.io API returned ${resp.status}: ${await resp.text()}`)
-const data = await resp.json()
+async function fetchCutoffs(slug) {
+    const url  = `https://raider.io/api/v1/mythic-plus/season-cutoffs?season=${slug}&region=${region}`
+    const resp = await fetch(url)
+    if (!resp.ok) return null
+    const data = await resp.json()
+    // Require at least one valid anchor point to accept this season
+    const root = data?.cutoffs ?? data
+    if (typeof root?.p999?.all?.quantileMinValue !== 'number') return null
+    return { slug, data }
+}
+
+let season = process.argv[2]
+let data
+
+if (season) {
+    console.log(`Fetching Raider.io cutoffs for ${season} / ${region}…`)
+    const url  = `https://raider.io/api/v1/mythic-plus/season-cutoffs?season=${season}&region=${region}`
+    const resp = await fetch(url)
+    if (!resp.ok) throw new Error(`Raider.io API returned ${resp.status}: ${await resp.text()}`)
+    data = await resp.json()
+} else {
+    // Probe recent TWW seasons newest-first until one returns live data
+    const candidates = ['season-tww-4', 'season-tww-3', 'season-tww-2', 'season-tww-1']
+    let found = null
+    for (const slug of candidates) {
+        console.log(`Probing ${slug}…`)
+        found = await fetchCutoffs(slug)
+        if (found) break
+    }
+    if (!found) throw new Error('Could not find a live season — all candidates returned no data')
+    season = found.slug
+    data   = found.data
+    console.log(`Auto-detected season: ${season}`)
+}
 
 // ── Extract anchors (mirrors extractAnchors() in solo-queue.ts) ──────────────
 
