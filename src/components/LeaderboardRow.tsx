@@ -280,7 +280,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
 
   if (entry.status === 'loading') {
     return (
-      <div className={`row row-loading ${anim.className}`} style={{ ...anim.style, '--spec-color': classColor } as unknown as React.CSSProperties}>
+      <div className={`row row-loading ${anim.className}`} style={anim.style}>
         <div className="row-main">
           <RankBadge rank={rank} delta={rankDelta} />
           <div className="row-avatar skeleton" />
@@ -300,7 +300,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
 
   if (entry.status === 'error') {
     return (
-      <div className={`row row-error ${anim.className}`} style={{ ...anim.style, '--spec-color': classColor } as unknown as React.CSSProperties}>
+      <div className={`row row-error ${anim.className}`} style={anim.style}>
         <div className="row-main">
           <RankBadge rank={rank} delta={rankDelta} />
           <div className="row-avatar row-avatar-err">?</div>
@@ -324,7 +324,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
     <>
       <a
         className={`row${isFirst ? ' row-first' : ''} ${anim.className}`}
-        style={{ ...anim.style, '--spec-color': classColor, ...(rankColor ? { '--rank-color': rankColor } : {}) } as unknown as React.CSSProperties}
+        style={{ ...anim.style, ...(rankColor ? { '--rank-color': rankColor } : {}) } as unknown as React.CSSProperties}
         href={entry.profileUrl}
         target="_blank"
         rel="noopener noreferrer"

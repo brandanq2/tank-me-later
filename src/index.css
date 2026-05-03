@@ -285,12 +285,11 @@ body {
   flex-direction: column;
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--spec-color, var(--surface)) 10%, var(--surface)) 0%,
-    var(--surface) 35%,
-    color-mix(in srgb, var(--rank-color, var(--surface)) 8%, var(--surface)) 100%
+    color-mix(in srgb, var(--rank-color, var(--surface)) 12%, var(--surface)) 0%,
+    var(--surface) 55%
   );
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--spec-color, var(--border));
+  border: 1px solid color-mix(in srgb, var(--rank-color, var(--border)) 30%, var(--border));
+  border-left: 3px solid var(--rank-color, var(--border));
   border-radius: 8px;
   padding: 0.75rem 1rem;
   text-decoration: none;
@@ -300,7 +299,11 @@ body {
   gap: 0.6rem;
 }
 
-a.row:hover { border-color: var(--accent); border-left-color: var(--spec-color, var(--accent)); background: var(--surface2); }
+a.row:hover {
+  border-color: color-mix(in srgb, var(--rank-color, var(--accent)) 60%, var(--accent));
+  border-left-color: var(--rank-color, var(--accent));
+  background: var(--surface2);
+}
 
 .row-main {
   display: flex;
@@ -312,22 +315,25 @@ a.row:hover { border-color: var(--accent); border-left-color: var(--spec-color, 
 .row-error { border-color: #3a1f1f; }
 
 .row-first {
-  border-color: var(--gold);
-  border-left: 3px solid var(--spec-color, var(--gold));
+  border-color: color-mix(in srgb, var(--rank-color, var(--gold)) 40%, var(--border));
+  border-left: 3px solid var(--rank-color, var(--gold));
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--spec-color, var(--gold)) 12%, var(--surface)) 0%,
-    color-mix(in srgb, var(--gold) 6%, var(--surface)) 40%,
-    color-mix(in srgb, var(--rank-color, var(--gold)) 10%, var(--surface)) 100%
+    color-mix(in srgb, var(--rank-color, var(--gold)) 16%, var(--surface)) 0%,
+    var(--surface) 60%
   );
-  box-shadow: 0 0 16px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--rank-color, var(--gold)) 20%, transparent);
   padding: 0.75rem 1rem;
   position: relative;
 }
 
 a.row-first:hover {
-  border-color: var(--gold);
-  background: linear-gradient(90deg, rgba(255, 215, 0, 0.14) 0%, var(--surface2) 60%);
+  border-color: color-mix(in srgb, var(--rank-color, var(--gold)) 60%, var(--border));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--rank-color, var(--gold)) 18%, var(--surface2)) 0%,
+    var(--surface2) 60%
+  );
 }
 
 .crown {
