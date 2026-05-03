@@ -10,6 +10,7 @@ events:RegisterEvent("PLAYER_LOGIN")
 
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" and arg1 == ADDON_NAME then
+        TankMeLaterDB = TankMeLaterDB or { minimapAngle = 225 }
         local d = TML.Data
         if d then
             print(string.format("|cff4fc3f7TankMeLater|r loaded — %s | data: %s",
@@ -42,7 +43,7 @@ SlashCmdList["TANKMELATER"] = function(msg)
 
         local info = TML:GetNextRankInfo(score)
         if info then
-            print(string.format("|cff4fc3f7TankMeLater|r: ↑ %d points to reach %s (min score %d)",
+            print(string.format("|cff4fc3f7TankMeLater|r: +%d points to reach %s (min score %d)",
                 info.pointsNeeded, info.nextRank.label, info.nextRank.minScore))
         else
             print(string.format("|cff4fc3f7TankMeLater|r: %sMax Rank — Challenger!|r", hex))

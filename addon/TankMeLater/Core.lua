@@ -35,6 +35,53 @@ function TML:GetTierColor(tier)
     return 1, 1, 1
 end
 
+-- Progress through the current rank tier (0 = just entered, 1 = at next boundary).
+function TML:ScoreToRankProgress(score)
+    local cutoffs = TML.Data.Cutoffs
+    for i, c in ipairs(cutoffs) do
+        if score >= c.minScore then
+            if i == 1 then return 1.0 end
+            local upper = cutoffs[i - 1]
+            return (score - c.minScore) / (upper.minScore - c.minScore)
+        end
+    end
+    return 0
+end
+
+-- Estimated top-% for a score, linearly interpolated between rank boundaries.
+function TML:ScoreToTopPercentApprox(score)
+    local cutoffs = TML.Data.Cutoffs
+    for i, c in ipairs(cutoffs) do
+        if score >= c.minScore then
+            if i == 1 then
+                return math.max(0.001, c.topPercent * c.minScore / score)
+            end
+            local upper = cutoffs[i - 1]
+            local t = (score - c.minScore) / (upper.minScore - c.minScore)
+            return c.topPercent - t * (c.topPercent - upper.topPercent)
+        end
+    end
+    return 100
+end
+
+-- Returns score, characterName, isOwnProfile.
+-- Tries mouseover then target so the profile card reflects whoever RaiderIO is showing.
+function TML:GetProfileScore()
+    if RaiderIO then
+        for _, unit in ipairs({ "mouseover", "target" }) do
+            if UnitExists(unit) and UnitIsPlayer(unit) and not UnitIsUnit(unit, "player") then
+                local ok, p = pcall(RaiderIO.GetProfile, unit, "PLAYER")
+                if ok and type(p) == "table" and p.mythicKeystoneProfile then
+                    local s = p.mythicKeystoneProfile.currentScore
+                    if s then return s, (p.name or UnitName(unit)), false end
+                end
+            end
+        end
+    end
+    local s = TML:GetPlayerScore()
+    return s, UnitName("player"), true
+end
+
 -- Returns the local player's current M+ score via the RaiderIO addon API.
 -- Returns nil when RaiderIO is not installed or the profile hasn't loaded yet.
 function TML:GetPlayerScore()
