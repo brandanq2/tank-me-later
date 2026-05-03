@@ -21,12 +21,16 @@ function charKey(c: CharacterInput) {
   return `${c.name}-${c.realm}-${c.region}`.toLowerCase()
 }
 
-function dailyKey(date: Date) {
-  return `tank-me-later:daily:${date.toISOString().slice(0, 10)}`
+function easternDate(d: Date): string {
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
 }
 
-function rankKey(date: Date) {
-  return `tank-me-later:daily-rank:${date.toISOString().slice(0, 10)}`
+function dailyKey(dateStr: string) {
+  return `tank-me-later:daily:${dateStr}`
+}
+
+function rankKey(dateStr: string) {
+  return `tank-me-later:daily-rank:${dateStr}`
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -62,11 +66,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const ttl = 60 * 60 * 24 * 7
-  const snapshotDate = new Date()
+  const todayEastern = easternDate(new Date())
 
   if (Object.keys(scoreSnapshot).length > 0) {
-    await redis.hset(dailyKey(snapshotDate), scoreSnapshot)
-    await redis.expire(dailyKey(snapshotDate), ttl)
+    await redis.hset(dailyKey(todayEastern), scoreSnapshot)
+    await redis.expire(dailyKey(todayEastern), ttl)
 
     const rankSnapshot: Record<string, number> = {}
     Object.entries(scoreSnapshot)
@@ -75,13 +79,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .forEach(([key], i) => { rankSnapshot[key] = i + 1 })
 
     if (Object.keys(rankSnapshot).length > 0) {
-      await redis.hset(rankKey(snapshotDate), rankSnapshot)
-      await redis.expire(rankKey(snapshotDate), ttl)
+      await redis.hset(rankKey(todayEastern), rankSnapshot)
+      await redis.expire(rankKey(todayEastern), ttl)
     }
   }
 
   const sql = getDb()
-  const dateStr = snapshotDate.toISOString().slice(0, 10)
+  const dateStr = todayEastern
   await Promise.allSettled(
     characters
       .filter((c) => scoreSnapshot[charKey(c)] != null)

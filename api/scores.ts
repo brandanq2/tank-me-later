@@ -10,18 +10,20 @@ function charKey(name: string, realm: string, region: string) {
   return `${name}-${realm}-${region}`.toLowerCase()
 }
 
-function dailyKey(date: Date) {
-  return `tank-me-later:daily:${date.toISOString().slice(0, 10)}`
+function easternDate(d: Date): string {
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
 }
 
-function rankKey(date: Date) {
-  return `tank-me-later:daily-rank:${date.toISOString().slice(0, 10)}`
+function dailyKey(dateStr: string) {
+  return `tank-me-later:daily:${dateStr}`
 }
 
-function yesterday() {
-  const d = new Date()
-  d.setUTCDate(d.getUTCDate() - 1)
-  return d
+function rankKey(dateStr: string) {
+  return `tank-me-later:daily-rank:${dateStr}`
+}
+
+function yesterdayEastern(): string {
+  return easternDate(new Date(Date.now() - 24 * 60 * 60 * 1000))
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -35,10 +37,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const cKey = charKey(name, realm, region)
-  const yKey = yesterday()
+  const yDate = yesterdayEastern()
   const [prevScore, prevRank] = await Promise.all([
-    redis.hget<number>(dailyKey(yKey), cKey),
-    redis.hget<number>(rankKey(yKey), cKey),
+    redis.hget<number>(dailyKey(yDate), cKey),
+    redis.hget<number>(rankKey(yDate), cKey),
   ])
 
   const delta = prevScore != null ? Math.max(0, score - prevScore) : 0
