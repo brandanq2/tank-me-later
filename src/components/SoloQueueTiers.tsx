@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { getRankCutoffs } from '../solo-queue'
-import type { ScoreAnchor } from '../solo-queue'
+import type { ScoreAnchor, RankCutoff } from '../solo-queue'
 
 const TIER_COLORS: Record<string, string> = {
   Challenger:  '#f4d03f',
@@ -14,35 +15,73 @@ const TIER_COLORS: Record<string, string> = {
   Iron:        '#7f8c8d',
 }
 
-interface Props {
-  anchors: ScoreAnchor[]
+interface TierGroup {
+  tier: string
+  color: string
+  rows: RankCutoff[]
+  entryScore: number
 }
 
-export function SoloQueueTiers({ anchors }: Props) {
+function groupByTier(cutoffs: RankCutoff[]): TierGroup[] {
+  const groups: TierGroup[] = []
+  let current: TierGroup | null = null
+  for (const r of cutoffs) {
+    if (!current || current.tier !== r.tier) {
+      current = { tier: r.tier, color: TIER_COLORS[r.tier] ?? '#aaa', rows: [], entryScore: 0 }
+      groups.push(current)
+    }
+    current.rows.push(r)
+  }
+  return groups.map(g => ({ ...g, entryScore: g.rows[g.rows.length - 1].minScore }))
+}
+
+export function SoloQueueTiers({ anchors }: { anchors: ScoreAnchor[] }) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
   if (anchors.length === 0) return null
 
-  const cutoffs = getRankCutoffs(anchors)
+  const groups = groupByTier(getRankCutoffs(anchors))
+
+  function toggle(tier: string) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      next.has(tier) ? next.delete(tier) : next.add(tier)
+      return next
+    })
+  }
 
   return (
     <div className="sq-tiers">
-      <h2 className="sq-tiers-title">Solo Queue Tier Cutoffs</h2>
-      <p className="sq-tiers-sub">Minimum Tank IO score per rank · live from Raider.io</p>
-      <div className="sq-tiers-grid">
-        {cutoffs.map(r => (
-          <div key={r.label} className="sq-tier-row">
-            <span
-              className="sq-tier-badge"
-              style={{ color: TIER_COLORS[r.tier], borderColor: TIER_COLORS[r.tier] }}
-            >
-              {r.label}
-            </span>
-            <span className="sq-tier-score">
-              {r.minScore > 0
-                ? `≥ ${r.minScore.toLocaleString()}`
-                : 'any'}
-            </span>
-          </div>
-        ))}
+      <p className="sq-tiers-title">Solo Queue</p>
+      <div className="sq-tree">
+        {groups.map(group => {
+          const hasDivisions = group.rows.length > 1
+          const isOpen = expanded.has(group.tier)
+          return (
+            <div key={group.tier} className="sq-group">
+              <div
+                className={`sq-tier-row${hasDivisions ? ' sq-tier-row--expandable' : ''}`}
+                onClick={() => hasDivisions && toggle(group.tier)}
+              >
+                <span className="sq-chevron">{hasDivisions ? (isOpen ? '▾' : '▸') : ''}</span>
+                <span className="sq-tier-name" style={{ color: group.color }}>{group.tier}</span>
+                <span className="sq-score">
+                  {group.entryScore > 0 ? `≥ ${group.entryScore.toLocaleString()}` : 'any'}
+                </span>
+              </div>
+              {isOpen && (
+                <div className="sq-divisions">
+                  {group.rows.map(r => (
+                    <div key={r.label} className="sq-div-row">
+                      <span className="sq-div-label" style={{ color: group.color }}>{r.division}</span>
+                      <span className="sq-score">≥ {r.minScore.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
