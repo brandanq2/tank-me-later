@@ -270,6 +270,10 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
     ? scoreToColor(entry.score ?? 0, 0, cutoffScore)
     : '#9d9d9d'
 
+  const rankColor = soloAnchors && soloAnchors.length > 0 && entry.score != null
+    ? TIER_COLORS[scoreToRank(entry.score, soloAnchors).tier]
+    : undefined
+
   const anim = revealed && isInitialEntry
     ? { className: revealClass(rank), style: { animationDelay: `${revealDelay}s` } }
     : { className: '', style: {} }
@@ -320,7 +324,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
     <>
       <a
         className={`row${isFirst ? ' row-first' : ''} ${anim.className}`}
-        style={{ ...anim.style, '--spec-color': classColor } as unknown as React.CSSProperties}
+        style={{ ...anim.style, '--spec-color': classColor, ...(rankColor ? { '--rank-color': rankColor } : {}) } as unknown as React.CSSProperties}
         href={entry.profileUrl}
         target="_blank"
         rel="noopener noreferrer"

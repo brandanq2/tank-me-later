@@ -286,7 +286,8 @@ body {
   background: linear-gradient(
     90deg,
     color-mix(in srgb, var(--spec-color, var(--surface)) 10%, var(--surface)) 0%,
-    var(--surface) 45%
+    var(--surface) 35%,
+    color-mix(in srgb, var(--rank-color, var(--surface)) 8%, var(--surface)) 100%
   );
   border: 1px solid var(--border);
   border-left: 3px solid var(--spec-color, var(--border));
@@ -316,8 +317,8 @@ a.row:hover { border-color: var(--accent); border-left-color: var(--spec-color, 
   background: linear-gradient(
     90deg,
     color-mix(in srgb, var(--spec-color, var(--gold)) 12%, var(--surface)) 0%,
-    color-mix(in srgb, var(--gold) 6%, var(--surface)) 55%,
-    var(--surface) 100%
+    color-mix(in srgb, var(--gold) 6%, var(--surface)) 40%,
+    color-mix(in srgb, var(--rank-color, var(--gold)) 10%, var(--surface)) 100%
   );
   box-shadow: 0 0 16px rgba(255, 215, 0, 0.15);
   padding: 0.75rem 1rem;
