@@ -6,6 +6,8 @@ const redis = new Redis({
   token: process.env.KV_REST_API_TOKEN!,
 })
 
+const SESSION_KEY = 'tank-me-later:scores'
+
 function charKey(name: string, realm: string, region: string) {
   return `${name}-${realm}-${region}`.toLowerCase()
 }
@@ -36,11 +38,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const cKey = charKey(name, realm, region)
   const yKey = yesterday()
-  const [prevScore, prevRank] = await Promise.all([
+  const [cronPrev, prevRank, sessionPrev] = await Promise.all([
     redis.hget<number>(dailyKey(yKey), cKey),
     redis.hget<number>(rankKey(yKey), cKey),
+    redis.hget<number>(SESSION_KEY, cKey),
   ])
-  const delta = prevScore != null ? Math.max(0, score - prevScore) : 0
+
+  // Keep session score up to date — used as fallback when no cron snapshot exists yet
+  if (sessionPrev == null || score > sessionPrev) {
+    await redis.hset(SESSION_KEY, { [cKey]: score })
+  }
+
+  const baseline = cronPrev ?? sessionPrev
+  const delta = baseline != null ? Math.max(0, score - baseline) : 0
 
   return res.json({ delta, prevRank: prevRank ?? null })
 }

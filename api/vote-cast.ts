@@ -7,7 +7,7 @@ const redis = new Redis({
   token: process.env.KV_REST_API_TOKEN!,
 })
 
-const VOTES_NEEDED = 3
+const VOTES_NEEDED = 5
 const ACTIVE_SET_KEY = 'tank-me-later:votes:active'
 const CHARS_KEY = 'tank-me-later:characters'
 
