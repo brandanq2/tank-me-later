@@ -1,4 +1,5 @@
 import type { CharacterInput, VoteRecord, HistoryPoint } from './types'
+import { extractAnchors, type ScoreAnchor } from './solo-queue'
 
 interface RaiderIOScore {
   season: string
@@ -141,6 +142,20 @@ export async function fetchHistory(char: CharacterInput): Promise<HistoryPoint[]
   const params = new URLSearchParams({ name: char.name, realm: char.realm, region: char.region })
   const res = await fetch(`/api/history?${params}`)
   if (!res.ok) return []
+  return res.json()
+}
+
+export async function fetchSoloQueueAnchors(season = 'season-tww-2', region = 'us'): Promise<ScoreAnchor[]> {
+  const params = new URLSearchParams({ season, region })
+  const res = await fetch(`/api/cutoff?${params}`)
+  if (!res.ok) return []
+  const data = await res.json()
+  return extractAnchors(data)
+}
+
+export async function fetchFlags(): Promise<Record<string, boolean>> {
+  const res = await fetch('/api/flags')
+  if (!res.ok) return {}
   return res.json()
 }
 
