@@ -68,8 +68,8 @@ end
 -- Creates the rank badge anchored to the top-left of `parent`.
 local function CreateRankBadge(parent)
     local badge = CreateFrame("Frame", "TankMeLaterRankBadge", parent)
-    badge:SetSize(180, 40)
-    badge:SetPoint("TOPLEFT", parent, "TOPLEFT", 6, -6)
+    badge:SetSize(190, 42)
+    badge:SetPoint("BOTTOMLEFT", parent, "TOPLEFT", 0, 4)
     badge:SetFrameLevel(parent:GetFrameLevel() + 15)
 
     local bg = badge:CreateTexture(nil, "BACKGROUND")
@@ -84,11 +84,22 @@ local function CreateRankBadge(parent)
     accent:SetColorTexture(1, 1, 1, 1)
     badge.accent = accent
 
-    local rankLabel = badge:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    rankLabel:SetPoint("TOPLEFT", badge, "TOPLEFT", 10, -6)
+    -- Colored tier icon square (WHITE8x8 recolored at runtime).
+    local icon = badge:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(12, 12)
+    icon:SetPoint("TOPLEFT", badge, "TOPLEFT", 10, -8)
+    icon:SetTexture("Interface\\Buttons\\WHITE8x8")
+    icon:SetVertexColor(1, 1, 1, 1)
+    badge.icon = icon
 
-    local nextLabel = badge:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    nextLabel:SetPoint("TOPLEFT", badge, "TOPLEFT", 10, -20)
+    -- Rank label sits to the right of the icon.
+    local rankLabel = badge:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    rankLabel:SetPoint("LEFT", icon, "RIGHT", 5, 0)
+
+    -- Points line uses Arial Narrow which renders a wider glyph set.
+    local nextLabel = badge:CreateFontString(nil, "OVERLAY")
+    nextLabel:SetFont("Fonts\\ARIALN.TTF", 11)
+    nextLabel:SetPoint("TOPLEFT", badge, "TOPLEFT", 10, -24)
     nextLabel:SetTextColor(0.75, 0.75, 0.75)
 
     badge.rankLabel = rankLabel
@@ -120,10 +131,11 @@ local function ApplyRankTheme(score)
         badge.rankLabel:SetText(rank.label)
         badge.rankLabel:SetTextColor(r, g, b)
         badge.accent:SetColorTexture(r, g, b, 1)
+        badge.icon:SetVertexColor(r, g, b, 1)
 
         local info = TML:GetNextRankInfo(score)
         if info then
-            badge.nextLabel:SetText(string.format("↑ %d pts → %s", info.pointsNeeded, info.nextRank.label))
+            badge.nextLabel:SetText(string.format("+%d pts to %s", info.pointsNeeded, info.nextRank.label))
             badge.nextLabel:SetTextColor(0.75, 0.75, 0.75)
         else
             badge.nextLabel:SetText("Max Rank!")
