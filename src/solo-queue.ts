@@ -159,6 +159,32 @@ export function getRankCutoffs(anchors: ScoreAnchor[]): RankCutoff[] {
   }))
 }
 
+export function getNextRankInfo(
+  score: number,
+  anchors: ScoreAnchor[],
+): { nextRank: Rank; pointsNeeded: number } | null {
+  if (anchors.length === 0) return null
+
+  const topPercent = scoreToTopPercent(score, anchors)
+
+  let currentIdx = RANK_THRESHOLDS.length - 1
+  for (let i = 0; i < RANK_THRESHOLDS.length; i++) {
+    if (topPercent <= RANK_THRESHOLDS[i].topPercent) {
+      currentIdx = i
+      break
+    }
+  }
+
+  if (currentIdx === 0) return null
+
+  const next = RANK_THRESHOLDS[currentIdx - 1]
+  const pointsNeeded = Math.ceil(topPercentToScore(next.topPercent, anchors) - score)
+  if (pointsNeeded <= 0) return null
+
+  const label = next.division ? `${next.tier} ${next.division}` : next.tier
+  return { nextRank: { tier: next.tier, division: next.division, label }, pointsNeeded }
+}
+
 // Parse the 5 percentile anchors out of a Raider.io season-cutoffs API response.
 export function extractAnchors(data: unknown): ScoreAnchor[] {
   const d = data as Record<string, unknown>
