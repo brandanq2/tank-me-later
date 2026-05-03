@@ -104,12 +104,10 @@ end
 
 -- ── Theme application ─────────────────────────────────────────────────────────
 
-local function ApplyRankTheme(score, charName, isOwnProfile)
-    if not score then
-        if TML.RankBadge then TML.RankBadge:Hide() end
-        return
-    end
-
+-- Updates border colors and minimap dot to match `score`.
+-- Used by all frame hooks — pass the profile score being displayed.
+local function UpdateBorders(score)
+    if not score then return end
     local rank    = TML:ScoreToRank(score)
     local r, g, b = TML:GetTierColor(rank.tier)
 
@@ -117,55 +115,57 @@ local function ApplyRankTheme(score, charName, isOwnProfile)
         TML.PVEBorder:SetColor(r, g, b)
         TML.PVEBorder:Show()
     end
-
     for _, key in ipairs({ "RIOProfileBorder", "RIOSearchBorder" }) do
         local border = TML[key]
         if border then border:SetColor(r, g, b) end
     end
-
-    if TML.RankBadge then
-        local badge = TML.RankBadge
-        local maxW  = badge:GetWidth() - 20
-
-        badge.header:SetText(isOwnProfile and "Your Rank" or (charName or "Their Rank"))
-        badge.scoreLabel:SetText(string.format("%d pts", math.floor(score)))
-
-        badge.rankLabel:SetText(rank.label)
-        badge.rankLabel:SetTextColor(r, g, b)
-        badge.icon:SetVertexColor(r, g, b, 1)
-        badge.accent:SetColorTexture(r, g, b, 1)
-
-        local pct = TML:ScoreToTopPercentApprox(score)
-        if pct < 1 then
-            badge.topPctLabel:SetText(string.format("Top %.2f%%", pct))
-        else
-            badge.topPctLabel:SetText(string.format("Top %.0f%%", pct))
-        end
-
-        local progress = TML:ScoreToRankProgress(score)
-        badge.barFill:SetWidth(math.max(2, progress * maxW))
-        badge.barFill:SetColorTexture(r, g, b, 0.9)
-
-        local info = TML:GetNextRankInfo(score)
-        if info then
-            badge.nextLabel:SetText(string.format("+%d pts to %s", info.pointsNeeded, info.nextRank.label))
-            badge.nextLabel:SetTextColor(0.70, 0.70, 0.70)
-        else
-            badge.nextLabel:SetText("Max Rank!")
-            badge.nextLabel:SetTextColor(r, g, b)
-        end
-
-        badge:Show()
-    end
-
     if TML.MinimapButton then
-        local btn = TML.MinimapButton
-        btn.dot:SetVertexColor(r, g, b, 1)
-        -- Proc glow on the minimap button tinted to the rank color
+        TML.MinimapButton.dot:SetVertexColor(r, g, b, 1)
         if ActionButton_ShowOverlayGlow then
-            ActionButton_ShowOverlayGlow(btn)
+            ActionButton_ShowOverlayGlow(TML.MinimapButton)
         end
     end
+end
+
+-- Updates the rank badge with the current player's own score.
+-- Always uses the logged-in character — never a mouseover/target.
+local function UpdateBadge(score)
+    if not TML.RankBadge then return end
+    if not score then TML.RankBadge:Hide(); return end
+
+    local badge   = TML.RankBadge
+    local rank    = TML:ScoreToRank(score)
+    local r, g, b = TML:GetTierColor(rank.tier)
+    local maxW    = badge:GetWidth() - 20
+
+    badge.header:SetText("Your Rank")
+    badge.scoreLabel:SetText(string.format("%d pts", math.floor(score)))
+    badge.rankLabel:SetText(rank.label)
+    badge.rankLabel:SetTextColor(r, g, b)
+    badge.icon:SetVertexColor(r, g, b, 1)
+    badge.accent:SetColorTexture(r, g, b, 1)
+
+    local pct = TML:ScoreToTopPercentApprox(score)
+    if pct < 1 then
+        badge.topPctLabel:SetText(string.format("Top %.2f%%", pct))
+    else
+        badge.topPctLabel:SetText(string.format("Top %.0f%%", pct))
+    end
+
+    local progress = TML:ScoreToRankProgress(score)
+    badge.barFill:SetWidth(math.max(2, progress * maxW))
+    badge.barFill:SetColorTexture(r, g, b, 0.9)
+
+    local info = TML:GetNextRankInfo(score)
+    if info then
+        badge.nextLabel:SetText(string.format("+%d pts to %s", info.pointsNeeded, info.nextRank.label))
+        badge.nextLabel:SetTextColor(0.70, 0.70, 0.70)
+    else
+        badge.nextLabel:SetText("Max Rank!")
+        badge.nextLabel:SetTextColor(r, g, b)
+    end
+
+    badge:Show()
 end
 
 -- ── PVEFrame ──────────────────────────────────────────────────────────────────
@@ -175,8 +175,7 @@ local function SetupPVEFrame()
     TML.PVEBorder = CreateBorderOverlay(PVEFrame, "TankMeLaterPVEBorder")
     TML.PVEBorder:Hide()
     PVEFrame:HookScript("OnShow", function()
-        local s, n, own = TML:GetProfileScore()
-        ApplyRankTheme(s, n, own)
+        UpdateBorders(TML:GetPlayerScore())
     end)
     PVEFrame:HookScript("OnHide", function()
         if TML.PVEBorder then TML.PVEBorder:Hide() end
@@ -198,8 +197,9 @@ local function HookRIOTooltipFrame(frameName, borderKey, withBadge)
     end
 
     frame:HookScript("OnShow", function()
-        local s, n, own = TML:GetProfileScore()
-        ApplyRankTheme(s, n, own)
+        local profileScore, _, _ = TML:GetProfileScore()
+        UpdateBorders(profileScore)
+        if withBadge then UpdateBadge(TML:GetPlayerScore()) end
         border:Show()
     end)
     frame:HookScript("OnHide", function()
@@ -288,15 +288,7 @@ local function CreateMinimapButton()
     end)
 
     C_Timer.After(1, function()
-        local score = TML:GetPlayerScore()
-        if score then
-            local rank    = TML:ScoreToRank(score)
-            local r, g, b = TML:GetTierColor(rank.tier)
-            btn.dot:SetVertexColor(r, g, b, 1)
-            if ActionButton_ShowOverlayGlow then
-                ActionButton_ShowOverlayGlow(btn)
-            end
-        end
+        UpdateBorders(TML:GetPlayerScore())
     end)
 
     TML.MinimapButton = btn
