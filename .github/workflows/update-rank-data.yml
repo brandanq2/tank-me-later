@@ -30,9 +30,13 @@ jobs:
 
       - name: Generate RankData.lua
         run: |
-          node scripts/generate-rank-data.mjs \
-            "${{ github.event.inputs.season || 'season-tww-2' }}" \
-            "${{ github.event.inputs.region || 'world' }}"
+          for attempt in 1 2 3; do
+            node scripts/generate-rank-data.mjs \
+              "${{ github.event.inputs.season || 'season-tww-2' }}" \
+              "${{ github.event.inputs.region || 'world' }}" && break
+            echo "Attempt $attempt failed — retrying in 30s…"
+            [ $attempt -lt 3 ] && sleep 30
+          done
 
       - name: Check for changes
         id: diff
