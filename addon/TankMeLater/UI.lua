@@ -104,9 +104,8 @@ local function ApplyRankTheme(score)
         TML.PVEBorder:Show()
     end
 
-    if TML.RIOBorder then
-        TML.RIOBorder:SetColor(r, g, b)
-    end
+    if TML.RIOProfileBorder then TML.RIOProfileBorder:SetColor(r, g, b) end
+    if TML.RIOSearchBorder  then TML.RIOSearchBorder:SetColor(r, g, b)  end
 
     if TML.RankBadge then
         local badge = TML.RankBadge
@@ -139,51 +138,38 @@ local function SetupPVEFrame()
     end)
 end
 
--- Hooks into the RaiderIO profile popup frame.
--- The RaiderIO addon lazily creates its frames; we retry via C_Timer if not ready yet.
-local function TryHookRIOFrame()
-    -- Common frame names used across RaiderIO addon versions.
-    local candidates = {
-        "RaiderIO_ProfilePopupFrame",
-        "RaiderIOProfilePopup",
-        "RaiderIOFrame",
-    }
+-- Attaches a themed border to a single named frame and wires OnShow/OnHide.
+local function HookRIOTooltipFrame(frameName, borderKey)
+    local frame = _G[frameName]
+    if not frame or not frame.HookScript then return false end
 
-    -- Also check frames exposed directly on the RaiderIO global.
-    if RaiderIO then
-        if RaiderIO.ProfilePopup and type(RaiderIO.ProfilePopup) == "table" then
-            table.insert(candidates, 1, tostring(RaiderIO.ProfilePopup:GetName() or ""))
-        end
-    end
+    local border = CreateBorderOverlay(frame, "TankMeLater" .. borderKey)
+    border:Hide()
+    TML[borderKey] = border
 
-    for _, name in ipairs(candidates) do
-        local frame = name ~= "" and _G[name] or nil
-        if frame and frame.HookScript then
-            TML.RIOBorder = CreateBorderOverlay(frame, "TankMeLaterRIOBorder")
-            TML.RIOBorder:Hide()
+    frame:HookScript("OnShow", function()
+        ApplyRankTheme(TML:GetPlayerScore())
+        border:Show()
+    end)
+    frame:HookScript("OnHide", function()
+        border:Hide()
+    end)
 
-            frame:HookScript("OnShow", function()
-                local r = TML.RIOBorder
-                if r then
-                    ApplyRankTheme(TML:GetPlayerScore())
-                    r:Show()
-                end
-            end)
-            frame:HookScript("OnHide", function()
-                if TML.RIOBorder then TML.RIOBorder:Hide() end
-            end)
-            return true
-        end
-    end
+    return true
+end
 
-    return false
+-- Hooks into both RaiderIO tooltip windows.
+-- Both frames exist by PLAYER_LOGIN in practice, but we retry once if not.
+local function TryHookRIOFrames()
+    local profileOk = HookRIOTooltipFrame("RaiderIO_ProfileTooltip", "RIOProfileBorder")
+    local searchOk  = HookRIOTooltipFrame("RaiderIO_SearchTooltip",  "RIOSearchBorder")
+    return profileOk or searchOk
 end
 
 function TML:InitUI()
     SetupPVEFrame()
 
-    if not TryHookRIOFrame() then
-        -- RaiderIO frames may not be created until slightly after PLAYER_LOGIN.
-        C_Timer.After(3, TryHookRIOFrame)
+    if not TryHookRIOFrames() then
+        C_Timer.After(3, TryHookRIOFrames)
     end
 end
