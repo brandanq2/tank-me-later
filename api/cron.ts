@@ -63,7 +63,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const ttl = 60 * 60 * 24 * 7
   const snapshotDate = new Date()
-  snapshotDate.setUTCDate(snapshotDate.getUTCDate() - 1)
 
   if (Object.keys(scoreSnapshot).length > 0) {
     await redis.hset(dailyKey(snapshotDate), scoreSnapshot)
