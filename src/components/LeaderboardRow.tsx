@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { scoreToColor } from '../scoreColor'
 import { insetAvatarUrl } from '../api'
-import { scoreToRank, getNextRankInfo } from '../solo-queue'
-import type { ScoreAnchor } from '../solo-queue'
+import { scoreToRankFromCutoffs, getNextRankInfoFromCutoffs } from '../solo-queue'
+import type { RankCutoff } from '../solo-queue'
 import type { CharacterEntry, VoteRecord } from '../types'
 import { CharacterModal } from './CharacterModal'
 
@@ -18,7 +18,7 @@ interface Props {
   revealDelay: number
   onRemove: (id: string) => void
   scoreLabel?: string
-  soloAnchors?: ScoreAnchor[]
+  soloMapping?: RankCutoff[]
 }
 
 const TIER_COLORS: Record<string, string> = {
@@ -125,19 +125,19 @@ function VoteStrip({ vote }: { vote: VoteRecord }) {
   )
 }
 
-export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO', soloAnchors }: Props) {
+export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO', soloMapping }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
     ? scoreToColor(entry.score ?? 0, 0, cutoffScore)
     : '#9d9d9d'
 
-  const rankColor = soloAnchors && soloAnchors.length > 0 && entry.score != null
-    ? TIER_COLORS[scoreToRank(entry.score, soloAnchors).tier]
+  const rankColor = soloMapping && soloMapping.length > 0 && entry.score != null
+    ? TIER_COLORS[scoreToRankFromCutoffs(entry.score, soloMapping).tier]
     : undefined
 
-  const nextInfo = soloAnchors && soloAnchors.length > 0 && entry.score != null
-    ? getNextRankInfo(entry.score, soloAnchors)
+  const nextInfo = soloMapping && soloMapping.length > 0 && entry.score != null
+    ? getNextRankInfoFromCutoffs(entry.score, soloMapping)
     : null
 
   const anim = revealed && isInitialEntry
@@ -224,7 +224,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
             </span>
             {rankColor && entry.score != null && (
               <span className="solo-rank-badge" style={{ color: rankColor, borderColor: rankColor }}>
-                {scoreToRank(entry.score, soloAnchors!).label}
+                {scoreToRankFromCutoffs(entry.score, soloMapping!).label}
               </span>
             )}
             {nextInfo && (
@@ -251,7 +251,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
           entry={entry}
           leaderRank={rank}
           classColor={classColor}
-          soloAnchors={soloAnchors}
+          soloMapping={soloMapping}
           onClose={() => setModalOpen(false)}
         />
       )}

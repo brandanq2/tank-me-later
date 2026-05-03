@@ -5,9 +5,9 @@ import { LeaderboardRow } from './components/LeaderboardRow'
 import { VoteModal } from './components/VoteModal'
 import { Nav } from './components/Nav'
 import { useFlag } from './hooks/useFlags'
-import { fetchSoloQueueAnchors } from './api'
+import { fetchSoloQueueMapping } from './api'
 import { SoloQueueTiers } from './components/SoloQueueTiers'
-import type { ScoreAnchor } from './solo-queue'
+import type { RankCutoff } from './solo-queue'
 import type { CharacterInput } from './types'
 
 const INITIAL_CHARACTERS: CharacterInput[] = [
@@ -21,10 +21,10 @@ const INITIAL_CHARACTERS: CharacterInput[] = [
 
 export default function App() {
   const soloQueueEnabled = useFlag('solo-queue')
-  const [soloAnchors, setSoloAnchors] = useState<ScoreAnchor[]>([])
+  const [soloMapping, setSoloMapping] = useState<RankCutoff[]>([])
 
   useEffect(() => {
-    if (soloQueueEnabled) fetchSoloQueueAnchors().then(setSoloAnchors)
+    if (soloQueueEnabled) fetchSoloQueueMapping().then(setSoloMapping)
   }, [soloQueueEnabled])
 
   const lb = useLeaderboard({
@@ -89,7 +89,7 @@ export default function App() {
                       isInitialEntry={lb.initialIds.has(entry.id)}
                       revealDelay={revealDelay(rank)}
                       onRemove={lb.handleRemoveOrVote}
-                      soloAnchors={soloQueueEnabled ? soloAnchors : undefined}
+                      soloMapping={soloQueueEnabled ? soloMapping : undefined}
                     />
                   )
                 })}
@@ -115,7 +115,7 @@ export default function App() {
                           isInitialEntry={lb.initialIds.has(entry.id)}
                           revealDelay={revealDelay(lb.leaderboard.length + 1)}
                           onRemove={lb.handleRemoveOrVote}
-                          soloAnchors={soloQueueEnabled ? soloAnchors : undefined}
+                          soloMapping={soloQueueEnabled ? soloMapping : undefined}
                         />
                       )
                     })}
@@ -126,9 +126,9 @@ export default function App() {
           )}
         </div>
 
-        {soloQueueEnabled && soloAnchors.length > 0 && (
+        {soloQueueEnabled && soloMapping.length > 0 && (
           <aside className="sq-sidebar">
-            <SoloQueueTiers anchors={soloAnchors} />
+            <SoloQueueTiers cutoffs={soloMapping} />
           </aside>
         )}
       </div>

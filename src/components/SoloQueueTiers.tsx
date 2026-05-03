@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { getRankCutoffs } from '../solo-queue'
-import type { ScoreAnchor, RankCutoff } from '../solo-queue'
+import type { RankCutoff } from '../solo-queue'
 
 const TIER_COLORS: Record<string, string> = {
   Challenger:  '#f4d03f',
@@ -35,12 +34,12 @@ function groupByTier(cutoffs: RankCutoff[]): TierGroup[] {
   return groups.map(g => ({ ...g, entryScore: g.rows[g.rows.length - 1].minScore }))
 }
 
-export function SoloQueueTiers({ anchors }: { anchors: ScoreAnchor[] }) {
+export function SoloQueueTiers({ cutoffs }: { cutoffs: RankCutoff[] }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
-  if (anchors.length === 0) return null
+  if (cutoffs.length === 0) return null
 
-  const groups = groupByTier(getRankCutoffs(anchors))
+  const groups = groupByTier(cutoffs)
 
   function toggle(tier: string) {
     setExpanded(prev => {

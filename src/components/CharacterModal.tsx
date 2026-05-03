@@ -1,5 +1,5 @@
-import { scoreToRank, getNextRankInfo } from '../solo-queue'
-import type { ScoreAnchor } from '../solo-queue'
+import { scoreToRankFromCutoffs, getNextRankInfoFromCutoffs } from '../solo-queue'
+import type { RankCutoff } from '../solo-queue'
 import type { CharacterEntry } from '../types'
 
 const TIER_COLORS: Record<string, string> = {
@@ -77,14 +77,14 @@ interface Props {
   entry: CharacterEntry
   leaderRank: number
   classColor: string
-  soloAnchors?: ScoreAnchor[]
+  soloMapping?: RankCutoff[]
   onClose: () => void
 }
 
-export function CharacterModal({ entry, leaderRank, classColor, soloAnchors, onClose }: Props) {
+export function CharacterModal({ entry, leaderRank, classColor, soloMapping, onClose }: Props) {
   const score = entry.score ?? 0
-  const rank = soloAnchors && soloAnchors.length > 0 ? scoreToRank(score, soloAnchors) : null
-  const nextInfo = soloAnchors && soloAnchors.length > 0 ? getNextRankInfo(score, soloAnchors) : null
+  const rank = soloMapping && soloMapping.length > 0 ? scoreToRankFromCutoffs(score, soloMapping) : null
+  const nextInfo = soloMapping && soloMapping.length > 0 ? getNextRankInfoFromCutoffs(score, soloMapping) : null
   const rankColor = rank ? TIER_COLORS[rank.tier] ?? '#aaa' : classColor
 
   return (

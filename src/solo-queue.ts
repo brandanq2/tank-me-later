@@ -159,6 +159,36 @@ export function getRankCutoffs(anchors: ScoreAnchor[]): RankCutoff[] {
   }))
 }
 
+// Simpler lookup against pre-computed cutoffs (from the weekly cron).
+// cutoffs must be ordered highest-rank-first (Challenger index 0).
+export function scoreToRankFromCutoffs(score: number, cutoffs: RankCutoff[]): Rank {
+  if (cutoffs.length === 0) return { tier: 'Unranked', division: null, label: 'Unranked' }
+  for (const c of cutoffs) {
+    if (score >= c.minScore) return { tier: c.tier, division: c.division, label: c.label }
+  }
+  return { tier: 'Iron', division: 'IV', label: 'Iron IV' }
+}
+
+export function getNextRankInfoFromCutoffs(
+  score: number,
+  cutoffs: RankCutoff[],
+): { nextRank: Rank; pointsNeeded: number } | null {
+  if (cutoffs.length === 0) return null
+
+  let currentIdx = cutoffs.length - 1
+  for (let i = 0; i < cutoffs.length; i++) {
+    if (score >= cutoffs[i].minScore) { currentIdx = i; break }
+  }
+
+  if (currentIdx === 0) return null
+
+  const next = cutoffs[currentIdx - 1]
+  const pointsNeeded = Math.ceil(next.minScore - score)
+  if (pointsNeeded <= 0) return null
+
+  return { nextRank: { tier: next.tier, division: next.division, label: next.label }, pointsNeeded }
+}
+
 export function getNextRankInfo(
   score: number,
   anchors: ScoreAnchor[],
