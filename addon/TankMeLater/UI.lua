@@ -8,10 +8,11 @@ local BORDER_ALPHA      = 0.95
 
 -- Tiers that get a pulsing shimmer on their border.
 local SHIMMER_CFG = {
-    Challenger  = { speed = 2.8, lo = 0.35, hi = 1.0 },
-    Grandmaster = { speed = 2.0, lo = 0.45, hi = 1.0 },
-    Master      = { speed = 1.3, lo = 0.55, hi = 1.0 },
+    Challenger  = { speed = 2.8, lo = 0.0,  hi = 1.0 },
+    Grandmaster = { speed = 2.0, lo = 0.0,  hi = 1.0 },
+    Master      = { speed = 1.4, lo = 0.08, hi = 1.0 },
 }
+local GLOW_PAD = 5  -- outer glow extends this many px beyond the border frame
 
 -- ── Border ────────────────────────────────────────────────────────────────────
 
@@ -61,13 +62,66 @@ end
 
 -- ── Shimmer ───────────────────────────────────────────────────────────────────
 
-local function StartShimmer(overlay, tier)
+-- r,g,b needed to color the outer glow that pulses alongside the border.
+local function StartShimmer(overlay, tier, r, g, b)
     local cfg = SHIMMER_CFG[tier]
-    if not cfg then overlay:SetAlpha(1); return end
-    local t = 0
+    if not cfg then
+        overlay:SetAlpha(1)
+        if overlay.glowFrame then overlay.glowFrame:Hide() end
+        return
+    end
+
+    -- Build the outer glow frame once (parented to overlay's parent so it
+    -- escapes the overlay's clipping rect and can extend beyond the frame edge).
+    if not overlay.glowFrame then
+        local parent = overlay:GetParent()
+        local gf = CreateFrame("Frame", nil, parent)
+        gf:SetFrameLevel(overlay:GetFrameLevel() - 1)
+        gf:SetPoint("TOPLEFT",     overlay, "TOPLEFT",     -GLOW_PAD,  GLOW_PAD)
+        gf:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT",  GLOW_PAD, -GLOW_PAD)
+
+        -- Four edge textures covering only the outer ring (no center fill).
+        local function GT()
+            local t = gf:CreateTexture(nil, "BACKGROUND")
+            t:SetColorTexture(r, g, b, 0)
+            return t
+        end
+        local gt = GT(); gt:SetHeight(GLOW_PAD)
+        gt:SetPoint("TOPLEFT",  gf, "TOPLEFT",  0, 0)
+        gt:SetPoint("TOPRIGHT", gf, "TOPRIGHT", 0, 0)
+
+        local gb = GT(); gb:SetHeight(GLOW_PAD)
+        gb:SetPoint("BOTTOMLEFT",  gf, "BOTTOMLEFT",  0, 0)
+        gb:SetPoint("BOTTOMRIGHT", gf, "BOTTOMRIGHT", 0, 0)
+
+        local gl = GT(); gl:SetWidth(GLOW_PAD)
+        gl:SetPoint("TOPLEFT",    gf, "TOPLEFT",    0, -GLOW_PAD)
+        gl:SetPoint("BOTTOMLEFT", gf, "BOTTOMLEFT", 0,  GLOW_PAD)
+
+        local gr = GT(); gr:SetWidth(GLOW_PAD)
+        gr:SetPoint("TOPRIGHT",    gf, "TOPRIGHT",    0, -GLOW_PAD)
+        gr:SetPoint("BOTTOMRIGHT", gf, "BOTTOMRIGHT", 0,  GLOW_PAD)
+
+        gf.edges = { gt, gb, gl, gr }
+        overlay.glowFrame = gf
+    end
+
+    -- Re-color glow edges for the current tier.
+    for _, t in ipairs(overlay.glowFrame.edges) do
+        t:SetColorTexture(r, g, b, 0)
+    end
+    overlay.glowFrame:Show()
+
+    local elapsed = 0
     overlay.shimmerTicker = C_Timer.NewTicker(0.033, function()
-        t = t + 0.033 * cfg.speed
-        overlay:SetAlpha(cfg.lo + (cfg.hi - cfg.lo) * (0.5 + 0.5 * math.sin(t)))
+        elapsed = elapsed + 0.033 * cfg.speed
+        local alpha = cfg.lo + (cfg.hi - cfg.lo) * (0.5 + 0.5 * math.sin(elapsed))
+        overlay:SetAlpha(alpha)
+        -- Glow peaks at ~22% alpha, perfectly in step with the border.
+        local glowAlpha = alpha * 0.22
+        for _, t in ipairs(overlay.glowFrame.edges) do
+            t:SetColorTexture(r, g, b, glowAlpha)
+        end
     end)
 end
 
@@ -77,6 +131,7 @@ local function StopShimmer(overlay)
         overlay.shimmerTicker = nil
     end
     overlay:SetAlpha(1)
+    if overlay.glowFrame then overlay.glowFrame:Hide() end
 end
 
 -- ── Rank badge ────────────────────────────────────────────────────────────────
@@ -172,7 +227,7 @@ local function ApplyRankTheme(score, charName, isOwnProfile)
         TML.PVEBorder:SetColor(r, g, b)
         TML.PVEBorder:Show()
         StopShimmer(TML.PVEBorder)
-        StartShimmer(TML.PVEBorder, rank.tier)
+        StartShimmer(TML.PVEBorder, rank.tier, r, g, b)
     end
 
     for _, key in ipairs({ "RIOProfileBorder", "RIOSearchBorder" }) do
@@ -180,7 +235,7 @@ local function ApplyRankTheme(score, charName, isOwnProfile)
         if border then
             border:SetColor(r, g, b)
             StopShimmer(border)
-            StartShimmer(border, rank.tier)
+            StartShimmer(border, rank.tier, r, g, b)
         end
     end
 
