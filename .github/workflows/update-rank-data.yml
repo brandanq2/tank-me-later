@@ -37,19 +37,18 @@ jobs:
       - name: Check for changes
         id: diff
         run: |
-          git diff --quiet addon/TankMeLater/RankData.lua \
-            && echo "changed=false" >> "$GITHUB_OUTPUT" \
-            || echo "changed=true"  >> "$GITHUB_OUTPUT"
+          if git diff --quiet addon/TankMeLater/RankData.lua; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Bump .toc version and commit
         if: steps.diff.outputs.changed == 'true'
         run: |
           TODAY=$(date -u +"%Y.%m.%d")
-
-          # Update ## Version line in TankMeLater.toc
           sed -i "s/^## Version: .*/## Version: ${TODAY}/" \
             addon/TankMeLater/TankMeLater.toc
-
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add addon/TankMeLater/RankData.lua \
