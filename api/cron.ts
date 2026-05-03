@@ -22,7 +22,7 @@ function charKey(c: CharacterInput) {
 }
 
 function easternDate(d: Date): string {
-  return d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+  return new Date(d.getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
 }
 
 function dailyKey(dateStr: string) {
