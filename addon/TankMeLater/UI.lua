@@ -4,61 +4,56 @@
 TankMeLater = TankMeLater or {}
 local TML = TankMeLater
 
-local BORDER_THICKNESS = 3
-local BORDER_ALPHA      = 0.90
-local GLOW_ALPHA        = 0.25
+local BORDER_THICKNESS = 2
+local BORDER_ALPHA      = 0.95
 
--- Creates a thin colored border overlay parented to `parent`.
+-- Creates a clean 8-piece border (4 edges + 4 corners, no overlap).
 -- Returns the overlay frame with a :SetColor(r,g,b) method.
 local function CreateBorderOverlay(parent, name)
     local overlay = CreateFrame("Frame", name, parent)
     overlay:SetAllPoints(parent)
     overlay:SetFrameLevel(parent:GetFrameLevel() + 10)
 
-    local function MakeLine(point1, point2, isVertical)
-        local tex = overlay:CreateTexture(nil, "OVERLAY")
-        tex:SetPoint(point1, overlay, point1, 0, 0)
-        tex:SetPoint(point2, overlay, point2, 0, 0)
-        if isVertical then
-            tex:SetWidth(BORDER_THICKNESS)
-        else
-            tex:SetHeight(BORDER_THICKNESS)
-        end
-        tex:SetColorTexture(1, 1, 1, BORDER_ALPHA)
-        return tex
+    local S = BORDER_THICKNESS
+
+    local function Tex()
+        local t = overlay:CreateTexture(nil, "OVERLAY")
+        t:SetColorTexture(1, 1, 1, BORDER_ALPHA)
+        return t
     end
 
-    local top    = MakeLine("TOPLEFT",    "TOPRIGHT",    false)
-    local bottom = MakeLine("BOTTOMLEFT", "BOTTOMRIGHT", false)
-    local left   = MakeLine("TOPLEFT",    "BOTTOMLEFT",  true)
-    local right  = MakeLine("TOPRIGHT",   "BOTTOMRIGHT", true)
+    -- Four corners (S×S squares).
+    local tl = Tex(); tl:SetSize(S, S); tl:SetPoint("TOPLEFT",     overlay, "TOPLEFT",     0,  0)
+    local tr = Tex(); tr:SetSize(S, S); tr:SetPoint("TOPRIGHT",    overlay, "TOPRIGHT",    0,  0)
+    local bl = Tex(); bl:SetSize(S, S); bl:SetPoint("BOTTOMLEFT",  overlay, "BOTTOMLEFT",  0,  0)
+    local br = Tex(); br:SetSize(S, S); br:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", 0,  0)
 
-    -- Soft inner glow — a slightly wider, translucent copy of each edge.
-    local function MakeGlow(point1, point2, isVertical, offset)
-        local tex = overlay:CreateTexture(nil, "OVERLAY")
-        tex:SetPoint(point1, overlay, point1, isVertical and offset or 0,  isVertical and 0 or offset)
-        tex:SetPoint(point2, overlay, point2, isVertical and offset or 0,  isVertical and 0 or -offset)
-        if isVertical then
-            tex:SetWidth(BORDER_THICKNESS * 2)
-        else
-            tex:SetHeight(BORDER_THICKNESS * 2)
-        end
-        tex:SetColorTexture(1, 1, 1, GLOW_ALPHA)
-        return tex
-    end
+    -- Four edges — inset by S on each end so they don't touch the corners.
+    local top = Tex()
+    top:SetHeight(S)
+    top:SetPoint("TOPLEFT",  overlay, "TOPLEFT",   S,  0)
+    top:SetPoint("TOPRIGHT", overlay, "TOPRIGHT", -S,  0)
 
-    local gTop    = MakeGlow("TOPLEFT",    "TOPRIGHT",    false, -BORDER_THICKNESS)
-    local gBottom = MakeGlow("BOTTOMLEFT", "BOTTOMRIGHT", false,  BORDER_THICKNESS)
-    local gLeft   = MakeGlow("TOPLEFT",    "BOTTOMLEFT",  true,   BORDER_THICKNESS)
-    local gRight  = MakeGlow("TOPRIGHT",   "BOTTOMRIGHT", true,  -BORDER_THICKNESS)
+    local bot = Tex()
+    bot:SetHeight(S)
+    bot:SetPoint("BOTTOMLEFT",  overlay, "BOTTOMLEFT",   S, 0)
+    bot:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", -S, 0)
 
-    local all = { top, bottom, left, right, gTop, gBottom, gLeft, gRight }
+    local lft = Tex()
+    lft:SetWidth(S)
+    lft:SetPoint("TOPLEFT",    overlay, "TOPLEFT",    0, -S)
+    lft:SetPoint("BOTTOMLEFT", overlay, "BOTTOMLEFT", 0,  S)
+
+    local rgt = Tex()
+    rgt:SetWidth(S)
+    rgt:SetPoint("TOPRIGHT",    overlay, "TOPRIGHT",    0, -S)
+    rgt:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", 0,  S)
+
+    local all = { tl, tr, bl, br, top, bot, lft, rgt }
 
     function overlay:SetColor(r, g, b)
-        for _, tex in ipairs(all) do
-            local a = (tex == top or tex == bottom or tex == left or tex == right)
-                      and BORDER_ALPHA or GLOW_ALPHA
-            tex:SetColorTexture(r, g, b, a)
+        for _, t in ipairs(all) do
+            t:SetColorTexture(r, g, b, BORDER_ALPHA)
         end
     end
 
