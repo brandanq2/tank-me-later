@@ -1,4 +1,4 @@
-## Interface: 110107
+## Interface: 120005
 ## Title: TankMeLater
 ## Notes: Tank-Me-Later rank display and M+ window theming
 ## Author: Brandan Quinn
