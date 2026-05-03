@@ -213,25 +213,29 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
               {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className}
             </span>
           </div>
-          <div className="row-score-wrap">
-            <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
-              {entry.score?.toLocaleString(undefined, { maximumFractionDigits: 1 }) ?? '0'}
-            </span>
-            <span className="row-score-label">
-              {entry.scoreDelta != null && entry.scoreDelta > 0
-                ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
-                : scoreLabel}
-            </span>
+          <div className="row-score-area">
             {rankColor && entry.score != null && (
-              <span className="solo-rank-badge" style={{ color: rankColor, borderColor: rankColor }}>
-                {scoreToRankFromCutoffs(entry.score, soloMapping!).label}
-              </span>
+              <div className="row-rank-col">
+                <span className="row-rank-badge" style={{ color: rankColor, borderColor: rankColor, background: `color-mix(in srgb, ${rankColor} 12%, transparent)` }}>
+                  {scoreToRankFromCutoffs(entry.score, soloMapping!).label}
+                </span>
+                {nextInfo && (
+                  <span className="row-next-rank" style={{ color: rankColor }}>
+                    ↑ {nextInfo.pointsNeeded.toLocaleString()} to {nextInfo.nextRank.label}
+                  </span>
+                )}
+              </div>
             )}
-            {nextInfo && (
-              <span className="row-next-rank" style={{ color: rankColor }}>
-                ↑ {nextInfo.pointsNeeded.toLocaleString()} to {nextInfo.nextRank.label}
+            <div className="row-score-wrap">
+              <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
+                {entry.score?.toLocaleString(undefined, { maximumFractionDigits: 1 }) ?? '0'}
               </span>
-            )}
+              <span className="row-score-label">
+                {entry.scoreDelta != null && entry.scoreDelta > 0
+                  ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
+                  : scoreLabel}
+              </span>
+            </div>
           </div>
           <button
             className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}`}

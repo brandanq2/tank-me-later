@@ -625,7 +625,35 @@ a.row-first:hover {
 }
 .cm-profile-link:hover { color: var(--text); }
 
-/* Score */
+/* Score area */
+.row-score-area {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+
+.row-rank-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.row-rank-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: 1px solid currentColor;
+  min-width: 5rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
 .row-score-wrap {
   display: flex;
   flex-direction: column;
