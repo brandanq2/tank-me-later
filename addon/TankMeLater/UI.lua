@@ -11,9 +11,9 @@ local GLOW_PAD          = 5   -- px: outer glow ring width
 
 -- Thickness pulse config for top tiers (minT → maxT and back).
 local SHIMMER_CFG = {
-    Challenger  = { speed = 2.2, minT = 0, maxT = 5 },
-    Grandmaster = { speed = 1.6, minT = 0, maxT = 4 },
-    Master      = { speed = 1.1, minT = 0, maxT = 3 },
+    Challenger  = { speed = 1.6, minT = 0, maxT = 5 },
+    Grandmaster = { speed = 1.2, minT = 0, maxT = 4 },
+    Master      = { speed = 0.85, minT = 0, maxT = 3 },
 }
 
 -- ── Border ────────────────────────────────────────────────────────────────────
@@ -100,6 +100,10 @@ end
 
 -- ── Shimmer ───────────────────────────────────────────────────────────────────
 
+-- Flattens the curve at both extremes so the pulse lingers at min/max
+-- instead of passing through them at full speed like raw sine.
+local function Smoothstep(t) return t * t * (3 - 2 * t) end
+
 local function StartShimmer(overlay, tier, r, g, b)
     local cfg = SHIMMER_CFG[tier]
     if not cfg then
@@ -145,7 +149,7 @@ local function StartShimmer(overlay, tier, r, g, b)
     local elapsed = 0
     overlay.shimmerTicker = C_Timer.NewTicker(0.033, function()
         elapsed = elapsed + 0.033 * cfg.speed
-        local progress = 0.5 + 0.5 * math.sin(elapsed)
+        local progress = Smoothstep(0.5 + 0.5 * math.sin(elapsed))
         overlay:SetThickness(cfg.minT + (cfg.maxT - cfg.minT) * progress)
         local glowAlpha = progress * 0.25
         for _, t in ipairs(overlay.glowFrame.edges) do
