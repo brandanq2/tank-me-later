@@ -36,12 +36,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const cKey = charKey(name, realm, region)
   const yKey = yesterday()
+  const lookupKey = dailyKey(yKey)
   const [prevScore, prevRank] = await Promise.all([
-    redis.hget<number>(dailyKey(yKey), cKey),
+    redis.hget<number>(lookupKey, cKey),
     redis.hget<number>(rankKey(yKey), cKey),
   ])
 
   const delta = prevScore != null ? Math.max(0, score - prevScore) : 0
 
-  return res.json({ delta, prevRank: prevRank ?? null })
+  return res.json({ delta, prevRank: prevRank ?? null, _debug: { cKey, lookupKey, prevScore, score } })
 }
