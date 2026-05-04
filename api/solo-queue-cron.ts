@@ -40,7 +40,7 @@ async function riotGet(path: string, apiKey: string): Promise<unknown> {
 // Binary search for the last non-empty page, capped at 8 iterations (~±4 pages of error).
 async function findLastPage(tier: string, division: string, apiKey: string): Promise<number> {
   let lo = 1, hi = 1000
-  for (let i = 0; i < 8 && lo < hi; i++) {
+  for (let i = 0; i < 7 && lo < hi; i++) {
     const mid = Math.ceil((lo + hi) / 2)
     const data = await riotGet(
       `/lol/league/v4/entries/${QUEUE}/${tier}/${division}?page=${mid}`,

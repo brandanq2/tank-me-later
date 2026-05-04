@@ -10,6 +10,6 @@
     { "path": "/api/solo-queue-cron",   "schedule": "0 6 * * 0" }
   ],
   "functions": {
-    "api/solo-queue-cron.ts": { "maxDuration": 800 }
+    "api/solo-queue-cron.ts": { "maxDuration": 300 }
   }
 }
