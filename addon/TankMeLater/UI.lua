@@ -32,6 +32,34 @@ local function CreateBorderOverlay(parent, name)
     return overlay
 end
 
+-- Returns a border object with SetColor / Show / Hide.
+-- If the frame already has a backdrop border, recolors it directly (no second border).
+-- Otherwise falls back to a new overlay frame.
+local function CreateBorderForFrame(frame, name)
+    local bd = frame.GetBackdrop and frame:GetBackdrop()
+    if bd and bd.edgeFile and bd.edgeFile ~= "" then
+        local origR, origG, origB, origA = frame:GetBackdropBorderColor()
+        local colored = false
+        local border  = {}
+        function border:SetColor(r, g, b)
+            colored = true
+            frame:SetBackdropBorderColor(
+                math.min(1, r * 1.4),
+                math.min(1, g * 1.4),
+                math.min(1, b * 1.4), 1)
+        end
+        function border:Show() end
+        function border:Hide()
+            if colored then
+                frame:SetBackdropBorderColor(origR, origG, origB, origA)
+                colored = false
+            end
+        end
+        return border
+    end
+    return CreateBorderOverlay(frame, name)
+end
+
 -- ── Rank badge ────────────────────────────────────────────────────────────────
 
 local function CreateRankBadge(parent)
@@ -173,7 +201,7 @@ end
 
 local function SetupPVEFrame()
     if not PVEFrame then return end
-    TML.PVEBorder = CreateBorderOverlay(PVEFrame, "TankMeLaterPVEBorder")
+    TML.PVEBorder = CreateBorderForFrame(PVEFrame, "TankMeLaterPVEBorder")
     TML.PVEBorder:Hide()
     PVEFrame:HookScript("OnShow", function()
         UpdateBorders(TML:GetPlayerScore())
@@ -189,7 +217,7 @@ local function HookRIOTooltipFrame(frameName, borderKey, withBadge)
     local frame = _G[frameName]
     if not frame or not frame.HookScript then return false end
 
-    local border = CreateBorderOverlay(frame, "TankMeLater" .. borderKey)
+    local border = CreateBorderForFrame(frame, "TankMeLater" .. borderKey)
     border:Hide()
     TML[borderKey] = border
 
