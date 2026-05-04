@@ -49,6 +49,9 @@ SlashCmdList["TANKMELATER"] = function(msg)
             print(string.format("|cff4fc3f7TankMeLater|r: %sMax Rank — Challenger!|r", hex))
         end
 
+        local progress = TML:ScoreToRankProgress(score)
+        print(string.format("|cff4fc3f7TankMeLater|r: Progress bar value: %.1f%%", progress * 100))
+
     elseif cmd == "debug" then
         TML:DebugProfile()
 
