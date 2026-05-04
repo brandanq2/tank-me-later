@@ -14,6 +14,11 @@ on:
         description: 'Region (world / us / eu / kr / tw)'
         default: 'world'
         required: false
+      force_release:
+        description: 'Create a release even if rank data is unchanged'
+        type: boolean
+        default: false
+        required: false
 
 jobs:
   update:
@@ -48,7 +53,7 @@ jobs:
           fi
 
       - name: Bump .toc version and commit
-        if: steps.diff.outputs.changed == 'true'
+        if: steps.diff.outputs.changed == 'true' || github.event.inputs.force_release == 'true'
         run: |
           TODAY=$(date -u +"%Y.%m.%d")
           sed -i "s/^## Version: .*/## Version: ${TODAY}/" \
@@ -61,7 +66,7 @@ jobs:
           git push
 
       - name: Package addon zip
-        if: steps.diff.outputs.changed == 'true'
+        if: steps.diff.outputs.changed == 'true' || github.event.inputs.force_release == 'true'
         run: |
           TODAY=$(date -u +"%Y.%m.%d")
           mkdir -p dist
@@ -70,7 +75,7 @@ jobs:
           echo "ADDON_VERSION=${TODAY}"                  >> "$GITHUB_ENV"
 
       - name: Create GitHub Release
-        if: steps.diff.outputs.changed == 'true'
+        if: steps.diff.outputs.changed == 'true' || github.event.inputs.force_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "addon-${{ env.ADDON_VERSION }}"
