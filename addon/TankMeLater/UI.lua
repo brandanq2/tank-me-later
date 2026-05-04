@@ -136,7 +136,7 @@ local function UpdateBadge(score)
     local badge   = TML.RankBadge
     local rank    = TML:ScoreToRank(score)
     local r, g, b = TML:GetTierColor(rank.tier)
-    local maxW    = badge:GetWidth() - 20
+    local maxW    = 190  -- badge width (210) minus 10px padding on each side
 
     badge.header:SetText("Your Rank")
     badge.scoreLabel:SetText(string.format("%d pts", math.floor(score)))
