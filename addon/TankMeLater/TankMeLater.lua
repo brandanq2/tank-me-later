@@ -10,7 +10,7 @@ events:RegisterEvent("PLAYER_LOGIN")
 
 events:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" and arg1 == ADDON_NAME then
-        TankMeLaterDB = TankMeLaterDB or { minimapAngle = 225 }
+        TankMeLaterDB = TankMeLaterDB or {}
         local d = TML.Data
         if d then
             print(string.format("|cff4fc3f7TankMeLater|r loaded — %s | data: %s",

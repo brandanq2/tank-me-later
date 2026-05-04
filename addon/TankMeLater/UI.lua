@@ -216,84 +216,6 @@ local function TryHookRIOFrames()
     return a or b
 end
 
--- ── Minimap button ────────────────────────────────────────────────────────────
-
-local MINIMAP_RADIUS = 80
-
-local function MinimapButtonPos(angle)
-    return math.cos(math.rad(angle)) * MINIMAP_RADIUS,
-           math.sin(math.rad(angle)) * MINIMAP_RADIUS
-end
-
-local function CreateMinimapButton()
-    local db = TankMeLaterDB
-    local btn = CreateFrame("Button", "TankMeLaterMinimapButton", Minimap)
-    btn:SetSize(26, 26)
-    btn:SetFrameLevel(8)
-    btn:SetFrameStrata("MEDIUM")
-
-    local x, y = MinimapButtonPos(db.minimapAngle)
-    btn:SetPoint("CENTER", Minimap, "CENTER", x, y)
-
-    local ring = btn:CreateTexture(nil, "OVERLAY")
-    ring:SetSize(36, 36)
-    ring:SetPoint("CENTER")
-    ring:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
-
-    local dot = btn:CreateTexture(nil, "BACKGROUND")
-    dot:SetSize(16, 16)
-    dot:SetPoint("CENTER")
-    dot:SetTexture("Interface\\Buttons\\WHITE8x8")
-    dot:SetVertexColor(0.31, 0.765, 0.969, 1)
-    btn.dot = dot
-
-    btn:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine("TankMeLater", 0.31, 0.765, 0.969)
-        local score = TML:GetPlayerScore()
-        if score then
-            local rank    = TML:ScoreToRank(score)
-            local r, g, b = TML:GetTierColor(rank.tier)
-            GameTooltip:AddLine(rank.label, r, g, b)
-            local pct = TML:ScoreToTopPercentApprox(score)
-            if pct < 1 then
-                GameTooltip:AddLine(string.format("%d pts  |  Top %.2f%%", math.floor(score), pct), 0.85, 0.85, 0.85)
-            else
-                GameTooltip:AddLine(string.format("%d pts  |  Top %.0f%%", math.floor(score), pct), 0.85, 0.85, 0.85)
-            end
-            local info = TML:GetNextRankInfo(score)
-            if info then
-                GameTooltip:AddLine(string.format("+%d pts to %s", info.pointsNeeded, info.nextRank.label), 0.6, 0.6, 0.6)
-            end
-        else
-            GameTooltip:AddLine("No score data — RaiderIO required", 0.5, 0.5, 0.5)
-        end
-        GameTooltip:Show()
-    end)
-    btn:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
-    btn:RegisterForDrag("LeftButton")
-    btn:SetScript("OnDragStart", function(self) self:SetScript("OnUpdate", function(self)
-        local mx, my = Minimap:GetCenter()
-        local scale  = UIParent:GetEffectiveScale()
-        local cx, cy = GetCursorPosition()
-        cx, cy = cx / scale, cy / scale
-        local angle  = math.deg(math.atan2(cy - my, cx - mx))
-        db.minimapAngle = angle
-        local nx, ny = MinimapButtonPos(angle)
-        self:SetPoint("CENTER", Minimap, "CENTER", nx, ny)
-    end) end)
-    btn:SetScript("OnDragStop", function(self)
-        self:SetScript("OnUpdate", nil)
-    end)
-
-    C_Timer.After(1, function()
-        UpdateBorders(TML:GetPlayerScore())
-    end)
-
-    TML.MinimapButton = btn
-end
-
 -- ── Init ──────────────────────────────────────────────────────────────────────
 
 function TML:InitUI()
@@ -303,5 +225,7 @@ function TML:InitUI()
         C_Timer.After(3, TryHookRIOFrames)
     end
 
-    CreateMinimapButton()
+    C_Timer.After(1, function()
+        UpdateBorders(TML:GetPlayerScore())
+    end)
 end
