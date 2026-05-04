@@ -85,11 +85,14 @@ local function CreateRankBadge(parent)
     barBg:SetPoint("TOPRIGHT", badge, "TOPRIGHT", -10, -38)
     barBg:SetColorTexture(0.18, 0.18, 0.18, 1)
 
-    local barFill = badge:CreateTexture(nil, "ARTWORK")
+    local barFill = CreateFrame("StatusBar", nil, badge)
     barFill:SetHeight(4)
-    barFill:SetPoint("TOPLEFT", badge, "TOPLEFT", 10, -38)
-    barFill:SetWidth(2)
-    barFill:SetColorTexture(1, 1, 1, 0.9)
+    barFill:SetPoint("TOPLEFT",  badge, "TOPLEFT",  10, -38)
+    barFill:SetPoint("TOPRIGHT", badge, "TOPRIGHT", -10, -38)
+    barFill:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8")
+    barFill:SetMinMaxValues(0, 1)
+    barFill:SetValue(0)
+    barFill:SetFrameLevel(badge:GetFrameLevel() + 2)
     badge.barFill = barFill
 
     local nextLabel = badge:CreateFontString(nil, "OVERLAY")
@@ -136,8 +139,6 @@ local function UpdateBadge(score)
     local badge   = TML.RankBadge
     local rank    = TML:ScoreToRank(score)
     local r, g, b = TML:GetTierColor(rank.tier)
-    local maxW    = 190  -- badge width (210) minus 10px padding on each side
-
     badge.header:SetText("Your Rank")
     badge.scoreLabel:SetText(string.format("%d pts", math.floor(score)))
     badge.rankLabel:SetText(rank.label)
@@ -153,8 +154,8 @@ local function UpdateBadge(score)
     end
 
     local progress = TML:ScoreToRankProgress(score)
-    badge.barFill:SetWidth(math.max(2, progress * maxW))
-    badge.barFill:SetColorTexture(r, g, b, 0.9)
+    badge.barFill:SetValue(progress)
+    badge.barFill:SetStatusBarColor(r, g, b, 0.9)
 
     local info = TML:GetNextRankInfo(score)
     if info then
