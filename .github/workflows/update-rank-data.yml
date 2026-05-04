@@ -69,12 +69,19 @@ jobs:
 
       - name: Package addon zip
         if: steps.diff.outputs.changed == 'true' || github.event.inputs.force_release == 'true'
+        env:
+          FORCE_RELEASE: ${{ github.event.inputs.force_release }}
         run: |
           TODAY=$(date -u +"%Y.%m.%d")
+          if [ "$FORCE_RELEASE" = "true" ]; then
+            ADDON_VERSION="${TODAY}-build.${{ github.run_number }}"
+          else
+            ADDON_VERSION="${TODAY}"
+          fi
           mkdir -p dist
-          zip -r "dist/TankMeLater-${TODAY}.zip" addon/TankMeLater/
-          echo "ADDON_ZIP=dist/TankMeLater-${TODAY}.zip" >> "$GITHUB_ENV"
-          echo "ADDON_VERSION=${TODAY}"                  >> "$GITHUB_ENV"
+          zip -r "dist/TankMeLater-${ADDON_VERSION}.zip" addon/TankMeLater/
+          echo "ADDON_ZIP=dist/TankMeLater-${ADDON_VERSION}.zip" >> "$GITHUB_ENV"
+          echo "ADDON_VERSION=${ADDON_VERSION}"                   >> "$GITHUB_ENV"
 
       - name: Create GitHub Release
         if: steps.diff.outputs.changed == 'true' || github.event.inputs.force_release == 'true'
