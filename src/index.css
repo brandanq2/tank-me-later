@@ -1244,10 +1244,6 @@ a.row-first:hover {
 }
 
 /* Warband row */
-.warband-row {
-  border-left-color: #a855f7;
-}
-
 .warband-avatars {
   display: flex;
   align-items: center;
