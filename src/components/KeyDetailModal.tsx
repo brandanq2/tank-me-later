@@ -1,10 +1,20 @@
 import { useEffect } from 'react'
 import type { BestRun } from '../types'
 
-const ROLE_COLORS: Record<string, string> = {
-  tank: '#4fc3f7',
-  healer: '#2ecc71',
-  dps: '#e74c3c',
+const CLASS_COLORS: Record<string, string> = {
+  'Death Knight': '#C41E3A',
+  'Demon Hunter': '#A330C9',
+  Druid: '#FF7C0A',
+  Evoker: '#33937F',
+  Hunter: '#AAD372',
+  Mage: '#3FC7EB',
+  Monk: '#00FF98',
+  Paladin: '#F48CBA',
+  Priest: '#FFFFFF',
+  Rogue: '#FFF468',
+  Shaman: '#0070DD',
+  Warlock: '#8788EE',
+  Warrior: '#C69B3A',
 }
 
 function formatMs(ms: number): string {
@@ -47,7 +57,7 @@ export function KeyDetailModal({ run, characterName, characterClass, onClose }: 
   const completedDate = run.completedAt
     ? new Date(run.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
     : null
-  const roleColor = ROLE_COLORS[run.role]
+  const classColor = characterClass ? CLASS_COLORS[characterClass] ?? '#aaa' : '#aaa'
   const specLabel = [run.specName, characterClass].filter(Boolean).join(' ')
 
   return (
@@ -58,7 +68,7 @@ export function KeyDetailModal({ run, characterName, characterClass, onClose }: 
         <div className="key-modal-header">
           <div className="key-modal-dungeon">
             <span className="key-modal-name">{run.dungeon}</span>
-            <span className="key-modal-level" style={{ color: roleColor }}>+{run.level}</span>
+            <span className="key-modal-level" style={{ color: classColor }}>+{run.level}</span>
           </div>
           <div className="key-modal-meta">
             <span className="key-modal-upgrade" style={{ color: upgrade.color }}>{upgrade.text}</span>
@@ -74,7 +84,7 @@ export function KeyDetailModal({ run, characterName, characterClass, onClose }: 
           {specLabel && (
             <div className="key-modal-timer-row">
               <span className="key-modal-timer-label">Spec</span>
-              <span className="key-modal-timer-value" style={{ color: roleColor }}>{specLabel}</span>
+              <span className="key-modal-timer-value" style={{ color: classColor }}>{specLabel}</span>
             </div>
           )}
           <div className="key-modal-timer-row">
