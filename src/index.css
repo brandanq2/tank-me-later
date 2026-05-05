@@ -791,29 +791,36 @@ a.row-first:hover {
   opacity: 0.9;
 }
 
-.sq-title-box {
+.sq-title-cutoff {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.35rem 0.75rem;
-  margin-bottom: 0.5rem;
-  border-radius: 6px;
-  border: 1px solid rgba(244, 208, 63, 0.35);
-  background: rgba(244, 208, 63, 0.08);
+  gap: 0.3rem;
+  padding: 0.25rem 0.4rem;
+  margin: 0.1rem 0;
 }
 
-.sq-title-box-label {
-  font-size: 0.62rem;
+.sq-title-cutoff-rule {
+  flex: 1;
+  height: 1px;
+  background: #f4d03f;
+  opacity: 0.45;
+}
+
+.sq-title-cutoff-label {
+  font-size: 0.58rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: #f4d03f;
+  white-space: nowrap;
 }
 
-.sq-title-box-score {
-  font-size: 0.72rem;
+.sq-title-cutoff-score {
+  font-size: 0.6rem;
   font-weight: 700;
   color: #f4d03f;
+  opacity: 0.85;
+  white-space: nowrap;
 }
 
 .solo-rank-badge {

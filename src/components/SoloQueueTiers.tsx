@@ -49,21 +49,29 @@ export function SoloQueueTiers({ cutoffs, titleScore }: { cutoffs: RankCutoff[];
     })
   }
 
+  // Round titleScore to match the integer minScores stored by the cron job.
+  const titleRounded = titleScore != null ? Math.round(titleScore) : null
+  const titleInsertIdx = titleRounded != null
+    ? groups.findIndex(g => titleRounded >= g.entryScore)
+    : -1
+
   return (
     <div className="sq-tiers">
       <p className="sq-tiers-title">Solo Queue</p>
-      {titleScore != null && (
-        <div className="sq-title-box">
-          <span className="sq-title-box-label">Title Cutoff</span>
-          <span className="sq-title-box-score">{Math.round(titleScore).toLocaleString()}</span>
-        </div>
-      )}
       <div className="sq-tree">
-        {groups.map((group) => {
+        {groups.map((group, i) => {
           const hasDivisions = group.rows.length > 1
           const isOpen = expanded.has(group.tier)
           return (
             <div key={group.tier}>
+              {i === titleInsertIdx && titleRounded != null && (
+                <div className="sq-title-cutoff">
+                  <div className="sq-title-cutoff-rule" />
+                  <span className="sq-title-cutoff-label">Title</span>
+                  <span className="sq-title-cutoff-score">{titleRounded.toLocaleString()}</span>
+                  <div className="sq-title-cutoff-rule" />
+                </div>
+              )}
               <div className="sq-group">
                 <div
                   className={`sq-tier-row${hasDivisions ? ' sq-tier-row--expandable' : ''}`}
