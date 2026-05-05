@@ -1310,7 +1310,6 @@ a.row-first:hover {
 
 .key-chip-char {
   font-size: 0.58rem;
-  opacity: 0.85;
   text-transform: capitalize;
   max-width: 3.5rem;
   overflow: hidden;
