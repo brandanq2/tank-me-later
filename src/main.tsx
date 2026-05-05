@@ -14,7 +14,7 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/augs" element={<AugsPage />} />
-          <Route path="/open" element={<OpenLeaderboardPage />} />
+          <Route path="/clb" element={<OpenLeaderboardPage />} />
         </Routes>
       </BrowserRouter>
     </FlagsProvider>

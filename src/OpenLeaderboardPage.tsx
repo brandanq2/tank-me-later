@@ -89,13 +89,21 @@ export default function OpenLeaderboardPage() {
     <div className="app">
       <Nav />
 
-      <header className="header">
-        <h1 className="title-stack">
-          <span>Open</span>
-          <span>Leader</span>
-          <span>board</span>
-        </h1>
-        <p className="subtitle">Mythic+ IO Leaderboard</p>
+      <header className="header clb-header">
+        <img src="/CLB-header.png" className="clb-header-img" alt="" aria-hidden />
+        <div className="clb-subheader">
+          <div className="clb-title-row">
+            <span className="clb-title">Certified Leader Board</span>
+            <div className="clb-swatches">
+              <span className="clb-swatch" style={{ background: '#6B9FD4' }} />
+              <span className="clb-swatch" style={{ background: '#9B84C7' }} />
+              <span className="clb-swatch" style={{ background: '#C4A882' }} />
+              <span className="clb-swatch" style={{ background: '#8BA888' }} />
+              <span className="clb-swatch" style={{ background: '#D4A5B0' }} />
+            </div>
+          </div>
+          <span className="clb-sub">BTW</span>
+        </div>
         {lb.cutoff && (
           <p className="cutoff-badge">
             {lb.cutoff.percentile} cutoff&nbsp;

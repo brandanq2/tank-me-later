@@ -13,8 +13,8 @@ export function Nav() {
         For All the Augs
       </NavLink>
       {openLeaderboard && (
-        <NavLink to="/open" className={({ isActive }) => 'nav-link' + (isActive ? ' nav-link-active' : '')}>
-          Open Leaderboard
+        <NavLink to="/clb" className={({ isActive }) => 'nav-link' + (isActive ? ' nav-link-active' : '')}>
+          CLB
         </NavLink>
       )}
     </nav>
