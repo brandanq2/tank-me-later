@@ -82,6 +82,21 @@ export function WarbandCard({
     ? scoreToColor(entry.score, 0, cutoffScore)
     : '#9d9d9d'
 
+  const topRunClasses = [...new Set(
+    entry.topRuns.map(r => r.characterClass).filter((c): c is string => !!c)
+  )]
+  const gradientColors = topRunClasses.map(c => CLASS_COLORS[c] ?? '#aaa')
+  const nameStyle: React.CSSProperties | undefined = gradientColors.length > 1
+    ? {
+        background: `linear-gradient(90deg, ${gradientColors.join(', ')})`,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }
+    : gradientColors.length === 1
+    ? { color: gradientColors[0] }
+    : undefined
+
   // Best run per dungeon across the warband (for key chips)
   const bestByDungeon = new Map<string, WarbandRun>()
   for (const run of entry.topRuns) {
@@ -130,7 +145,7 @@ export function WarbandCard({
           <div className="row-info">
             <span className="row-name">
               <span className="warband-icon" aria-hidden>⚔ </span>
-              {entry.name}
+              <span style={nameStyle}>{entry.name}</span>
             </span>
             <span className="row-sub">
               {entry.members.length} member{entry.members.length !== 1 ? 's' : ''} · Warband
