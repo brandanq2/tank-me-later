@@ -24,6 +24,11 @@ export default function OpenLeaderboardPage() {
   const [soloMapping, setSoloMapping] = useState<RankCutoff[]>([])
 
   useEffect(() => {
+    document.body.classList.add('body-clb')
+    return () => document.body.classList.remove('body-clb')
+  }, [])
+
+  useEffect(() => {
     if (soloQueueEnabled) fetchSoloQueueMapping().then(setSoloMapping)
   }, [soloQueueEnabled])
 

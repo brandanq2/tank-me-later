@@ -25,6 +25,10 @@ body {
   min-height: 100vh;
 }
 
+body.body-clb {
+  background: #09090f;
+}
+
 .app {
   max-width: 1040px;
   margin: 0 auto;
