@@ -24,6 +24,28 @@ const CLASS_COLORS: Record<string, string> = {
   Warrior: '#D4A843',
 }
 
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]
+}
+
+function lerpColor(a: string, b: string, t: number): string {
+  const [r1, g1, b1] = hexToRgb(a)
+  const [r2, g2, b2] = hexToRgb(b)
+  return `rgb(${Math.round(r1 + (r2 - r1) * t)},${Math.round(g1 + (g2 - g1) * t)},${Math.round(b1 + (b2 - b1) * t)})`
+}
+
+function colorAtPos(pos: number, stops: { pct: number; color: string }[]): string {
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (pos <= stops[i + 1].pct) {
+      const range = stops[i + 1].pct - stops[i].pct
+      const t = range === 0 ? 0 : (pos - stops[i].pct) / range
+      return lerpColor(stops[i].color, stops[i + 1].color, t)
+    }
+  }
+  return stops[stops.length - 1].color
+}
+
 const TIER_COLORS: Record<string, string> = {
   Challenger:  '#f4d03f',
   Grandmaster: '#e8253b',
@@ -91,25 +113,22 @@ export function WarbandCard({
   const sortedClasses = [...classCounts.entries()].sort((a, b) => b[1] - a[1])
   const total = sortedClasses.reduce((sum, [, n]) => sum + n, 0)
 
-  let nameStyle: React.CSSProperties | undefined
-  if (total === 0) {
-    nameStyle = undefined
-  } else if (sortedClasses.length === 1) {
-    nameStyle = { color: CLASS_COLORS[sortedClasses[0][0]] ?? '#aaa' }
-  } else {
+  const gradientStops: { pct: number; color: string }[] = []
+  if (total > 0) {
     let cursor = 0
-    const stops = sortedClasses.map(([cls, count]) => {
-      const color = CLASS_COLORS[cls] ?? '#aaa'
-      cursor += (count / total) * 100
-      return `${color} ${cursor.toFixed(1)}%`
-    })
-    nameStyle = {
-      background: `linear-gradient(90deg, ${stops.join(', ')})`,
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      backgroundClip: 'text',
+    for (const [cls, count] of sortedClasses) {
+      gradientStops.push({ pct: cursor, color: CLASS_COLORS[cls] ?? '#aaa' })
+      cursor += count / total
     }
+    gradientStops.push({ pct: 1, color: gradientStops[gradientStops.length - 1].color })
   }
+
+  const nameChars = gradientStops.length > 0
+    ? entry.name.split('').map((char, i) => {
+        const pos = entry.name.length <= 1 ? 0 : i / (entry.name.length - 1)
+        return <span key={i} style={{ color: colorAtPos(pos, gradientStops) }}>{char}</span>
+      })
+    : null
 
   // Best run per dungeon across the warband (for key chips)
   const bestByDungeon = new Map<string, WarbandRun>()
@@ -159,7 +178,7 @@ export function WarbandCard({
           <div className="row-info">
             <span className="row-name">
               <span className="warband-icon" aria-hidden>⚔ </span>
-              <span style={nameStyle}>{entry.name}</span>
+              {nameChars ?? entry.name}
             </span>
             <span className="row-sub">
               {entry.members.length} member{entry.members.length !== 1 ? 's' : ''} · Warband
