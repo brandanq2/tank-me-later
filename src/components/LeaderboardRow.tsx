@@ -219,10 +219,10 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
               <span className="row-sub" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <span>{entry.className}</span>
                 {entry.roleScores && (
-                  <span style={{ display: 'flex', gap: '0.15rem', fontSize: '0.9em' }}>
-                    {entry.roleScores.tank > 0 && <span title="Tank">🛡️</span>}
-                    {entry.roleScores.dps > 0 && <span title="DPS">⚔️</span>}
-                    {entry.roleScores.healer > 0 && <span title="Healer">✚</span>}
+                  <span style={{ display: 'flex', gap: '0.15rem' }}>
+                    {entry.roleScores.tank > 0 && <img src="/role-tank.png" title="Tank" style={{ width: 14, height: 14, imageRendering: 'pixelated' }} />}
+                    {entry.roleScores.dps > 0 && <img src="/role-dps.png" title="DPS" style={{ width: 14, height: 14, imageRendering: 'pixelated' }} />}
+                    {entry.roleScores.healer > 0 && <img src="/role-healer.png" title="Healer" style={{ width: 14, height: 14, imageRendering: 'pixelated' }} />}
                   </span>
                 )}
               </span>
