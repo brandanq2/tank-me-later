@@ -136,7 +136,7 @@ export default function OpenLeaderboardPage() {
 
         {soloQueueEnabled && soloMapping.length > 0 && (
           <aside className="sq-sidebar">
-            <SoloQueueTiers cutoffs={soloMapping} />
+            <SoloQueueTiers cutoffs={soloMapping} titleScore={lb.cutoff?.score} />
           </aside>
         )}
       </div>

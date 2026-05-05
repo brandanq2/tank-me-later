@@ -34,7 +34,7 @@ function groupByTier(cutoffs: RankCutoff[]): TierGroup[] {
   return groups.map(g => ({ ...g, entryScore: g.rows[g.rows.length - 1].minScore }))
 }
 
-export function SoloQueueTiers({ cutoffs }: { cutoffs: RankCutoff[] }) {
+export function SoloQueueTiers({ cutoffs, titleScore }: { cutoffs: RankCutoff[]; titleScore?: number }) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
 
   if (cutoffs.length === 0) return null
@@ -49,35 +49,51 @@ export function SoloQueueTiers({ cutoffs }: { cutoffs: RankCutoff[] }) {
     })
   }
 
+  // Index of the first group whose entry score is at or below the title cutoff — the line appears above it.
+  const titleInsertIdx = titleScore != null
+    ? groups.findIndex(g => titleScore >= g.entryScore)
+    : -1
+
   return (
     <div className="sq-tiers">
       <p className="sq-tiers-title">Solo Queue</p>
       <div className="sq-tree">
-        {groups.map(group => {
+        {groups.map((group, i) => {
           const hasDivisions = group.rows.length > 1
           const isOpen = expanded.has(group.tier)
           return (
-            <div key={group.tier} className="sq-group">
-              <div
-                className={`sq-tier-row${hasDivisions ? ' sq-tier-row--expandable' : ''}`}
-                onClick={() => hasDivisions && toggle(group.tier)}
-              >
-                <span className="sq-chevron">{hasDivisions ? (isOpen ? '▾' : '▸') : ''}</span>
-                <span className="sq-tier-name" style={{ color: group.color }}>{group.tier}</span>
-                <span className="sq-score">
-                  {group.entryScore > 0 ? `≥ ${group.entryScore.toLocaleString()}` : 'any'}
-                </span>
-              </div>
-              {isOpen && (
-                <div className="sq-divisions">
-                  {group.rows.map(r => (
-                    <div key={r.label} className="sq-div-row">
-                      <span className="sq-div-label" style={{ color: group.color }}>{r.division}</span>
-                      <span className="sq-score">≥ {r.minScore.toLocaleString()}</span>
-                    </div>
-                  ))}
+            <div key={group.tier}>
+              {i === titleInsertIdx && titleScore != null && (
+                <div className="sq-title-cutoff">
+                  <span className="sq-title-cutoff-label">Title</span>
+                  <div className="sq-title-cutoff-line" />
+                  <span className="sq-title-cutoff-score">
+                    {Math.round(titleScore).toLocaleString()}
+                  </span>
                 </div>
               )}
+              <div className="sq-group">
+                <div
+                  className={`sq-tier-row${hasDivisions ? ' sq-tier-row--expandable' : ''}`}
+                  onClick={() => hasDivisions && toggle(group.tier)}
+                >
+                  <span className="sq-chevron">{hasDivisions ? (isOpen ? '▾' : '▸') : ''}</span>
+                  <span className="sq-tier-name" style={{ color: group.color }}>{group.tier}</span>
+                  <span className="sq-score">
+                    {group.entryScore > 0 ? `≥ ${group.entryScore.toLocaleString()}` : 'any'}
+                  </span>
+                </div>
+                {isOpen && (
+                  <div className="sq-divisions">
+                    {group.rows.map(r => (
+                      <div key={r.label} className="sq-div-row">
+                        <span className="sq-div-label" style={{ color: group.color }}>{r.division}</span>
+                        <span className="sq-score">≥ {r.minScore.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )
         })}

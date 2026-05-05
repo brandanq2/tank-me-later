@@ -791,6 +791,40 @@ a.row-first:hover {
   opacity: 0.9;
 }
 
+.sq-title-cutoff {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.4rem 0.3rem 1.4rem;
+  margin: 0.1rem 0;
+}
+
+.sq-title-cutoff-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #f4d03f;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sq-title-cutoff-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, #f4d03f, transparent);
+  opacity: 0.5;
+}
+
+.sq-title-cutoff-score {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #f4d03f;
+  opacity: 0.85;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .solo-rank-badge {
   font-size: 0.6rem;
   font-weight: 700;
