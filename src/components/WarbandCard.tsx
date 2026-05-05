@@ -1,8 +1,24 @@
 import { useState } from 'react'
 import { insetAvatarUrl } from '../api'
+import { scoreToColor } from '../scoreColor'
+import { scoreToRankFromCutoffs, getNextRankInfoFromCutoffs } from '../solo-queue'
+import type { RankCutoff } from '../solo-queue'
 import type { WarbandEntry, WarbandRun } from '../types'
 import { WarbandModal } from './WarbandModal'
 import { KeyDetailModal } from './KeyDetailModal'
+
+const TIER_COLORS: Record<string, string> = {
+  Challenger:  '#f4d03f',
+  Grandmaster: '#e8253b',
+  Master:      '#9b59b6',
+  Diamond:     '#4fc3f7',
+  Emerald:     '#2ecc71',
+  Platinum:    '#1abc9c',
+  Gold:        '#f39c12',
+  Silver:      '#95a5a6',
+  Bronze:      '#cd7f32',
+  Iron:        '#7f8c8d',
+}
 
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) return <span className="rank rank-gold">1</span>
@@ -15,6 +31,8 @@ interface Props {
   entry: WarbandEntry
   rank: number
   sessionId: string
+  cutoffScore: number
+  soloMapping?: RankCutoff[]
   revealed: boolean
   isInitialEntry: boolean
   revealDelay: number
@@ -24,7 +42,7 @@ interface Props {
 }
 
 export function WarbandCard({
-  entry, rank, sessionId, revealed, isInitialEntry, revealDelay,
+  entry, rank, sessionId, cutoffScore, soloMapping, revealed, isInitialEntry, revealDelay,
   onRemoveMember, onRemoveWarband, dungeonOrder,
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
@@ -37,6 +55,16 @@ export function WarbandCard({
     ? { className: revealClass, style: { animationDelay: `${revealDelay}s` } }
     : { className: '', style: {} }
 
+  const rankColor = soloMapping && soloMapping.length > 0 && entry.score > 0
+    ? TIER_COLORS[scoreToRankFromCutoffs(entry.score, soloMapping).tier]
+    : undefined
+  const nextInfo = soloMapping && soloMapping.length > 0 && entry.score > 0
+    ? getNextRankInfoFromCutoffs(entry.score, soloMapping)
+    : null
+  const scoreColor = entry.score > 0 && cutoffScore > 0
+    ? scoreToColor(entry.score, 0, cutoffScore)
+    : '#9d9d9d'
+
   // Best run per dungeon across the warband (for key chips)
   const bestByDungeon = new Map<string, WarbandRun>()
   for (const run of entry.topRuns) {
@@ -48,7 +76,7 @@ export function WarbandCard({
     <>
       <div
         className={`row row-clickable warband-row${isFirst ? ' row-first' : ''} ${anim.className}`}
-        style={anim.style}
+        style={{ ...anim.style, ...(rankColor ? { '--rank-color': rankColor } : {}) } as React.CSSProperties}
         onClick={() => setModalOpen(true)}
         role="button"
       >
@@ -92,11 +120,28 @@ export function WarbandCard({
             </span>
           </div>
 
-          <div className="row-score-wrap">
-            <span className={`row-score${isFirst ? ' row-score-first' : ''}`}>
-              {entry.score.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            </span>
-            <span className="row-score-label">Warband IO</span>
+          <div className="row-score-area">
+            {rankColor && (
+              <div className="row-rank-col">
+                <span
+                  className="row-rank-badge"
+                  style={{ color: rankColor, borderColor: rankColor, background: `color-mix(in srgb, ${rankColor} 12%, transparent)` }}
+                >
+                  {scoreToRankFromCutoffs(entry.score, soloMapping!).label}
+                </span>
+                {nextInfo && (
+                  <span className="row-next-rank" style={{ color: rankColor }}>
+                    ↑ {nextInfo.pointsNeeded.toLocaleString()} to {nextInfo.nextRank.label}
+                  </span>
+                )}
+              </div>
+            )}
+            <div className="row-score-wrap">
+              <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
+                {entry.score.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </span>
+              <span className="row-score-label">Warband IO</span>
+            </div>
           </div>
 
           <button

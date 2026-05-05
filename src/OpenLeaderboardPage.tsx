@@ -136,6 +136,8 @@ export default function OpenLeaderboardPage() {
                         entry={item.entry}
                         rank={item.rank}
                         sessionId={lb.sessionId}
+                        cutoffScore={lb.cutoffScore}
+                        soloMapping={soloQueueEnabled ? soloMapping : undefined}
                         revealed={lb.revealed}
                         isInitialEntry={lb.revealed}
                         revealDelay={revealDelay(item.rank)}
