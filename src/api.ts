@@ -31,6 +31,7 @@ export interface CharacterData {
   specName: string
   thumbnailUrl: string
   profileUrl: string
+  roleScores: { tank: number; dps: number; healer: number }
 }
 
 export interface CutoffData {
@@ -181,16 +182,17 @@ export async function fetchCharacter(char: CharacterInput, scoreField: 'tank' | 
 
   const data: RaiderIOResponse = await res.json()
   const currentSeason = data.mythic_plus_scores_by_season?.[0]
-  const score = currentSeason?.scores?.[scoreField] ?? 0
+  const scores = currentSeason?.scores ?? { all: 0, dps: 0, healer: 0, tank: 0 }
 
   const isFemale = data.gender === 1 || String(data.gender).toLowerCase() === 'female'
   return {
-    score,
+    score: scores[scoreField] ?? 0,
     race: data.race,
     gender: isFemale ? 'female' : 'male',
     className: data.class,
     specName: data.active_spec_name,
     thumbnailUrl: data.thumbnail_url,
     profileUrl: data.profile_url,
+    roleScores: { tank: scores.tank, dps: scores.dps, healer: scores.healer },
   }
 }

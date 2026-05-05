@@ -11,6 +11,12 @@ export interface HistoryPoint {
   score: number | null
 }
 
+export interface RoleScores {
+  tank: number
+  dps: number
+  healer: number
+}
+
 export interface CharacterEntry extends CharacterInput {
   id: string
   status: FetchStatus
@@ -24,6 +30,7 @@ export interface CharacterEntry extends CharacterInput {
   specName?: string
   thumbnailUrl?: string
   profileUrl?: string
+  roleScores?: RoleScores
   error?: string
   history?: HistoryPoint[]
 }

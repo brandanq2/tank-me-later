@@ -20,6 +20,7 @@ interface Props {
   scoreLabel?: string
   soloMapping?: RankCutoff[]
   votingEnabled?: boolean
+  showClassLabel?: boolean
 }
 
 const TIER_COLORS: Record<string, string> = {
@@ -126,7 +127,7 @@ function VoteStrip({ vote }: { vote: VoteRecord }) {
   )
 }
 
-export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO', soloMapping, votingEnabled }: Props) {
+export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO', soloMapping, votingEnabled, showClassLabel }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
@@ -214,9 +215,22 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
           )}
           <div className="row-info">
             <span className="row-name" style={{ color: classColor }}>{entry.name}</span>
-            <span className="row-sub">
-              {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className}
-            </span>
+            {showClassLabel ? (
+              <span className="row-sub" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span>{entry.className}</span>
+                {entry.roleScores && (
+                  <span style={{ display: 'flex', gap: '0.15rem', fontSize: '0.9em' }}>
+                    {entry.roleScores.tank > 0 && <span title="Tank">🛡️</span>}
+                    {entry.roleScores.dps > 0 && <span title="DPS">⚔️</span>}
+                    {entry.roleScores.healer > 0 && <span title="Healer">✚</span>}
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span className="row-sub">
+                {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className}
+              </span>
+            )}
           </div>
           <div className="row-score-area">
             {rankColor && entry.score != null && (

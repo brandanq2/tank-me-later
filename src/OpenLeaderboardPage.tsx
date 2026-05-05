@@ -83,6 +83,7 @@ export default function OpenLeaderboardPage() {
                       onRemove={lb.handleRemoveOrVote}
                       soloMapping={soloQueueEnabled ? soloMapping : undefined}
                       votingEnabled={votingEnabled}
+                      showClassLabel
                     />
                   )
                 })}
@@ -110,6 +111,7 @@ export default function OpenLeaderboardPage() {
                           onRemove={lb.handleRemoveOrVote}
                           soloMapping={soloQueueEnabled ? soloMapping : undefined}
                           votingEnabled={votingEnabled}
+                          showClassLabel
                         />
                       )
                     })}
