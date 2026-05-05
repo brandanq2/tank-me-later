@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import AugsPage from './AugsPage'
+import OpenLeaderboardPage from './OpenLeaderboardPage'
 import { FlagsProvider } from './hooks/useFlags'
 
 createRoot(document.getElementById('root')!).render(
@@ -13,6 +14,7 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/augs" element={<AugsPage />} />
+          <Route path="/open" element={<OpenLeaderboardPage />} />
         </Routes>
       </BrowserRouter>
     </FlagsProvider>
