@@ -11,6 +11,10 @@ interface RaiderIOScore {
   }
 }
 
+interface RaiderIOBestRun {
+  role: 'tank' | 'healer' | 'dps'
+}
+
 interface RaiderIOResponse {
   name: string
   race: string
@@ -21,6 +25,7 @@ interface RaiderIOResponse {
   thumbnail_url: string
   profile_url: string
   mythic_plus_scores_by_season: RaiderIOScore[]
+  mythic_plus_best_runs?: RaiderIOBestRun[]
 }
 
 export interface CharacterData {
@@ -163,12 +168,17 @@ export function insetAvatarUrl(url: string): string {
   return url.replace(/-avatar\.jpg/, '-inset.jpg')
 }
 
+function rolesFromBestRuns(runs?: RaiderIOBestRun[]): { tank: number; dps: number; healer: number } {
+  const roles = new Set(runs?.map(r => r.role) ?? [])
+  return { tank: roles.has('tank') ? 1 : 0, dps: roles.has('dps') ? 1 : 0, healer: roles.has('healer') ? 1 : 0 }
+}
+
 export async function fetchCharacter(char: CharacterInput, scoreField: 'tank' | 'dps' | 'all' = 'tank'): Promise<CharacterData> {
   const params = new URLSearchParams({
     region: char.region,
     realm: char.realm,
     name: char.name,
-    fields: 'mythic_plus_scores_by_season:current',
+    fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs',
   })
 
   const res = await fetch(`/api/raiderio?${params}`)
@@ -193,6 +203,6 @@ export async function fetchCharacter(char: CharacterInput, scoreField: 'tank' | 
     specName: data.active_spec_name,
     thumbnailUrl: data.thumbnail_url,
     profileUrl: data.profile_url,
-    roleScores: { tank: scores.tank, dps: scores.dps, healer: scores.healer },
+    roleScores: rolesFromBestRuns(data.mythic_plus_best_runs),
   }
 }
