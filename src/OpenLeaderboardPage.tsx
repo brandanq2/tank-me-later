@@ -118,7 +118,7 @@ export default function OpenLeaderboardPage() {
             {warbandsEnabled && (
               <WarbandManager
                 onCreate={wb.addWarband}
-                onAddCharacter={(input) => lb.addCharacter(input, false)}
+                onAddCharacter={(input) => lb.addCharacter(input, true)}
               />
             )}
           </div>
