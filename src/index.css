@@ -504,6 +504,7 @@ a.row-first:hover {
   font-weight: 700;
   font-size: 1rem;
   white-space: nowrap;
+  text-transform: capitalize;
   overflow: hidden;
   text-overflow: ellipsis;
   text-transform: capitalize;
@@ -603,6 +604,7 @@ a.row-first:hover {
   font-size: 1.15rem;
   font-weight: 700;
   white-space: nowrap;
+  text-transform: capitalize;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1266,19 +1268,19 @@ a.row-first:hover {
 
 .key-chip-tank {
   color: #4fc3f7;
-  background: transparent;
+  background: var(--surface);
   border-color: color-mix(in srgb, #4fc3f7 55%, transparent);
 }
 
 .key-chip-healer {
   color: #2ecc71;
-  background: transparent;
+  background: var(--surface);
   border-color: color-mix(in srgb, #2ecc71 55%, transparent);
 }
 
 .key-chip-dps {
   color: #ff7043;
-  background: transparent;
+  background: var(--surface);
   border-color: color-mix(in srgb, #ff7043 55%, transparent);
 }
 
@@ -1309,6 +1311,7 @@ a.row-first:hover {
 .key-chip-char {
   font-size: 0.58rem;
   opacity: 0.85;
+  text-transform: capitalize;
   max-width: 3.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1418,6 +1421,7 @@ a.row-first:hover {
   font-weight: 700;
   font-size: 0.92rem;
   white-space: nowrap;
+  text-transform: capitalize;
   overflow: hidden;
   text-overflow: ellipsis;
   text-transform: capitalize;
@@ -1444,6 +1448,7 @@ a.row-first:hover {
   flex: 1;
   font-size: 0.75rem;
   color: var(--muted);
+  text-transform: capitalize;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

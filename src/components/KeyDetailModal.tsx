@@ -79,7 +79,7 @@ export function KeyDetailModal({ run, characterName, characterClass, onClose }: 
         <div className="key-modal-timer">
           <div className="key-modal-timer-row">
             <span className="key-modal-timer-label">Character</span>
-            <span className="key-modal-timer-value">{characterName}</span>
+            <span className="key-modal-timer-value" style={{ textTransform: 'capitalize' }}>{characterName}</span>
           </div>
           {specLabel && (
             <div className="key-modal-timer-row">
