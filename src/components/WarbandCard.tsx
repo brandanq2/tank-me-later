@@ -82,20 +82,34 @@ export function WarbandCard({
     ? scoreToColor(entry.score, 0, cutoffScore)
     : '#9d9d9d'
 
-  const topRunClasses = [...new Set(
-    entry.topRuns.map(r => r.characterClass).filter((c): c is string => !!c)
-  )]
-  const gradientColors = topRunClasses.map(c => CLASS_COLORS[c] ?? '#aaa')
-  const nameStyle: React.CSSProperties | undefined = gradientColors.length > 1
-    ? {
-        background: `linear-gradient(90deg, ${gradientColors.join(', ')})`,
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-      }
-    : gradientColors.length === 1
-    ? { color: gradientColors[0] }
-    : undefined
+  const classCounts = new Map<string, number>()
+  for (const run of entry.topRuns) {
+    if (run.characterClass) {
+      classCounts.set(run.characterClass, (classCounts.get(run.characterClass) ?? 0) + 1)
+    }
+  }
+  const sortedClasses = [...classCounts.entries()].sort((a, b) => b[1] - a[1])
+  const total = sortedClasses.reduce((sum, [, n]) => sum + n, 0)
+  let nameStyle: React.CSSProperties | undefined
+  if (total === 0) {
+    nameStyle = undefined
+  } else if (sortedClasses.length === 1) {
+    nameStyle = { color: CLASS_COLORS[sortedClasses[0][0]] ?? '#aaa' }
+  } else {
+    let cursor = 0
+    const stops = sortedClasses.map(([cls, count]) => {
+      const color = CLASS_COLORS[cls] ?? '#aaa'
+      const start = cursor
+      cursor += (count / total) * 100
+      return `${color} ${start}% ${cursor}%`
+    })
+    nameStyle = {
+      background: `linear-gradient(90deg, ${stops.join(', ')})`,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+    }
+  }
 
   // Best run per dungeon across the warband (for key chips)
   const bestByDungeon = new Map<string, WarbandRun>()
