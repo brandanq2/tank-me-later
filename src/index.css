@@ -53,6 +53,19 @@ body {
   --accent: #c94f3a;
 }
 
+/* CLB theme overrides — cool dark base, hot pink accent from CLB palette */
+.page-clb {
+  --bg: #09090f;
+  --surface: #12121c;
+  --surface2: #1a1a2a;
+  --border: #272742;
+  --text: #eceaf8;
+  --muted: #7878a8;
+  --accent: #d44090;
+  background: var(--bg);
+  min-height: 100vh;
+}
+
 /* Nav */
 .site-nav {
   display: flex;

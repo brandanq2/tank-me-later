@@ -86,7 +86,7 @@ export default function OpenLeaderboardPage() {
   }), [lb.clowns, wb.warbandMemberKeys, warbandsEnabled])
 
   return (
-    <div className="app">
+    <div className="app page-clb">
       <Nav />
 
       <header className="header clb-header">
