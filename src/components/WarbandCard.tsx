@@ -7,6 +7,22 @@ import type { WarbandEntry, WarbandRun } from '../types'
 import { WarbandModal } from './WarbandModal'
 import { KeyDetailModal } from './KeyDetailModal'
 
+const CLASS_COLORS: Record<string, string> = {
+  'Death Knight': '#C41E3A',
+  'Demon Hunter': '#A330C9',
+  Druid: '#FF7C0A',
+  Evoker: '#33937F',
+  Hunter: '#AAD372',
+  Mage: '#3FC7EB',
+  Monk: '#00FF98',
+  Paladin: '#F48CBA',
+  Priest: '#FFFFFF',
+  Rogue: '#FFF468',
+  Shaman: '#0070DD',
+  Warlock: '#8788EE',
+  Warrior: '#C69B3A',
+}
+
 const TIER_COLORS: Record<string, string> = {
   Challenger:  '#f4d03f',
   Grandmaster: '#e8253b',
@@ -167,7 +183,7 @@ export function WarbandCard({
                 >
                   <span className="key-chip-name">{shortName}</span>
                   {run && <span className="key-chip-level">+{run.level}</span>}
-                  {run && <span className="key-chip-char">{run.characterName}</span>}
+                  {run && <span className="key-chip-char" style={{ color: run.characterClass ? CLASS_COLORS[run.characterClass] ?? '#aaa' : undefined }}>{run.characterName}</span>}
                 </div>
               )
             })}

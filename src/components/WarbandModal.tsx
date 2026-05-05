@@ -98,7 +98,7 @@ export function WarbandModal({ entry, sessionId, onRemoveMember, onClose }: Prop
                     <span className="key-chip-name">{run.shortName}</span>
                     <span className="key-chip-level">+{run.level}</span>
                   </span>
-                  <span className="wm-run-char">{run.characterName}</span>
+                  <span className="wm-run-char" style={{ color: run.characterClass ? CLASS_COLORS[run.characterClass] ?? '#aaa' : '#aaa' }}>{run.characterName}</span>
                   <span className="wm-run-score">
                     {run.score.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </span>

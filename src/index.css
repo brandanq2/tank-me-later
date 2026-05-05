@@ -1163,9 +1163,9 @@ a.row-first:hover {
 }
 
 .role-badge-dps {
-  color: #e74c3c;
-  background: color-mix(in srgb, #e74c3c 14%, transparent);
-  border-color: color-mix(in srgb, #e74c3c 35%, transparent);
+  color: #ff7043;
+  background: color-mix(in srgb, #ff7043 14%, transparent);
+  border-color: color-mix(in srgb, #ff7043 35%, transparent);
 }
 
 /* Best keys strip */
@@ -1202,9 +1202,9 @@ a.row-first:hover {
 }
 
 .key-chip-dps {
-  color: #e74c3c;
-  background: color-mix(in srgb, #e74c3c 12%, transparent);
-  border-color: color-mix(in srgb, #e74c3c 30%, transparent);
+  color: #ff7043;
+  background: color-mix(in srgb, #ff7043 12%, transparent);
+  border-color: color-mix(in srgb, #ff7043 30%, transparent);
 }
 
 .key-chip-empty {

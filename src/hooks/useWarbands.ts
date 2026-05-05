@@ -15,21 +15,26 @@ function computeWarbandEntry(def: WarbandDefinition, loadedEntries: CharacterEnt
     keyMap.get(charKey(m)) ?? { ...m, id: charKey(m), status: 'loading' as const }
   )
 
-  const allRuns: WarbandRun[] = []
+  // Best run per dungeon across all members — prevents the same dungeon
+  // from being counted twice when multiple characters share a key.
+  const bestByDungeon = new Map<string, WarbandRun>()
   for (const member of members) {
     if (member.status === 'success' && member.bestRuns) {
       for (const run of member.bestRuns) {
-        allRuns.push({
-          ...run,
-          characterName: member.name,
-          characterClass: member.className,
-          thumbnailUrl: member.thumbnailUrl,
-        })
+        const existing = bestByDungeon.get(run.shortName)
+        if (!existing || run.score > existing.score) {
+          bestByDungeon.set(run.shortName, {
+            ...run,
+            characterName: member.name,
+            characterClass: member.className,
+            thumbnailUrl: member.thumbnailUrl,
+          })
+        }
       }
     }
   }
 
-  const topRuns = [...allRuns].sort((a, b) => b.score - a.score).slice(0, 8)
+  const topRuns = [...bestByDungeon.values()].sort((a, b) => b.score - a.score).slice(0, 8)
   const score = topRuns.reduce((sum, r) => sum + r.score, 0)
 
   const contributorKeys = new Set(topRuns.map(r => r.characterName.toLowerCase()))
