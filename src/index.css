@@ -144,14 +144,14 @@ body.body-clb {
 
 .clb-header-img {
   width: 100%;
-  max-width: 330px;
+  max-width: 360px;
   display: block;
 }
 
 .clb-subheader {
   background: #fff;
   width: 100%;
-  max-width: 330px;
+  max-width: 360px;
   padding: 0.6rem 0.85rem 0.5rem;
   display: flex;
   flex-direction: column;
