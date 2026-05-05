@@ -7,21 +7,21 @@ import type { WarbandEntry, WarbandRun } from '../types'
 import { WarbandModal } from './WarbandModal'
 import { KeyDetailModal } from './KeyDetailModal'
 
-// Brightened class colors for small chip text — dark originals (DK, DH, Evoker, Shaman) are unreadable at small sizes
+// Brightened class colors for small chip text — mixed ~30% toward white for legibility at small sizes
 const CLASS_COLORS: Record<string, string> = {
-  'Death Knight': '#FF4D6A',
-  'Demon Hunter': '#CF65E8',
-  Druid: '#FF7C0A',
-  Evoker: '#52BFA8',
-  Hunter: '#AAD372',
-  Mage: '#3FC7EB',
-  Monk: '#00FF98',
-  Paladin: '#F48CBA',
-  Priest: '#C8C8C8',
-  Rogue: '#FFF468',
-  Shaman: '#3399FF',
-  Warlock: '#A9AAFF',
-  Warrior: '#D4A843',
+  'Death Knight': '#FF8297',
+  'Demon Hunter': '#DD93EF',
+  Druid: '#FF8F53',
+  Evoker: '#86D2C2',
+  Hunter: '#C4E09C',
+  Mage: '#79D8F1',
+  Monk: '#4DFFB7',
+  Paladin: '#F7AECF',
+  Priest: '#D9D9D9',
+  Rogue: '#FFFF95',
+  Shaman: '#70B7FF',
+  Warlock: '#C3C4FF',
+  Warrior: '#E1C27B',
 }
 
 function hexToRgb(hex: string): [number, number, number] {
