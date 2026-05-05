@@ -100,15 +100,10 @@ export async function fetchCutoff(season = 'season-mn-1', region = 'us'): Promis
   if (!res.ok) throw new Error(`Cutoff API error ${res.status}`)
 
   const data = await res.json()
-  console.log('[raiderio] cutoff response:', JSON.stringify(data, null, 2))
 
-  const p999 =
-    data?.cutoffs?.p999 ??
-    data?.all?.p999 ??
-    data?.p999
-
-  if (p999?.score != null) {
-    return { score: p999.score, percentile: '0.1%' }
+  const score = data?.cutoffs?.p999?.all?.quantileMinValue
+  if (score != null) {
+    return { score, percentile: '0.1%' }
   }
 
   throw new Error('Cutoff score not found in response')
