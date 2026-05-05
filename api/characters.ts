@@ -15,6 +15,7 @@ const redis = new Redis({
 const KEYS: Record<string, string> = {
   tanks: 'tank-me-later:characters',
   augs:  'tank-me-later:characters:augs',
+  open:  'tank-me-later:characters:open',
 }
 
 function listKey(req: VercelRequest): string {
