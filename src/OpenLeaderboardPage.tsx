@@ -95,11 +95,11 @@ export default function OpenLeaderboardPage() {
           <div className="clb-title-row">
             <span className="clb-title">Certified Leader Board</span>
             <div className="clb-swatches">
-              <span className="clb-swatch" style={{ background: '#6B9FD4' }} />
-              <span className="clb-swatch" style={{ background: '#9B84C7' }} />
-              <span className="clb-swatch" style={{ background: '#C4A882' }} />
-              <span className="clb-swatch" style={{ background: '#8BA888' }} />
-              <span className="clb-swatch" style={{ background: '#D4A5B0' }} />
+              <span className="clb-swatch" style={{ background: '#5B8EC4' }} />
+              <span className="clb-swatch" style={{ background: '#9B7DC0' }} />
+              <span className="clb-swatch" style={{ background: '#C49460' }} />
+              <span className="clb-swatch" style={{ background: '#8B9B4C' }} />
+              <span className="clb-swatch" style={{ background: '#D44090' }} />
             </div>
           </div>
           <span className="clb-sub">BTW</span>
