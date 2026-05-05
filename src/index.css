@@ -1308,7 +1308,7 @@ a.row-first:hover {
 
 .key-chip-char {
   font-size: 0.58rem;
-  opacity: 0.85;
+  color: rgba(255, 255, 255, 0.65);
   max-width: 3.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
