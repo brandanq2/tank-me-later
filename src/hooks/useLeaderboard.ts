@@ -97,7 +97,7 @@ export function useLeaderboard(config: LeaderboardConfig) {
         return
       }
 
-      const { delta: scoreDelta, prevRank } = await reportScore(input, data.score).catch(() => ({ delta: 0, prevRank: null }))
+      const { delta: scoreDelta, prevRank } = await reportScore(input, data.score, listId).catch(() => ({ delta: 0, prevRank: null }))
       persistCharacter(input, listId).catch(() => {})
       setEntries((prev) =>
         prev.map((e) =>
@@ -199,7 +199,7 @@ export function useLeaderboard(config: LeaderboardConfig) {
       allEntries.map(async (e) => {
         try {
           const [data, history] = await Promise.all([fetchCharacter(e, scoreField), fetchHistory(e)])
-          const { delta: scoreDelta, prevRank } = await reportScore(e, data.score).catch(() => ({ delta: 0, prevRank: null }))
+          const { delta: scoreDelta, prevRank } = await reportScore(e, data.score, listId).catch(() => ({ delta: 0, prevRank: null }))
           setEntries((prev) =>
             prev.map((entry) => (entry.id === e.id ? { ...entry, status: 'success', ...data, scoreDelta, prevRank: prevRank ?? undefined, history } : entry))
           )

@@ -63,11 +63,12 @@ export interface ScoreReport {
 export async function reportScore(
   char: CharacterInput,
   score: number,
+  list?: string,
 ): Promise<ScoreReport> {
   const res = await fetch('/api/scores', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...char, score }),
+    body: JSON.stringify({ ...char, score, list }),
   })
   if (!res.ok) return { delta: 0, prevRank: null }
   const data = await res.json()
