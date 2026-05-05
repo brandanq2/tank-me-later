@@ -59,7 +59,9 @@ export function KeyDetailModal({ run, characterName, onClose }: Props) {
   const upgrade = upgradeLabel(run.numUpgrades)
   const timed = run.clearTimeMs <= run.parTimeMs
   const delta = run.clearTimeMs > 0 && run.parTimeMs > 0 ? timeDelta(run.clearTimeMs, run.parTimeMs) : null
-  const completedDate = run.completedAt ? new Date(run.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null
+  const completedDate = run.completedAt
+    ? new Date(run.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    : null
   const roleColor = ROLE_COLORS[run.role]
 
   return (
@@ -109,35 +111,27 @@ export function KeyDetailModal({ run, characterName, onClose }: Props) {
           )}
         </div>
 
-        {run.affixes.length > 0 && (
-          <div className="key-modal-affixes">
-            {run.affixes.map(affix => (
-              <span key={affix} className="key-modal-affix">{affix}</span>
-            ))}
-          </div>
-        )}
-
-        {run.roster.length > 0 && (
-          <div className="key-modal-roster">
-            <div className="key-modal-section-label">Party</div>
-            {run.roster.map((member, i) => {
-              const isSubject = member.name.toLowerCase() === characterName.toLowerCase()
-              const classColor = CLASS_COLORS[member.className] ?? '#aaa'
-              const memberRoleColor = ROLE_COLORS[member.role] ?? '#aaa'
-              return (
-                <div key={i} className={`key-modal-member${isSubject ? ' key-modal-member-self' : ''}`}>
-                  <span className="key-modal-member-role" style={{ color: memberRoleColor }}>
-                    {member.role === 'tank' ? '⛉' : member.role === 'healer' ? '✚' : '⚔'}
-                  </span>
-                  <span className="key-modal-member-name" style={{ color: classColor }}>
-                    {member.name}
-                  </span>
-                  <span className="key-modal-member-spec">{member.specName} {member.className}</span>
-                </div>
-              )
-            })}
-          </div>
-        )}
+        <div className="key-modal-roster">
+          <div className="key-modal-section-label">Party</div>
+          {run.roster.length > 0 ? run.roster.map((member, i) => {
+            const isSubject = member.name.toLowerCase() === characterName.toLowerCase()
+            const classColor = CLASS_COLORS[member.className] ?? '#aaa'
+            const memberRoleColor = ROLE_COLORS[member.role] ?? '#aaa'
+            return (
+              <div key={i} className={`key-modal-member${isSubject ? ' key-modal-member-self' : ''}`}>
+                <span className="key-modal-member-role" style={{ color: memberRoleColor }}>
+                  {member.role === 'tank' ? '⛉' : member.role === 'healer' ? '✚' : '⚔'}
+                </span>
+                <span className="key-modal-member-name" style={{ color: classColor }}>
+                  {member.name}
+                </span>
+                <span className="key-modal-member-spec">{member.specName} {member.className}</span>
+              </div>
+            )
+          }) : (
+            <span className="key-modal-roster-empty">Party details available on Raider.io</span>
+          )}
+        </div>
 
         {run.url && (
           <a

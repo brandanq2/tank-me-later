@@ -204,7 +204,7 @@ export async function fetchCharacter(char: CharacterInput, scoreField: 'tank' | 
     region: char.region,
     realm: char.realm,
     name: char.name,
-    fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs',
+    fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs:roster',
   })
 
   const res = await fetch(`/api/raiderio?${params}`)
@@ -217,6 +217,7 @@ export async function fetchCharacter(char: CharacterInput, scoreField: 'tank' | 
   }
 
   const data: RaiderIOResponse = await res.json()
+  console.log('[raiderio] first best run raw:', JSON.stringify(data.mythic_plus_best_runs?.[0], null, 2))
   const currentSeason = data.mythic_plus_scores_by_season?.[0]
   const scores = currentSeason?.scores ?? { all: 0, dps: 0, healer: 0, tank: 0 }
 

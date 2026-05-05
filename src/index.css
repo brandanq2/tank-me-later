@@ -1370,6 +1370,13 @@ a.row-first:hover {
   color: var(--muted);
 }
 
+.key-modal-roster-empty {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+  padding: 0.2rem 0.5rem;
+}
+
 .key-modal-link {
   display: block;
   text-align: center;
