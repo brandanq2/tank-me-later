@@ -68,7 +68,7 @@ export function SoloQueueTiers({ cutoffs, titleScore }: { cutoffs: RankCutoff[];
                 <div className="sq-title-cutoff">
                   <div className="sq-title-cutoff-rule" />
                   <span className="sq-title-cutoff-label">Title</span>
-                  <span className="sq-title-cutoff-score">{titleRounded.toLocaleString()}</span>
+                  <span className="sq-title-cutoff-score">{titleScore!.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                   <div className="sq-title-cutoff-rule" />
                 </div>
               )}
