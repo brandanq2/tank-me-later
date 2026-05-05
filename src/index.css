@@ -1311,7 +1311,6 @@ a.row-first:hover {
 .key-chip-char {
   font-size: 0.58rem;
   text-transform: capitalize;
-  filter: brightness(1.4);
   max-width: 3.5rem;
   overflow: hidden;
   text-overflow: ellipsis;

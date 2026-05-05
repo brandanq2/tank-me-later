@@ -7,6 +7,7 @@ import type { WarbandEntry, WarbandRun } from '../types'
 import { WarbandModal } from './WarbandModal'
 import { KeyDetailModal } from './KeyDetailModal'
 
+// Original WoW class colors — used for warband name gradient
 const CLASS_COLORS: Record<string, string> = {
   'Death Knight': '#C41E3A',
   'Demon Hunter': '#A330C9',
@@ -21,6 +22,23 @@ const CLASS_COLORS: Record<string, string> = {
   Shaman: '#0070DD',
   Warlock: '#8788EE',
   Warrior: '#C69B3A',
+}
+
+// ~30% mixed toward white — preserves hue but brighter for small chip text
+const CHIP_CLASS_COLORS: Record<string, string> = {
+  'Death Knight': '#FF8297',
+  'Demon Hunter': '#DD93EF',
+  Druid: '#FF8F53',
+  Evoker: '#86D2C2',
+  Hunter: '#C4E09C',
+  Mage: '#79D8F1',
+  Monk: '#4DFFB7',
+  Paladin: '#F7AECF',
+  Priest: '#D9D9D9',
+  Rogue: '#FFFF95',
+  Shaman: '#70B7FF',
+  Warlock: '#C3C4FF',
+  Warrior: '#E1C27B',
 }
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -245,7 +263,7 @@ export function WarbandCard({
                 >
                   <span className="key-chip-name">{shortName}</span>
                   {run && <span className="key-chip-level">+{run.level}</span>}
-                  {run && <span className="key-chip-char" style={{ color: run.characterClass ? CLASS_COLORS[run.characterClass] ?? '#aaa' : undefined }}>{run.characterName}</span>}
+                  {run && <span className="key-chip-char" style={{ color: run.characterClass ? CHIP_CLASS_COLORS[run.characterClass] ?? '#aaa' : undefined }}>{run.characterName}</span>}
                 </div>
               )
             })}
