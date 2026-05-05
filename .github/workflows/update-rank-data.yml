@@ -2,8 +2,10 @@ name: Update Addon Rank Data
 
 on:
   schedule:
-    # Every Sunday at 06:00 UTC — shortly after Raider.io updates weekly cutoffs.
-    - cron: '0 6 * * 0'
+    # Every Sunday at 06:30 UTC — after the Vercel solo-queue-cron (06:00 UTC) has
+    # written fresh cutoffs to Redis, so generate-rank-data.mjs gets the same data
+    # the web app uses and addon/web percentile mapping stays in sync.
+    - cron: '30 6 * * 0'
   workflow_dispatch:
     inputs:
       season:
