@@ -1,18 +1,6 @@
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Nav } from './components/Nav'
-import { useFlag } from './hooks/useFlags'
 
 export default function OpenLeaderboardPage() {
-  const enabled = useFlag('open-leaderboard')
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    if (!enabled) navigate('/', { replace: true })
-  }, [enabled, navigate])
-
-  if (!enabled) return null
-
   return (
     <div className="app">
       <Nav />
