@@ -122,12 +122,15 @@ export function WarbandCard({
     gradientStops.push({ pct: 1, color: gradientStops[gradientStops.length - 1].color })
   }
 
-  const nameChars = gradientStops.length > 0
-    ? entry.name.split('').map((char, i) => {
-        const pos = entry.name.length <= 1 ? 0 : i / (entry.name.length - 1)
-        return <span key={i} style={{ color: colorAtPos(pos, gradientStops) }}>{char}</span>
-      })
-    : null
+  let nameContent: React.ReactNode = entry.name
+  if (sortedClasses.length === 1) {
+    nameContent = <span style={{ color: CLASS_COLORS[sortedClasses[0][0]] ?? '#aaa' }}>{entry.name}</span>
+  } else if (sortedClasses.length > 1) {
+    nameContent = entry.name.split('').map((char, i) => {
+      const pos = entry.name.length <= 1 ? 0 : i / (entry.name.length - 1)
+      return <span key={i} style={{ color: colorAtPos(pos, gradientStops) }}>{char}</span>
+    })
+  }
 
   // Best run per dungeon across the warband (for key chips)
   const bestByDungeon = new Map<string, WarbandRun>()
@@ -177,7 +180,7 @@ export function WarbandCard({
           <div className="row-info">
             <span className="row-name">
               <span className="warband-icon" aria-hidden>⚔ </span>
-              {nameChars ?? entry.name}
+              {nameContent}
             </span>
             <span className="row-sub" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <span>{entry.members.length} member{entry.members.length !== 1 ? 's' : ''} · Warband</span>
