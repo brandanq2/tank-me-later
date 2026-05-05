@@ -11,11 +11,33 @@ interface RaiderIOScore {
   }
 }
 
+interface RaiderIOAffix {
+  name: string
+}
+
+interface RaiderIORosterEntry {
+  character: {
+    name: string
+    realm: { name: string }
+    class: { name: string }
+    spec: { name: string }
+  }
+  role: 'tank' | 'healer' | 'dps'
+}
+
 interface RaiderIOBestRun {
   role: 'tank' | 'healer' | 'dps'
   short_name: string
   dungeon: string
   mythic_level: number
+  completed_at: string
+  clear_time_ms: number
+  par_time_ms: number
+  num_keystone_upgrades: number
+  score: number
+  url: string
+  affixes: RaiderIOAffix[]
+  roster: RaiderIORosterEntry[]
 }
 
 interface RaiderIOResponse {
@@ -213,6 +235,20 @@ export async function fetchCharacter(char: CharacterInput, scoreField: 'tank' | 
       dungeon: r.dungeon,
       level: r.mythic_level,
       role: r.role,
+      completedAt: r.completed_at ?? '',
+      clearTimeMs: r.clear_time_ms ?? 0,
+      parTimeMs: r.par_time_ms ?? 0,
+      numUpgrades: r.num_keystone_upgrades ?? 0,
+      score: r.score ?? 0,
+      url: r.url ?? '',
+      affixes: (r.affixes ?? []).map(a => a.name),
+      roster: (r.roster ?? []).map(m => ({
+        name: m.character?.name ?? '',
+        realm: m.character?.realm?.name ?? '',
+        className: m.character?.class?.name ?? '',
+        specName: m.character?.spec?.name ?? '',
+        role: m.role,
+      })),
     })),
   }
 }

@@ -3,8 +3,9 @@ import { scoreToColor } from '../scoreColor'
 import { insetAvatarUrl } from '../api'
 import { scoreToRankFromCutoffs, getNextRankInfoFromCutoffs } from '../solo-queue'
 import type { RankCutoff } from '../solo-queue'
-import type { CharacterEntry, VoteRecord } from '../types'
+import type { BestRun, CharacterEntry, VoteRecord } from '../types'
 import { CharacterModal } from './CharacterModal'
+import { KeyDetailModal } from './KeyDetailModal'
 
 interface Props {
   entry: CharacterEntry
@@ -130,6 +131,7 @@ function VoteStrip({ vote }: { vote: VoteRecord }) {
 
 export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO', soloMapping, votingEnabled, showClassLabel, dungeonOrder }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
+  const [selectedRun, setSelectedRun] = useState<BestRun | null>(null)
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
     ? scoreToColor(entry.score ?? 0, 0, cutoffScore)
@@ -286,8 +288,10 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
               return (
                 <div
                   key={shortName}
-                  className={`key-chip${run ? ` key-chip-${run.role}` : ' key-chip-empty'}`}
+                  className={`key-chip${run ? ` key-chip-${run.role} key-chip-clickable` : ' key-chip-empty'}`}
                   title={run ? `${run.dungeon} +${run.level} (${run.role})` : shortName}
+                  onClick={run ? () => setSelectedRun(run) : undefined}
+                  role={run ? 'button' : undefined}
                 >
                   <span className="key-chip-name">{shortName}</span>
                   {run && <span className="key-chip-level">+{run.level}</span>}
@@ -305,6 +309,13 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
           classColor={classColor}
           soloMapping={soloMapping}
           onClose={() => setModalOpen(false)}
+        />
+      )}
+      {selectedRun && (
+        <KeyDetailModal
+          run={selectedRun}
+          characterName={entry.name}
+          onClose={() => setSelectedRun(null)}
         />
       )}
     </>
