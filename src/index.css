@@ -1266,20 +1266,20 @@ a.row-first:hover {
 
 .key-chip-tank {
   color: #4fc3f7;
-  background: color-mix(in srgb, #4fc3f7 12%, transparent);
-  border-color: color-mix(in srgb, #4fc3f7 30%, transparent);
+  background: transparent;
+  border-color: color-mix(in srgb, #4fc3f7 55%, transparent);
 }
 
 .key-chip-healer {
   color: #2ecc71;
-  background: color-mix(in srgb, #2ecc71 12%, transparent);
-  border-color: color-mix(in srgb, #2ecc71 30%, transparent);
+  background: transparent;
+  border-color: color-mix(in srgb, #2ecc71 55%, transparent);
 }
 
 .key-chip-dps {
   color: #ff7043;
-  background: color-mix(in srgb, #ff7043 12%, transparent);
-  border-color: color-mix(in srgb, #ff7043 30%, transparent);
+  background: transparent;
+  border-color: color-mix(in srgb, #ff7043 55%, transparent);
 }
 
 .key-chip-empty {
