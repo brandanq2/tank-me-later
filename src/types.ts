@@ -50,6 +50,29 @@ export interface CharacterEntry extends CharacterInput {
   history?: HistoryPoint[]
 }
 
+export interface WarbandDefinition {
+  id: string
+  name: string
+  ownerSessionId: string
+  members: CharacterInput[]
+}
+
+export interface WarbandRun extends BestRun {
+  characterName: string
+  characterClass?: string
+  thumbnailUrl?: string
+}
+
+export interface WarbandEntry {
+  id: string
+  name: string
+  ownerSessionId: string
+  score: number
+  members: CharacterEntry[]
+  topRuns: WarbandRun[]
+  contributors: CharacterEntry[]
+}
+
 export interface VoteRecord {
   charKey: string
   name: string

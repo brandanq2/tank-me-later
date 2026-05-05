@@ -1,4 +1,4 @@
-import type { CharacterInput, VoteRecord, HistoryPoint, BestRun } from './types'
+import type { CharacterInput, VoteRecord, HistoryPoint, BestRun, WarbandDefinition } from './types'
 import type { RankCutoff } from './solo-queue'
 
 interface RaiderIOScore {
@@ -156,6 +156,46 @@ export async function fetchHistory(char: CharacterInput): Promise<HistoryPoint[]
   const res = await fetch(`/api/history?${params}`)
   if (!res.ok) return []
   return res.json()
+}
+
+export async function fetchWarbands(): Promise<WarbandDefinition[]> {
+  const res = await fetch('/api/warbands')
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function createWarband(
+  name: string,
+  members: CharacterInput[],
+  ownerSessionId: string,
+): Promise<WarbandDefinition | null> {
+  const res = await fetch('/api/warbands', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, members, ownerSessionId }),
+  })
+  if (!res.ok) return null
+  return res.json()
+}
+
+export async function updateWarbandMembers(
+  id: string,
+  members: CharacterInput[],
+  ownerSessionId: string,
+): Promise<WarbandDefinition | null> {
+  const res = await fetch(`/api/warbands?id=${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ members, ownerSessionId }),
+  })
+  if (!res.ok) return null
+  return res.json()
+}
+
+export async function deleteWarband(id: string, sessionId: string): Promise<boolean> {
+  const params = new URLSearchParams({ id, session: sessionId })
+  const res = await fetch(`/api/warbands?${params}`, { method: 'DELETE' })
+  return res.ok
 }
 
 export async function fetchSoloQueueMapping(): Promise<RankCutoff[]> {
