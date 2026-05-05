@@ -91,16 +91,24 @@ export function WarbandCard({
   const sortedClasses = [...classCounts.entries()].sort((a, b) => b[1] - a[1])
   const total = sortedClasses.reduce((sum, [, n]) => sum + n, 0)
 
-  const nameSegments: { text: string; color: string }[] = []
-  if (total > 0) {
-    const len = entry.name.length
-    let charIdx = 0
-    sortedClasses.forEach(([cls, count], i) => {
-      const isLast = i === sortedClasses.length - 1
-      const segLen = isLast ? len - charIdx : Math.round((count / total) * len)
-      nameSegments.push({ text: entry.name.slice(charIdx, charIdx + segLen), color: CLASS_COLORS[cls] ?? '#aaa' })
-      charIdx += segLen
+  let nameStyle: React.CSSProperties | undefined
+  if (total === 0) {
+    nameStyle = undefined
+  } else if (sortedClasses.length === 1) {
+    nameStyle = { color: CLASS_COLORS[sortedClasses[0][0]] ?? '#aaa' }
+  } else {
+    let cursor = 0
+    const stops = sortedClasses.map(([cls, count]) => {
+      const color = CLASS_COLORS[cls] ?? '#aaa'
+      cursor += (count / total) * 100
+      return `${color} ${cursor.toFixed(1)}%`
     })
+    nameStyle = {
+      background: `linear-gradient(90deg, ${stops.join(', ')})`,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+    }
   }
 
   // Best run per dungeon across the warband (for key chips)
@@ -151,11 +159,7 @@ export function WarbandCard({
           <div className="row-info">
             <span className="row-name">
               <span className="warband-icon" aria-hidden>⚔ </span>
-              {nameSegments.length > 0
-                ? nameSegments.map((seg, i) => (
-                    <span key={i} style={{ color: seg.color }}>{seg.text}</span>
-                  ))
-                : entry.name}
+              <span style={nameStyle}>{entry.name}</span>
             </span>
             <span className="row-sub">
               {entry.members.length} member{entry.members.length !== 1 ? 's' : ''} · Warband
