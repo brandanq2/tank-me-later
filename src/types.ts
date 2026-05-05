@@ -4,6 +4,13 @@ export interface CharacterInput {
   region: string
 }
 
+export interface BestRun {
+  shortName: string
+  dungeon: string
+  level: number
+  role: 'tank' | 'healer' | 'dps'
+}
+
 export type FetchStatus = 'idle' | 'loading' | 'success' | 'error'
 
 export interface HistoryPoint {
@@ -31,6 +38,7 @@ export interface CharacterEntry extends CharacterInput {
   thumbnailUrl?: string
   profileUrl?: string
   roleScores?: RoleScores
+  bestRuns?: BestRun[]
   error?: string
   history?: HistoryPoint[]
 }

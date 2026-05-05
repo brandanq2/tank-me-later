@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLeaderboard, revealDelay } from './hooks/useLeaderboard'
 import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
@@ -24,6 +24,16 @@ export default function OpenLeaderboardPage() {
     initialCharacters: [],
     scoreField: 'all',
   })
+
+  const dungeonOrder = useMemo(() => {
+    const names = new Set<string>()
+    for (const entry of lb.entries) {
+      for (const run of entry.bestRuns ?? []) {
+        names.add(run.shortName)
+      }
+    }
+    return Array.from(names).sort()
+  }, [lb.entries])
 
   return (
     <div className="app">
@@ -84,6 +94,7 @@ export default function OpenLeaderboardPage() {
                       soloMapping={soloQueueEnabled ? soloMapping : undefined}
                       votingEnabled={votingEnabled}
                       showClassLabel
+                      dungeonOrder={dungeonOrder}
                     />
                   )
                 })}
@@ -112,6 +123,7 @@ export default function OpenLeaderboardPage() {
                           soloMapping={soloQueueEnabled ? soloMapping : undefined}
                           votingEnabled={votingEnabled}
                           showClassLabel
+                          dungeonOrder={dungeonOrder}
                         />
                       )
                     })}

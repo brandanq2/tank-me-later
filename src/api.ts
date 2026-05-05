@@ -1,4 +1,4 @@
-import type { CharacterInput, VoteRecord, HistoryPoint } from './types'
+import type { CharacterInput, VoteRecord, HistoryPoint, BestRun } from './types'
 import type { RankCutoff } from './solo-queue'
 
 interface RaiderIOScore {
@@ -13,6 +13,9 @@ interface RaiderIOScore {
 
 interface RaiderIOBestRun {
   role: 'tank' | 'healer' | 'dps'
+  short_name: string
+  dungeon: string
+  mythic_level: number
 }
 
 interface RaiderIOResponse {
@@ -37,6 +40,7 @@ export interface CharacterData {
   thumbnailUrl: string
   profileUrl: string
   roleScores: { tank: number; dps: number; healer: number }
+  bestRuns: BestRun[]
 }
 
 export interface CutoffData {
@@ -204,5 +208,11 @@ export async function fetchCharacter(char: CharacterInput, scoreField: 'tank' | 
     thumbnailUrl: data.thumbnail_url,
     profileUrl: data.profile_url,
     roleScores: rolesFromBestRuns(data.mythic_plus_best_runs),
+    bestRuns: (data.mythic_plus_best_runs ?? []).map(r => ({
+      shortName: r.short_name,
+      dungeon: r.dungeon,
+      level: r.mythic_level,
+      role: r.role,
+    })),
   }
 }

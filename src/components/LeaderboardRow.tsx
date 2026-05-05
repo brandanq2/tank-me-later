@@ -21,6 +21,7 @@ interface Props {
   soloMapping?: RankCutoff[]
   votingEnabled?: boolean
   showClassLabel?: boolean
+  dungeonOrder?: string[]
 }
 
 const TIER_COLORS: Record<string, string> = {
@@ -127,7 +128,7 @@ function VoteStrip({ vote }: { vote: VoteRecord }) {
   )
 }
 
-export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO', soloMapping, votingEnabled, showClassLabel }: Props) {
+export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: _sessionId, cutoffScore, revealed, isInitialEntry, revealDelay, onRemove, scoreLabel = 'Tank IO', soloMapping, votingEnabled, showClassLabel, dungeonOrder }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const classColor = entry.className ? CLASS_COLORS[entry.className] ?? '#aaa' : '#aaa'
   const scoreColor = entry.status === 'success' && cutoffScore > 0
@@ -216,16 +217,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
           <div className="row-info">
             <span className="row-name" style={{ color: classColor }}>{entry.name}</span>
             {showClassLabel ? (
-              <span className="row-sub" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span>{entry.className}</span>
-                {entry.roleScores && (
-                  <span style={{ display: 'flex', gap: '0.15rem' }}>
-                    {entry.roleScores.tank > 0 && <img src="/role-tank.png" title="Tank" style={{ width: 14, height: 14, imageRendering: 'pixelated' }} />}
-                    {entry.roleScores.dps > 0 && <img src="/role-dps.png" title="DPS" style={{ width: 14, height: 14, imageRendering: 'pixelated' }} />}
-                    {entry.roleScores.healer > 0 && <img src="/role-healer.png" title="Healer" style={{ width: 14, height: 14, imageRendering: 'pixelated' }} />}
-                  </span>
-                )}
-              </span>
+              <span className="row-sub">{entry.className}</span>
             ) : (
               <span className="row-sub">
                 {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className}
@@ -269,6 +261,23 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
         </div>
         {votingEnabled && activeVote && !activeVote.failed && <VoteStrip vote={activeVote} />}
         {votingEnabled && activeVote?.failed && <FailedStrip vote={activeVote} />}
+        {dungeonOrder && dungeonOrder.length > 0 && (
+          <div className="best-keys-strip" onClick={e => e.stopPropagation()}>
+            {dungeonOrder.map(shortName => {
+              const run = entry.bestRuns?.find(r => r.shortName === shortName)
+              return (
+                <div
+                  key={shortName}
+                  className={`key-chip${run ? ` key-chip-${run.role}` : ' key-chip-empty'}`}
+                  title={run ? `${run.dungeon} +${run.level} (${run.role})` : shortName}
+                >
+                  <span className="key-chip-name">{shortName}</span>
+                  {run && <span className="key-chip-level">+{run.level}</span>}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {modalOpen && (
