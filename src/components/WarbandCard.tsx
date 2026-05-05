@@ -7,20 +7,21 @@ import type { WarbandEntry, WarbandRun } from '../types'
 import { WarbandModal } from './WarbandModal'
 import { KeyDetailModal } from './KeyDetailModal'
 
+// Brightened class colors for small chip text — dark originals (DK, DH, Evoker, Shaman) are unreadable at small sizes
 const CLASS_COLORS: Record<string, string> = {
-  'Death Knight': '#C41E3A',
-  'Demon Hunter': '#A330C9',
+  'Death Knight': '#FF4D6A',
+  'Demon Hunter': '#CF65E8',
   Druid: '#FF7C0A',
-  Evoker: '#33937F',
+  Evoker: '#52BFA8',
   Hunter: '#AAD372',
   Mage: '#3FC7EB',
   Monk: '#00FF98',
   Paladin: '#F48CBA',
-  Priest: '#FFFFFF',
+  Priest: '#C8C8C8',
   Rogue: '#FFF468',
-  Shaman: '#0070DD',
-  Warlock: '#8788EE',
-  Warrior: '#C69B3A',
+  Shaman: '#3399FF',
+  Warlock: '#A9AAFF',
+  Warrior: '#D4A843',
 }
 
 const TIER_COLORS: Record<string, string> = {
