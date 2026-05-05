@@ -4,27 +4,18 @@ export interface CharacterInput {
   region: string
 }
 
-export interface BestRunMember {
-  name: string
-  realm: string
-  className: string
-  specName: string
-  role: 'tank' | 'healer' | 'dps'
-}
-
 export interface BestRun {
   shortName: string
   dungeon: string
   level: number
   role: 'tank' | 'healer' | 'dps'
+  specName: string
   completedAt: string
   clearTimeMs: number
   parTimeMs: number
   numUpgrades: number
   score: number
   url: string
-  affixes: string[]
-  roster: BestRunMember[]
 }
 
 export type FetchStatus = 'idle' | 'loading' | 'success' | 'error'

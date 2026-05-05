@@ -1359,58 +1359,6 @@ a.row-first:hover {
   letter-spacing: 0.02em;
 }
 
-.key-modal-section-label {
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  margin-bottom: 0.4rem;
-}
-
-.key-modal-roster {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-.key-modal-member {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.3rem 0.5rem;
-  border-radius: 6px;
-}
-
-.key-modal-member-self {
-  background: rgba(255, 255, 255, 0.05);
-  outline: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.key-modal-member-role {
-  font-size: 0.75rem;
-  width: 1rem;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.key-modal-member-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  min-width: 7rem;
-}
-
-.key-modal-member-spec {
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-
-.key-modal-roster-empty {
-  font-size: 0.75rem;
-  color: var(--muted);
-  font-style: italic;
-  padding: 0.2rem 0.5rem;
-}
-
 .key-modal-link {
   display: block;
   text-align: center;

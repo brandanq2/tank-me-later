@@ -315,6 +315,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
         <KeyDetailModal
           run={selectedRun}
           characterName={entry.name}
+          characterClass={entry.className}
           onClose={() => setSelectedRun(null)}
         />
       )}

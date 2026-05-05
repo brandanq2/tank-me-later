@@ -11,20 +11,6 @@ interface RaiderIOScore {
   }
 }
 
-interface RaiderIOAffix {
-  name: string
-}
-
-interface RaiderIORosterEntry {
-  character: {
-    name: string
-    realm: { name: string }
-    class: { name: string }
-    spec: { name: string }
-  }
-  role: 'tank' | 'healer' | 'dps'
-}
-
 interface RaiderIOBestRun {
   role: 'tank' | 'healer' | 'dps'
   short_name: string
@@ -36,8 +22,7 @@ interface RaiderIOBestRun {
   num_keystone_upgrades: number
   score: number
   url: string
-  affixes: RaiderIOAffix[]
-  roster: RaiderIORosterEntry[]
+  spec?: { name: string }
 }
 
 interface RaiderIOResponse {
@@ -217,7 +202,6 @@ export async function fetchCharacter(char: CharacterInput, scoreField: 'tank' | 
   }
 
   const data: RaiderIOResponse = await res.json()
-  console.log('[raiderio] first best run raw:', JSON.stringify(data.mythic_plus_best_runs?.[0], null, 2))
   const currentSeason = data.mythic_plus_scores_by_season?.[0]
   const scores = currentSeason?.scores ?? { all: 0, dps: 0, healer: 0, tank: 0 }
 
@@ -242,14 +226,7 @@ export async function fetchCharacter(char: CharacterInput, scoreField: 'tank' | 
       numUpgrades: r.num_keystone_upgrades ?? 0,
       score: r.score ?? 0,
       url: r.url ?? '',
-      affixes: (r.affixes ?? []).map(a => a.name),
-      roster: (r.roster ?? []).map(m => ({
-        name: m.character?.name ?? '',
-        realm: m.character?.realm?.name ?? '',
-        className: m.character?.class?.name ?? '',
-        specName: m.character?.spec?.name ?? '',
-        role: m.role,
-      })),
+      specName: r.spec?.name ?? '',
     })),
   }
 }

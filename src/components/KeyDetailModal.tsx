@@ -1,22 +1,6 @@
 import { useEffect } from 'react'
 import type { BestRun } from '../types'
 
-const CLASS_COLORS: Record<string, string> = {
-  'Death Knight': '#C41E3A',
-  'Demon Hunter': '#A330C9',
-  Druid: '#FF7C0A',
-  Evoker: '#33937F',
-  Hunter: '#AAD372',
-  Mage: '#3FC7EB',
-  Monk: '#00FF98',
-  Paladin: '#F48CBA',
-  Priest: '#FFFFFF',
-  Rogue: '#FFF468',
-  Shaman: '#0070DD',
-  Warlock: '#8788EE',
-  Warrior: '#C69B3A',
-}
-
 const ROLE_COLORS: Record<string, string> = {
   tank: '#4fc3f7',
   healer: '#2ecc71',
@@ -46,10 +30,11 @@ function upgradeLabel(n: number): { text: string; color: string } {
 interface Props {
   run: BestRun
   characterName: string
+  characterClass?: string
   onClose: () => void
 }
 
-export function KeyDetailModal({ run, characterName, onClose }: Props) {
+export function KeyDetailModal({ run, characterName, characterClass, onClose }: Props) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -63,6 +48,7 @@ export function KeyDetailModal({ run, characterName, onClose }: Props) {
     ? new Date(run.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
     : null
   const roleColor = ROLE_COLORS[run.role]
+  const specLabel = [run.specName, characterClass].filter(Boolean).join(' ')
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -81,6 +67,16 @@ export function KeyDetailModal({ run, characterName, onClose }: Props) {
         </div>
 
         <div className="key-modal-timer">
+          <div className="key-modal-timer-row">
+            <span className="key-modal-timer-label">Character</span>
+            <span className="key-modal-timer-value">{characterName}</span>
+          </div>
+          {specLabel && (
+            <div className="key-modal-timer-row">
+              <span className="key-modal-timer-label">Spec</span>
+              <span className="key-modal-timer-value" style={{ color: roleColor }}>{specLabel}</span>
+            </div>
+          )}
           <div className="key-modal-timer-row">
             <span className="key-modal-timer-label">Clear Time</span>
             <span className="key-modal-timer-value">
@@ -108,28 +104,6 @@ export function KeyDetailModal({ run, characterName, onClose }: Props) {
                 {run.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
               </span>
             </div>
-          )}
-        </div>
-
-        <div className="key-modal-roster">
-          <div className="key-modal-section-label">Party</div>
-          {run.roster.length > 0 ? run.roster.map((member, i) => {
-            const isSubject = member.name.toLowerCase() === characterName.toLowerCase()
-            const classColor = CLASS_COLORS[member.className] ?? '#aaa'
-            const memberRoleColor = ROLE_COLORS[member.role] ?? '#aaa'
-            return (
-              <div key={i} className={`key-modal-member${isSubject ? ' key-modal-member-self' : ''}`}>
-                <span className="key-modal-member-role" style={{ color: memberRoleColor }}>
-                  {member.role === 'tank' ? '⛉' : member.role === 'healer' ? '✚' : '⚔'}
-                </span>
-                <span className="key-modal-member-name" style={{ color: classColor }}>
-                  {member.name}
-                </span>
-                <span className="key-modal-member-spec">{member.specName} {member.className}</span>
-              </div>
-            )
-          }) : (
-            <span className="key-modal-roster-empty">Party details available on Raider.io</span>
           )}
         </div>
 
