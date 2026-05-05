@@ -180,8 +180,19 @@ export function WarbandCard({
               <span className="warband-icon" aria-hidden>⚔ </span>
               {nameChars ?? entry.name}
             </span>
-            <span className="row-sub">
-              {entry.members.length} member{entry.members.length !== 1 ? 's' : ''} · Warband
+            <span className="row-sub" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span>{entry.members.length} member{entry.members.length !== 1 ? 's' : ''} · Warband</span>
+              {entry.topRuns.length > 0 && (() => {
+                const roles = Array.from(new Set(entry.topRuns.map(r => r.role)));
+                const order: Array<'tank' | 'healer' | 'dps'> = ['tank', 'healer', 'dps'];
+                return (
+                  <span style={{ display: 'flex', gap: '0.2rem' }}>
+                    {order.filter(r => roles.includes(r)).map(role => (
+                      <span key={role} className={`role-badge role-badge-${role}`}>{role}</span>
+                    ))}
+                  </span>
+                )
+              })()}
             </span>
           </div>
 
