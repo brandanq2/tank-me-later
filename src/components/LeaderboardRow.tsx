@@ -161,9 +161,12 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
             <span className="row-score">...</span>
             <span className="row-score-label">Tank IO</span>
           </div>
-          {(votingEnabled || entry.isOwned) && (
-            <button className="remove-btn" onClick={() => onRemove(entry.id)}>✕</button>
-          )}
+          <button
+            className={`remove-btn${!(votingEnabled || entry.isOwned) ? ' remove-btn-hidden' : ''}`}
+            disabled={!(votingEnabled || entry.isOwned)}
+            onClick={() => { if (votingEnabled || entry.isOwned) onRemove(entry.id) }}
+            aria-hidden={!(votingEnabled || entry.isOwned)}
+          >✕</button>
         </div>
       </div>
     )
@@ -183,9 +186,12 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
             <span className="row-score row-score-err">—</span>
             <span className="row-score-label">Tank IO</span>
           </div>
-          {(votingEnabled || entry.isOwned) && (
-            <button className="remove-btn" onClick={() => onRemove(entry.id)}>✕</button>
-          )}
+          <button
+            className={`remove-btn${!(votingEnabled || entry.isOwned) ? ' remove-btn-hidden' : ''}`}
+            disabled={!(votingEnabled || entry.isOwned)}
+            onClick={() => { if (votingEnabled || entry.isOwned) onRemove(entry.id) }}
+            aria-hidden={!(votingEnabled || entry.isOwned)}
+          >✕</button>
         </div>
       </div>
     )
@@ -261,16 +267,15 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
               </span>
             </div>
           </div>
-          {(votingEnabled || entry.isOwned) && (
-            <button
-              className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}`}
-              disabled={!!activeVote?.failed}
-              onClick={e => { e.stopPropagation(); if (!activeVote?.failed) onRemove(entry.id) }}
-              title={activeVote?.failed ? 'Vote to remove failed — on cooldown' : undefined}
-            >
-              {activeVote?.failed ? '🔒' : '✕'}
-            </button>
-          )}
+          <button
+            className={`remove-btn${activeVote?.failed ? ' remove-btn-locked' : ''}${!(votingEnabled || entry.isOwned) ? ' remove-btn-hidden' : ''}`}
+            disabled={!!activeVote?.failed || !(votingEnabled || entry.isOwned)}
+            onClick={e => { e.stopPropagation(); if (!activeVote?.failed && (votingEnabled || entry.isOwned)) onRemove(entry.id) }}
+            title={activeVote?.failed ? 'Vote to remove failed — on cooldown' : undefined}
+            aria-hidden={!(votingEnabled || entry.isOwned)}
+          >
+            {activeVote?.failed ? '🔒' : '✕'}
+          </button>
         </div>
         {votingEnabled && activeVote && !activeVote.failed && <VoteStrip vote={activeVote} />}
         {votingEnabled && activeVote?.failed && <FailedStrip vote={activeVote} />}

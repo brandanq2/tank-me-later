@@ -831,6 +831,11 @@ a.row-first:hover {
   cursor: not-allowed;
 }
 
+.remove-btn-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* Vote Modal */
 .vote-overlay {
   position: fixed;
