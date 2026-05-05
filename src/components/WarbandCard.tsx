@@ -232,7 +232,7 @@ export function WarbandCard({
                 >
                   <span className="key-chip-name">{shortName}</span>
                   {run && <span className="key-chip-level">+{run.level}</span>}
-                  {run && <span className="key-chip-char">{run.characterName}</span>}
+                  {run && <span className="key-chip-char" style={{ color: run.characterClass ? CLASS_COLORS[run.characterClass] ?? '#aaa' : undefined }}>{run.characterName}</span>}
                 </div>
               )
             })}
