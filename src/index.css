@@ -127,14 +127,14 @@ body {
 
 .clb-header-img {
   width: 100%;
-  max-width: 420px;
+  max-width: 280px;
   display: block;
 }
 
 .clb-subheader {
   background: #fff;
   width: 100%;
-  max-width: 420px;
+  max-width: 280px;
   padding: 0.6rem 0.85rem 0.5rem;
   display: flex;
   flex-direction: column;
@@ -150,7 +150,7 @@ body {
 
 .clb-title {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: #111;
   line-height: 1;
