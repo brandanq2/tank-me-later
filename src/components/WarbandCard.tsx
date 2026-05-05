@@ -218,7 +218,7 @@ export function WarbandCard({
             )}
             <div className="row-score-wrap">
               <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
-                {entry.score.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                {entry.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
               </span>
               <span className="row-score-label">Warband IO</span>
             </div>

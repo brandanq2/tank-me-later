@@ -39,7 +39,7 @@ export function WarbandModal({ entry, sessionId, onRemoveMember, onClose }: Prop
           </div>
           <div className="cm-score-block">
             <span className="cm-score">
-              {entry.score.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              {entry.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
             </span>
             <span className="cm-score-label">Warband IO</span>
           </div>
@@ -55,7 +55,7 @@ export function WarbandModal({ entry, sessionId, onRemoveMember, onClose }: Prop
                 ? 'Loading…'
                 : member.status === 'error'
                 ? 'Failed to load'
-                : `${member.realm} · ${member.region.toUpperCase()} · ${(member.score ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} IO`
+                : `${member.realm} · ${member.region.toUpperCase()} · ${(member.score ?? 0).toLocaleString(undefined, { maximumFractionDigits: 1 })} IO`
 
               return (
                 <div key={key} className="wm-member">
@@ -100,7 +100,7 @@ export function WarbandModal({ entry, sessionId, onRemoveMember, onClose }: Prop
                   </span>
                   <span className="wm-run-char" style={{ color: run.characterClass ? CLASS_COLORS[run.characterClass] ?? '#aaa' : '#aaa' }}>{run.characterName}</span>
                   <span className="wm-run-score">
-                    {run.score.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    {run.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
                   </span>
                 </div>
               ))}
