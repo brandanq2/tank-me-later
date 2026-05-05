@@ -791,38 +791,29 @@ a.row-first:hover {
   opacity: 0.9;
 }
 
-.sq-title-cutoff {
+.sq-title-box {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.4rem 0.3rem 1.4rem;
-  margin: 0.1rem 0;
+  padding: 0.35rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(244, 208, 63, 0.35);
+  background: rgba(244, 208, 63, 0.08);
 }
 
-.sq-title-cutoff-label {
-  font-size: 0.58rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #f4d03f;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.sq-title-cutoff-line {
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(to right, #f4d03f, transparent);
-  opacity: 0.5;
-}
-
-.sq-title-cutoff-score {
+.sq-title-box-label {
   font-size: 0.62rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   color: #f4d03f;
-  opacity: 0.85;
-  white-space: nowrap;
-  flex-shrink: 0;
+}
+
+.sq-title-box-score {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #f4d03f;
 }
 
 .solo-rank-badge {

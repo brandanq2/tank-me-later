@@ -94,6 +94,7 @@ export default function OpenLeaderboardPage() {
                       soloMapping={soloQueueEnabled ? soloMapping : undefined}
                       votingEnabled={votingEnabled}
                       showClassLabel
+                      scoreLabel=""
                       dungeonOrder={dungeonOrder}
                     />
                   )

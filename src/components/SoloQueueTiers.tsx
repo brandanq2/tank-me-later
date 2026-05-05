@@ -49,29 +49,21 @@ export function SoloQueueTiers({ cutoffs, titleScore }: { cutoffs: RankCutoff[];
     })
   }
 
-  // Index of the first group whose entry score is at or below the title cutoff — the line appears above it.
-  const titleInsertIdx = titleScore != null
-    ? groups.findIndex(g => titleScore >= g.entryScore)
-    : -1
-
   return (
     <div className="sq-tiers">
       <p className="sq-tiers-title">Solo Queue</p>
+      {titleScore != null && (
+        <div className="sq-title-box">
+          <span className="sq-title-box-label">Title Cutoff</span>
+          <span className="sq-title-box-score">{Math.round(titleScore).toLocaleString()}</span>
+        </div>
+      )}
       <div className="sq-tree">
-        {groups.map((group, i) => {
+        {groups.map((group) => {
           const hasDivisions = group.rows.length > 1
           const isOpen = expanded.has(group.tier)
           return (
             <div key={group.tier}>
-              {i === titleInsertIdx && titleScore != null && (
-                <div className="sq-title-cutoff">
-                  <span className="sq-title-cutoff-label">Title</span>
-                  <div className="sq-title-cutoff-line" />
-                  <span className="sq-title-cutoff-score">
-                    {Math.round(titleScore).toLocaleString()}
-                  </span>
-                </div>
-              )}
               <div className="sq-group">
                 <div
                   className={`sq-tier-row${hasDivisions ? ' sq-tier-row--expandable' : ''}`}
@@ -101,3 +93,4 @@ export function SoloQueueTiers({ cutoffs, titleScore }: { cutoffs: RankCutoff[];
     </div>
   )
 }
+
