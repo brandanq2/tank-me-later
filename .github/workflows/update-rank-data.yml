@@ -94,3 +94,39 @@ jobs:
 
             Install by extracting `TankMeLater/` into your `Interface/AddOns/` folder.
           files: ${{ env.ADDON_ZIP }}
+
+      - name: Upload to CurseForge
+        if: steps.diff.outputs.changed == 'true' || github.event.inputs.force_release == 'true'
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          CF_PROJECT_ID: ${{ secrets.CF_PROJECT_ID }}
+        run: |
+          if [ -z "$CF_API_KEY" ] || [ -z "$CF_PROJECT_ID" ]; then
+            echo "CF_API_KEY or CF_PROJECT_ID not set — skipping CurseForge upload"
+            exit 0
+          fi
+
+          # Convert TOC interface number to version string (e.g. 120005 → 12.0.5)
+          INTERFACE_VER=$(grep "^## Interface:" addon/TankMeLater/TankMeLater.toc | awk '{print $NF}')
+          MAJOR=$((INTERFACE_VER / 10000))
+          MINOR=$(( (INTERFACE_VER % 10000) / 100 ))
+          PATCH=$((INTERFACE_VER % 100))
+          VERSION_STR="${MAJOR}.${MINOR}.${PATCH}"
+
+          # Resolve the CurseForge internal game version ID (gameVersionTypeID 517 = retail WoW)
+          CF_VERSIONS=$(curl -sf "https://wow.curseforge.com/api/game/versions" \
+            -H "X-Api-Token: ${CF_API_KEY}")
+          CF_VERSION_ID=$(echo "$CF_VERSIONS" | jq -r \
+            ".[] | select(.name == \"${VERSION_STR}\" and .gameVersionTypeID == 517) | .id" | head -1)
+
+          if [ -z "$CF_VERSION_ID" ]; then
+            echo "Could not find CurseForge game version for ${VERSION_STR} — skipping upload"
+            exit 1
+          fi
+
+          echo "Uploading ${ADDON_ZIP} for WoW ${VERSION_STR} (CF version ID: ${CF_VERSION_ID})"
+          curl -sf -X POST \
+            "https://wow.curseforge.com/api/projects/${CF_PROJECT_ID}/upload-file" \
+            -H "X-Api-Token: ${CF_API_KEY}" \
+            -F "metadata={\"changelog\":\"Weekly rank data update for ${ADDON_VERSION}.\",\"changelogType\":\"text\",\"gameVersions\":[${CF_VERSION_ID}],\"releaseType\":\"release\"}" \
+            -F "file=@${ADDON_ZIP}"
