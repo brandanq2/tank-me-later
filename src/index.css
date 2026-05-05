@@ -1317,7 +1317,6 @@ a.row-first:hover {
   white-space: nowrap;
   border-left: 1px solid currentColor;
   padding-left: 0.25rem;
-  opacity: 0.5;
 }
 
 /* Warband row */
