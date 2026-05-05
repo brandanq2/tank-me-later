@@ -217,7 +217,20 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
           <div className="row-info">
             <span className="row-name" style={{ color: classColor }}>{entry.name}</span>
             {showClassLabel ? (
-              <span className="row-sub">{entry.className}</span>
+              <span className="row-sub" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span>{entry.className}</span>
+                {entry.bestRuns && entry.bestRuns.length > 0 && (() => {
+                  const roles = Array.from(new Set(entry.bestRuns!.map(r => r.role)))
+                  const order: Array<'tank' | 'healer' | 'dps'> = ['tank', 'healer', 'dps']
+                  return (
+                    <span style={{ display: 'flex', gap: '0.2rem' }}>
+                      {order.filter(r => roles.includes(r)).map(role => (
+                        <span key={role} className={`role-badge role-badge-${role}`}>{role}</span>
+                      ))}
+                    </span>
+                  )
+                })()}
+              </span>
             ) : (
               <span className="row-sub">
                 {entry.className ? (CLASS_TANK_SPEC[entry.className] ?? entry.specName) : entry.specName} {entry.className}

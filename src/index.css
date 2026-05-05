@@ -1101,6 +1101,36 @@ a.row-first:hover {
   color: var(--muted);
 }
 
+/* Role badges */
+.role-badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  line-height: 1.4;
+}
+
+.role-badge-tank {
+  color: #4fc3f7;
+  background: color-mix(in srgb, #4fc3f7 14%, transparent);
+  border-color: color-mix(in srgb, #4fc3f7 35%, transparent);
+}
+
+.role-badge-healer {
+  color: #2ecc71;
+  background: color-mix(in srgb, #2ecc71 14%, transparent);
+  border-color: color-mix(in srgb, #2ecc71 35%, transparent);
+}
+
+.role-badge-dps {
+  color: #e74c3c;
+  background: color-mix(in srgb, #e74c3c 14%, transparent);
+  border-color: color-mix(in srgb, #e74c3c 35%, transparent);
+}
+
 /* Best keys strip */
 .best-keys-strip {
   display: flex;
