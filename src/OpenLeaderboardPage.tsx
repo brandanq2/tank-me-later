@@ -139,7 +139,7 @@ export default function OpenLeaderboardPage() {
           {lb.entries.length === 0 && (!warbandsEnabled || wb.warbandEntries.length === 0) ? (
             <p className="empty">Add characters above to build your leaderboard.</p>
           ) : (
-            <div className={lb.revealed && !lb.isRefreshing ? undefined : 'pre-reveal'}>
+            <div className={lb.revealed && !lb.isRefreshing && (!warbandsEnabled || wb.warbandsLoaded) ? undefined : 'pre-reveal'}>
               <div className="leaderboard">
                 {combined.map((item) => {
                   if (item.kind === 'warband') {

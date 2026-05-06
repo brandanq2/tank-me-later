@@ -45,9 +45,12 @@ function computeWarbandEntry(def: WarbandDefinition, loadedEntries: CharacterEnt
 
 export function useWarbands(loadedEntries: CharacterEntry[], sessionId: string) {
   const [definitions, setDefinitions] = useState<WarbandDefinition[]>([])
+  const [warbandsLoaded, setWarbandsLoaded] = useState(false)
 
   useEffect(() => {
-    fetchWarbands().then(setDefinitions).catch(() => {})
+    fetchWarbands()
+      .then(data => { setDefinitions(data); setWarbandsLoaded(true) })
+      .catch(() => setWarbandsLoaded(true))
   }, [])
 
   const warbandEntries = definitions.map(def => computeWarbandEntry(def, loadedEntries))
@@ -73,5 +76,5 @@ export function useWarbands(loadedEntries: CharacterEntry[], sessionId: string) 
     if (ok) setDefinitions(prev => prev.filter(d => d.id !== warbandId))
   }, [sessionId])
 
-  return { warbandEntries, warbandMemberKeys, addWarband, removeMember, removeWarband }
+  return { warbandEntries, warbandMemberKeys, warbandsLoaded, addWarband, removeMember, removeWarband }
 }
