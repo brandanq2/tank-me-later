@@ -226,9 +226,9 @@ local function HookRIOTooltipFrame(frameName, borderKey, withBadge)
     end
 
     frame:HookScript("OnShow", function()
-        local profileScore, _, _ = TML:GetProfileScore()
-        UpdateBorders(profileScore)
-        if withBadge then UpdateBadge(TML:GetPlayerScore()) end
+        local playerScore = TML:GetPlayerScore()
+        UpdateBorders(playerScore)
+        if withBadge then UpdateBadge(playerScore) end
         border:Show()
     end)
     frame:HookScript("OnHide", function()
