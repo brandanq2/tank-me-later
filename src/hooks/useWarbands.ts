@@ -4,8 +4,13 @@ import {
 } from '../api'
 import type { CharacterEntry, CharacterInput, WarbandDefinition, WarbandEntry, WarbandRun } from '../types'
 
-function charKey(c: CharacterInput): string {
-  return `${c.name}-${c.realm}-${c.region}`.toLowerCase()
+// Normalize realm slugs so "Zul'jin", "zul-jin", and "zuljin" all match.
+function normalizeRealm(realm: string): string {
+  return realm.toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+export function charKey(c: CharacterInput): string {
+  return `${c.name.toLowerCase()}-${normalizeRealm(c.realm)}-${c.region.toLowerCase()}`
 }
 
 function computeWarbandEntry(def: WarbandDefinition, loadedEntries: CharacterEntry[]): WarbandEntry {

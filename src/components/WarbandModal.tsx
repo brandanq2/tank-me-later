@@ -1,4 +1,5 @@
 import { insetAvatarUrl } from '../api'
+import { charKey } from '../hooks/useWarbands'
 import type { WarbandEntry } from '../types'
 
 const CLASS_COLORS: Record<string, string> = {
@@ -49,7 +50,7 @@ export function WarbandModal({ entry, sessionId, onRemoveMember, onClose }: Prop
           <p className="cm-section-label">Members · {entry.members.length}</p>
           <div className="wm-member-list">
             {entry.members.map(member => {
-              const key = `${member.name}-${member.realm}-${member.region}`.toLowerCase()
+              const key = charKey(member)
               const classColor = member.className ? CLASS_COLORS[member.className] ?? '#aaa' : '#aaa'
               const subText = member.status === 'loading'
                 ? 'Loading…'

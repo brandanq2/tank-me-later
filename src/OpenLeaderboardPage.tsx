@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLeaderboard, revealDelay } from './hooks/useLeaderboard'
-import { useWarbands } from './hooks/useWarbands'
+import { useWarbands, charKey } from './hooks/useWarbands'
 import { AddCharacterForm } from './components/AddCharacterForm'
 import { LeaderboardRow } from './components/LeaderboardRow'
 import { WarbandCard } from './components/WarbandCard'
@@ -59,8 +59,7 @@ export default function OpenLeaderboardPage() {
     const items: CombinedItem[] = []
 
     for (const entry of lb.leaderboard) {
-      const key = `${entry.name}-${entry.realm}-${entry.region}`.toLowerCase()
-      if (warbandsEnabled && wb.warbandMemberKeys.has(key)) continue
+      if (warbandsEnabled && wb.warbandMemberKeys.has(charKey(entry))) continue
       items.push({ kind: 'char', entry })
     }
 
@@ -86,8 +85,7 @@ export default function OpenLeaderboardPage() {
   // Clowns: 0-IO individual entries not in a warband
   const clowns = useMemo(() => lb.clowns.filter(e => {
     if (!warbandsEnabled) return true
-    const key = `${e.name}-${e.realm}-${e.region}`.toLowerCase()
-    return !wb.warbandMemberKeys.has(key)
+    return !wb.warbandMemberKeys.has(charKey(e))
   }), [lb.clowns, wb.warbandMemberKeys, warbandsEnabled])
 
   return (
