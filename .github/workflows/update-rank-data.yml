@@ -81,7 +81,7 @@ jobs:
             ADDON_VERSION="${TODAY}"
           fi
           mkdir -p dist
-          zip -r "dist/TankMeLater-${ADDON_VERSION}.zip" addon/TankMeLater/
+          (cd addon && zip -r "../dist/TankMeLater-${ADDON_VERSION}.zip" TankMeLater/)
           echo "ADDON_ZIP=dist/TankMeLater-${ADDON_VERSION}.zip" >> "$GITHUB_ENV"
           echo "ADDON_VERSION=${ADDON_VERSION}"                   >> "$GITHUB_ENV"
 
