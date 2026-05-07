@@ -6,7 +6,7 @@ TankMeLater.Data = {}
 
 -- Season metadata
 TankMeLater.Data.Season      = "season-mn-1"
-TankMeLater.Data.UpdatedDate = "2026-05-05"
+TankMeLater.Data.UpdatedDate = "2026-05-07"
 
 -- Pre-computed minimum score for each rank boundary.
 -- Ordered highest rank first (Challenger index 1, Iron IV last).
