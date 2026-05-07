@@ -220,7 +220,11 @@ export function WarbandCard({
               <span className={`row-score${isFirst ? ' row-score-first' : ''}`} style={{ color: scoreColor }}>
                 {entry.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
               </span>
-              <span className="row-score-label">Warband IO</span>
+              <span className="row-score-label">
+                {entry.scoreDelta != null && entry.scoreDelta > 0
+                  ? <span className="score-delta">+{entry.scoreDelta.toLocaleString(undefined, { maximumFractionDigits: 1 })} today</span>
+                  : 'Warband IO'}
+              </span>
             </div>
           </div>
 

@@ -68,6 +68,7 @@ export interface WarbandEntry {
   name: string
   ownerSessionId: string
   score: number
+  scoreDelta?: number
   members: CharacterEntry[]
   topRuns: WarbandRun[]
   contributors: CharacterEntry[]

@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   fetchWarbands, createWarband, updateWarbandMembers, deleteWarband, persistCharacter,
+  reportWarbandScore,
 } from '../api'
 import type { CharacterEntry, CharacterInput, WarbandDefinition, WarbandEntry, WarbandRun } from '../types'
 
@@ -58,8 +59,31 @@ export function useWarbands(loadedEntries: CharacterEntry[], sessionId: string) 
       .catch(() => setWarbandsLoaded(true))
   }, [])
 
-  const warbandEntries = definitions.map(def => computeWarbandEntry(def, loadedEntries))
+  const baseWarbandEntries = useMemo(
+    () => definitions.map(def => computeWarbandEntry(def, loadedEntries)),
+    [definitions, loadedEntries],
+  )
   const warbandMemberKeys = new Set(definitions.flatMap(d => d.members.map(charKey)))
+
+  const [warbandDeltas, setWarbandDeltas] = useState<Record<string, number>>({})
+  const reportedScoresRef = useRef(new Map<string, number>())
+
+  useEffect(() => {
+    for (const wb of baseWarbandEntries) {
+      const allMembersLoaded = wb.members.every(m => m.status === 'success')
+      if (!allMembersLoaded || wb.score <= 0) continue
+      if (reportedScoresRef.current.get(wb.id) === wb.score) continue
+      reportedScoresRef.current.set(wb.id, wb.score)
+      reportWarbandScore(wb.id, wb.score).then(delta => {
+        setWarbandDeltas(prev => ({ ...prev, [wb.id]: delta }))
+      }).catch(() => {})
+    }
+  }, [baseWarbandEntries])
+
+  const warbandEntries = useMemo(
+    () => baseWarbandEntries.map(wb => ({ ...wb, scoreDelta: warbandDeltas[wb.id] })),
+    [baseWarbandEntries, warbandDeltas],
+  )
 
   const addWarband = useCallback(async (name: string, members: CharacterInput[]) => {
     await Promise.allSettled(members.map(m => persistCharacter(m, 'open')))

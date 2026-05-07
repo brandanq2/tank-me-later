@@ -198,6 +198,17 @@ export async function deleteWarband(id: string, sessionId: string): Promise<bool
   return res.ok
 }
 
+export async function reportWarbandScore(warbandId: string, score: number): Promise<number> {
+  const res = await fetch('/api/warband-scores', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ warbandId, score }),
+  })
+  if (!res.ok) return 0
+  const data = await res.json()
+  return data.delta ?? 0
+}
+
 export async function fetchSoloQueueMapping(): Promise<RankCutoff[]> {
   const res = await fetch('/api/solo-queue-mapping')
   if (!res.ok) return []
