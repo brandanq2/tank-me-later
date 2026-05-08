@@ -6,6 +6,7 @@ import {
 } from '../api'
 import type { CharacterData, CutoffData } from '../api'
 import type { CharacterEntry, CharacterInput, VoteRecord } from '../types'
+import { useFlag } from './useFlags'
 
 export interface LeaderboardConfig {
   listId: string
@@ -58,6 +59,7 @@ export function revealDelay(rank: number): number {
 
 export function useLeaderboard(config: LeaderboardConfig) {
   const { listId, ownedStorageKey, initialCharacters, scoreField, validate } = config
+  const votingEnabled = useFlag('vote-to-kick')
 
   const [entries, setEntries] = useState<CharacterEntry[]>([])
   const [anyLoading, setAnyLoading] = useState(false)
@@ -143,6 +145,7 @@ export function useLeaderboard(config: LeaderboardConfig) {
 
   const isFirstVoteFetch = useRef(true)
   useEffect(() => {
+    if (!votingEnabled) return
     const poll = () => fetchVotes().then((fetched) => {
       if (isFirstVoteFetch.current) {
         isFirstVoteFetch.current = false
@@ -158,7 +161,7 @@ export function useLeaderboard(config: LeaderboardConfig) {
     poll()
     const interval = setInterval(poll, 10_000)
     return () => clearInterval(interval)
-  }, [])
+  }, [votingEnabled])
 
   const removeCharacter = useCallback((id: string) => {
     setEntries((prev) => {
