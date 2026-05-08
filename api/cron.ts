@@ -38,6 +38,14 @@ const LISTS = [
   { charsKey: 'tank-me-later:characters:open', scoreField: 'all'  as const, prefix: 'tank-me-later:open', saveHistory: false },
 ]
 
+const WARBANDS_KEY = 'tank-me-later:warbands'
+const WARBAND_DAILY_PREFIX = 'tank-me-later:warband-daily'
+
+interface WarbandDefinition {
+  id: string
+  members: CharacterInput[]
+}
+
 async function snapshotList(
   characters: CharacterInput[],
   scoreField: 'tank' | 'all',
@@ -90,6 +98,58 @@ async function snapshotList(
   return scoreSnapshot
 }
 
+// Mirror of `computeWarbandEntry` in src/hooks/useWarbands.ts: best run per
+// dungeon across all members, then top-8 sum.
+async function snapshotWarbands(todayEastern: string, ttl: number): Promise<number> {
+  const warbands = await redis.get<WarbandDefinition[]>(WARBANDS_KEY) ?? []
+  if (warbands.length === 0) return 0
+
+  const memberKeys = new Map<string, CharacterInput>()
+  for (const wb of warbands) {
+    for (const m of wb.members) memberKeys.set(charKey(m), m)
+  }
+
+  const runsByKey = new Map<string, Array<{ shortName: string; score: number }>>()
+  await Promise.allSettled(
+    [...memberKeys.entries()].map(async ([key, char]) => {
+      const params = new URLSearchParams({
+        region: char.region,
+        realm: char.realm,
+        name: char.name,
+        fields: 'mythic_plus_best_runs:roster',
+      })
+      const upstream = await fetch(`https://raider.io/api/v1/characters/profile?${params}`)
+      if (!upstream.ok) return
+      const data = await upstream.json() as { mythic_plus_best_runs?: Array<{ short_name?: string; score?: number }> }
+      const runs = (data?.mythic_plus_best_runs ?? [])
+        .map(r => ({ shortName: r.short_name ?? '', score: r.score ?? 0 }))
+        .filter(r => r.shortName)
+      runsByKey.set(key, runs)
+    })
+  )
+
+  const warbandScores: Record<string, number> = {}
+  for (const wb of warbands) {
+    const bestByDungeon = new Map<string, number>()
+    for (const m of wb.members) {
+      const runs = runsByKey.get(charKey(m)) ?? []
+      for (const run of runs) {
+        const existing = bestByDungeon.get(run.shortName) ?? 0
+        if (run.score > existing) bestByDungeon.set(run.shortName, run.score)
+      }
+    }
+    const score = [...bestByDungeon.values()].sort((a, b) => b - a).slice(0, 8).reduce((s, v) => s + v, 0)
+    if (score > 0) warbandScores[wb.id] = score
+  }
+
+  if (Object.keys(warbandScores).length === 0) return 0
+
+  const dKey = `${WARBAND_DAILY_PREFIX}:${todayEastern}`
+  await redis.hset(dKey, warbandScores)
+  await redis.expire(dKey, ttl)
+  return Object.keys(warbandScores).length
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = req.headers.authorization
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -125,5 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  return res.json({ snapshotted: totalSnapshotted })
+  const warbandsSnapshotted = await snapshotWarbands(todayEastern, ttl)
+
+  return res.json({ snapshotted: totalSnapshotted, warbands: warbandsSnapshotted })
 }
