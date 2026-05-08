@@ -6,6 +6,7 @@ import type { RankCutoff } from '../solo-queue'
 import type { BestRun, CharacterEntry, VoteRecord } from '../types'
 import { CharacterModal } from './CharacterModal'
 import { KeyDetailModal } from './KeyDetailModal'
+import { isToday } from '../today'
 
 interface Props {
   entry: CharacterEntry
@@ -295,6 +296,7 @@ export function LeaderboardRow({ entry, rank, rankDelta, activeVote, sessionId: 
                 >
                   <span className="key-chip-name">{shortName}</span>
                   {run && <span className="key-chip-level">+{run.level}</span>}
+                  {run && isToday(run.completedAt) && <span className="key-chip-new" aria-label="completed today">NEW</span>}
                 </div>
               )
             })}

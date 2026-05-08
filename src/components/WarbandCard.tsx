@@ -6,6 +6,7 @@ import type { RankCutoff } from '../solo-queue'
 import type { WarbandEntry, WarbandRun } from '../types'
 import { WarbandModal } from './WarbandModal'
 import { KeyDetailModal } from './KeyDetailModal'
+import { isToday } from '../today'
 
 // Original WoW class colors — used for warband name gradient
 const CLASS_COLORS: Record<string, string> = {
@@ -252,6 +253,7 @@ export function WarbandCard({
                   <span className="key-chip-name">{shortName}</span>
                   {run && <span className="key-chip-level">+{run.level}</span>}
                   {run && <span className="key-chip-char" style={{ color: run.characterClass ? CLASS_COLORS[run.characterClass] ?? '#aaa' : undefined }}>{run.characterName}</span>}
+                  {run && isToday(run.completedAt) && <span className="key-chip-new" aria-label="completed today">NEW</span>}
                 </div>
               )
             })}

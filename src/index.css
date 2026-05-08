@@ -1255,6 +1255,7 @@ a.row-first:hover {
 }
 
 .key-chip {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -1264,6 +1265,22 @@ a.row-first:hover {
   font-weight: 600;
   letter-spacing: 0.02em;
   border: 1px solid transparent;
+}
+
+.key-chip-new {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ffd54f;
+  color: #1a1a1a;
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
 }
 
 .key-chip-tank {
