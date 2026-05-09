@@ -153,6 +153,10 @@ export default function OpenLeaderboardPage() {
                         isInitialEntry={lb.revealed}
                         revealDelay={revealDelay(item.rank)}
                         onRemoveMember={wb.removeMember}
+                        onAddMember={(id, member) => {
+                          wb.addMember(id, member)
+                          lb.addCharacter(member)
+                        }}
                         onRemoveWarband={wb.removeWarband}
                         dungeonOrder={dungeonOrder}
                       />

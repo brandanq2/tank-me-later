@@ -1283,6 +1283,10 @@ a.row-first:hover {
   pointer-events: none;
 }
 
+.wm-add-form {
+  margin-bottom: 0.6rem;
+}
+
 .key-chip-tank {
   color: #4fc3f7;
   background: var(--surface);

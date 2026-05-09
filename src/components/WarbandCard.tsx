@@ -78,13 +78,14 @@ interface Props {
   isInitialEntry: boolean
   revealDelay: number
   onRemoveMember: (warbandId: string, memberKey: string) => void
+  onAddMember?: (warbandId: string, member: import('../types').CharacterInput) => void
   onRemoveWarband: (warbandId: string) => void
   dungeonOrder?: string[]
 }
 
 export function WarbandCard({
   entry, rank, sessionId, cutoffScore, soloMapping, revealed, isInitialEntry, revealDelay,
-  onRemoveMember, onRemoveWarband, dungeonOrder,
+  onRemoveMember, onAddMember, onRemoveWarband, dungeonOrder,
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedRun, setSelectedRun] = useState<WarbandRun | null>(null)
@@ -266,6 +267,7 @@ export function WarbandCard({
           entry={entry}
           sessionId={sessionId}
           onRemoveMember={onRemoveMember}
+          onAddMember={onAddMember}
           onClose={() => setModalOpen(false)}
         />
       )}

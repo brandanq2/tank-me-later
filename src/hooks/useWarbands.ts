@@ -100,10 +100,21 @@ export function useWarbands(loadedEntries: CharacterEntry[], sessionId: string) 
     if (result) setDefinitions(prev => prev.map(d => d.id === warbandId ? result : d))
   }, [definitions, sessionId])
 
+  const addMember = useCallback(async (warbandId: string, member: CharacterInput) => {
+    const warband = definitions.find(d => d.id === warbandId)
+    if (!warband || warband.ownerSessionId !== sessionId) return null
+    const newKey = charKey(member)
+    if (warband.members.some(m => charKey(m) === newKey)) return null
+    persistCharacter(member, 'open').catch(() => {})
+    const result = await updateWarbandMembers(warbandId, [...warband.members, member], sessionId)
+    if (result) setDefinitions(prev => prev.map(d => d.id === warbandId ? result : d))
+    return result
+  }, [definitions, sessionId])
+
   const removeWarband = useCallback(async (warbandId: string) => {
     const ok = await deleteWarband(warbandId, sessionId)
     if (ok) setDefinitions(prev => prev.filter(d => d.id !== warbandId))
   }, [sessionId])
 
-  return { warbandEntries, warbandMemberKeys, warbandsLoaded, addWarband, removeMember, removeWarband }
+  return { warbandEntries, warbandMemberKeys, warbandsLoaded, addWarband, addMember, removeMember, removeWarband }
 }

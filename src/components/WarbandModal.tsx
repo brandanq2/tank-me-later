@@ -1,6 +1,9 @@
+import { useState, type FormEvent } from 'react'
 import { insetAvatarUrl } from '../api'
 import { charKey } from '../hooks/useWarbands'
-import type { WarbandEntry } from '../types'
+import type { CharacterInput, WarbandEntry } from '../types'
+
+const REGIONS = ['us', 'eu', 'kr', 'tw', 'cn']
 
 const CLASS_COLORS: Record<string, string> = {
   'Death Knight': '#C41E3A',
@@ -22,11 +25,26 @@ interface Props {
   entry: WarbandEntry
   sessionId: string
   onRemoveMember: (warbandId: string, memberKey: string) => void
+  onAddMember?: (warbandId: string, member: CharacterInput) => void
   onClose: () => void
 }
 
-export function WarbandModal({ entry, sessionId, onRemoveMember, onClose }: Props) {
+export function WarbandModal({ entry, sessionId, onRemoveMember, onAddMember, onClose }: Props) {
   const isOwner = entry.ownerSessionId === sessionId
+  const [charName, setCharName] = useState('')
+  const [charRealm, setCharRealm] = useState('')
+  const [charRegion, setCharRegion] = useState('us')
+
+  function handleAddMember(e: FormEvent) {
+    e.preventDefault()
+    const n = charName.trim(), r = charRealm.trim()
+    if (!n || !r || !onAddMember) return
+    const newKey = `${n}-${r}-${charRegion}`.toLowerCase()
+    if (entry.members.some(m => `${m.name}-${m.realm}-${m.region}`.toLowerCase() === newKey)) return
+    onAddMember(entry.id, { name: n, realm: r, region: charRegion })
+    setCharName('')
+    setCharRealm('')
+  }
 
   return (
     <div className="cm-overlay" onClick={onClose}>
@@ -48,6 +66,28 @@ export function WarbandModal({ entry, sessionId, onRemoveMember, onClose }: Prop
 
         <div className="cm-section">
           <p className="cm-section-label">Members · {entry.members.length}</p>
+          {isOwner && onAddMember && (
+            <form className="add-form wm-add-form" onSubmit={handleAddMember}>
+              <input
+                type="text"
+                placeholder="Character name"
+                value={charName}
+                onChange={e => setCharName(e.target.value)}
+                required
+              />
+              <input
+                type="text"
+                placeholder="Realm"
+                value={charRealm}
+                onChange={e => setCharRealm(e.target.value)}
+                required
+              />
+              <select value={charRegion} onChange={e => setCharRegion(e.target.value)}>
+                {REGIONS.map(r => <option key={r} value={r}>{r.toUpperCase()}</option>)}
+              </select>
+              <button type="submit" disabled={!charName.trim() || !charRealm.trim()}>Add</button>
+            </form>
+          )}
           <div className="wm-member-list">
             {entry.members.map(member => {
               const key = charKey(member)
