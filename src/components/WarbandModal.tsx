@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react'
-import { insetAvatarUrl } from '../api'
+import { useEffect, useState, type FormEvent } from 'react'
+import { insetAvatarUrl, fetchWarbandHistory } from '../api'
 import { charKey } from '../hooks/useWarbands'
-import type { CharacterInput, WarbandEntry } from '../types'
+import type { CharacterInput, HistoryPoint, WarbandEntry } from '../types'
+import { HistoryChart } from './HistoryChart'
 
 const REGIONS = ['us', 'eu', 'kr', 'tw', 'cn']
 
@@ -24,16 +25,26 @@ const CLASS_COLORS: Record<string, string> = {
 interface Props {
   entry: WarbandEntry
   sessionId: string
+  chartColor?: string
   onRemoveMember: (warbandId: string, memberKey: string) => void
   onAddMember?: (warbandId: string, member: CharacterInput) => void
   onClose: () => void
 }
 
-export function WarbandModal({ entry, sessionId, onRemoveMember, onAddMember, onClose }: Props) {
+export function WarbandModal({ entry, sessionId, chartColor, onRemoveMember, onAddMember, onClose }: Props) {
   const isOwner = entry.ownerSessionId === sessionId
   const [charName, setCharName] = useState('')
   const [charRealm, setCharRealm] = useState('')
   const [charRegion, setCharRegion] = useState('us')
+  const [history, setHistory] = useState<HistoryPoint[] | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchWarbandHistory(entry.id)
+      .then(h => { if (!cancelled) setHistory(h) })
+      .catch(() => { if (!cancelled) setHistory([]) })
+    return () => { cancelled = true }
+  }, [entry.id])
 
   function handleAddMember(e: FormEvent) {
     e.preventDefault()
@@ -128,6 +139,18 @@ export function WarbandModal({ entry, sessionId, onRemoveMember, onAddMember, on
             })}
           </div>
         </div>
+
+        {history && history.some(h => h.score !== null) && (
+          <div className="cm-section">
+            <p className="cm-section-label">Score History</p>
+            <HistoryChart
+              history={history}
+              currentScore={entry.score}
+              color={chartColor ?? '#9B7DC0'}
+              idSuffix={`wm-${entry.id}`}
+            />
+          </div>
+        )}
 
         {entry.topRuns.length > 0 && (
           <div className="cm-section">

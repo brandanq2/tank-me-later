@@ -151,8 +151,16 @@ export async function castVote(charKey: string, vote: 'yes' | 'no', sessionId: s
 }
 
 
-export async function fetchHistory(char: CharacterInput): Promise<HistoryPoint[]> {
+export async function fetchHistory(char: CharacterInput, list?: string): Promise<HistoryPoint[]> {
   const params = new URLSearchParams({ name: char.name, realm: char.realm, region: char.region })
+  if (list) params.set('list', list)
+  const res = await fetch(`/api/history?${params}`)
+  if (!res.ok) return []
+  return res.json()
+}
+
+export async function fetchWarbandHistory(warbandId: string): Promise<HistoryPoint[]> {
+  const params = new URLSearchParams({ kind: 'warband', id: warbandId })
   const res = await fetch(`/api/history?${params}`)
   if (!res.ok) return []
   return res.json()

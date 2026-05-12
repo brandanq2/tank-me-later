@@ -266,6 +266,7 @@ export function WarbandCard({
         <WarbandModal
           entry={entry}
           sessionId={sessionId}
+          chartColor={rankColor ?? scoreColor}
           onRemoveMember={onRemoveMember}
           onAddMember={onAddMember}
           onClose={() => setModalOpen(false)}
