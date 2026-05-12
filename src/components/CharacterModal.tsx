@@ -86,6 +86,8 @@ export function CharacterModal({ entry, leaderRank, classColor, soloMapping, onC
               runs={entry.bestRuns!}
               fallbackCharacterName={entry.name}
               fallbackCharacterClass={entry.className}
+              history={entry.history}
+              currentScore={entry.score}
             />
           </div>
         )}

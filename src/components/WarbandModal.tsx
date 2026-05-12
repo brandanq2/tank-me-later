@@ -167,7 +167,11 @@ export function WarbandModal({ entry, sessionId, chartColor, onRemoveMember, onA
         {allMemberRuns.length > 0 && (
           <div className="cm-section">
             <p className="cm-section-label">Key Timings · Past Week</p>
-            <KeyTimeline runs={allMemberRuns} />
+            <KeyTimeline
+              runs={allMemberRuns}
+              history={history ?? undefined}
+              currentScore={entry.score}
+            />
           </div>
         )}
       </div>

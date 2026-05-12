@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { BestRun, WarbandRun } from '../types'
+import type { BestRun, HistoryPoint, WarbandRun } from '../types'
 import { KeyDetailModal } from './KeyDetailModal'
 import { easternDateString } from '../today'
 
@@ -26,6 +26,8 @@ interface Props {
   fallbackCharacterName?: string
   fallbackCharacterClass?: string
   days?: number
+  history?: HistoryPoint[]
+  currentScore?: number
 }
 
 function formatDayLabel(dateStr: string): string {
@@ -39,7 +41,34 @@ function formatDayLabel(dateStr: string): string {
   return `${weekday} ${parseInt(m)}/${parseInt(d)}`
 }
 
-export function KeyTimeline({ runs, fallbackCharacterName, fallbackCharacterClass, days = 7 }: Props) {
+function nextEasternDay(dateStr: string): string {
+  const d = new Date(`${dateStr}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
+// Activity on Eastern date D is captured by snapshot[D+1] - snapshot[D]:
+// the cron at 05:00 UTC writes snapshot[D] at the *start* of Eastern day D,
+// so it contains all keys timed during day D-1. For today, the next snapshot
+// doesn't exist yet — use the live currentScore instead.
+function computeDayDelta(
+  date: string,
+  scoreByDate: Map<string, number>,
+  currentScore: number | undefined,
+): number | null {
+  const startScore = scoreByDate.get(date)
+  if (startScore == null) return null
+
+  const today = easternDateString(new Date())
+  const endScore = date === today
+    ? currentScore
+    : scoreByDate.get(nextEasternDay(date))
+
+  if (endScore == null) return null
+  return Math.max(0, endScore - startScore)
+}
+
+export function KeyTimeline({ runs, fallbackCharacterName, fallbackCharacterClass, days = 7, history, currentScore }: Props) {
   const [selectedRun, setSelectedRun] = useState<RunLike | null>(null)
 
   const cutoffMs = Date.now() - days * 24 * 60 * 60 * 1000
@@ -58,6 +87,11 @@ export function KeyTimeline({ runs, fallbackCharacterName, fallbackCharacterClas
     return <p className="cm-no-history">No key timings in the past {days} days.</p>
   }
 
+  const scoreByDate = new Map<string, number>()
+  for (const point of history ?? []) {
+    if (point.score != null) scoreByDate.set(point.date, point.score)
+  }
+
   const sortedDates = [...byDate.keys()].sort((a, b) => b.localeCompare(a))
 
   return (
@@ -65,13 +99,16 @@ export function KeyTimeline({ runs, fallbackCharacterName, fallbackCharacterClas
       <div className="key-timeline">
         {sortedDates.map(date => {
           const dayRuns = byDate.get(date)!.sort((a, b) => b.score - a.score)
-          const totalScore = dayRuns.reduce((s, r) => s + r.score, 0)
+          const delta = computeDayDelta(date, scoreByDate, currentScore)
           return (
             <div key={date} className="key-timeline-day">
               <div className="key-timeline-date">
                 <span>{formatDayLabel(date)}</span>
                 <span className="key-timeline-day-score">
-                  {dayRuns.length} key{dayRuns.length === 1 ? '' : 's'} · {totalScore.toLocaleString(undefined, { maximumFractionDigits: 0 })} IO
+                  {dayRuns.length} key{dayRuns.length === 1 ? '' : 's'}
+                  {delta != null && delta > 0 && (
+                    <> · +{delta.toLocaleString(undefined, { maximumFractionDigits: 1 })} IO</>
+                  )}
                 </span>
               </div>
               <div className="key-timeline-keys">
