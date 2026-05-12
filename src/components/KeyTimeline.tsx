@@ -41,31 +41,27 @@ function formatDayLabel(dateStr: string): string {
   return `${weekday} ${parseInt(m)}/${parseInt(d)}`
 }
 
-function nextEasternDay(dateStr: string): string {
+function prevEasternDay(dateStr: string): string {
   const d = new Date(`${dateStr}T12:00:00Z`)
-  d.setUTCDate(d.getUTCDate() + 1)
+  d.setUTCDate(d.getUTCDate() - 1)
   return d.toISOString().slice(0, 10)
 }
 
-// Activity on Eastern date D is captured by snapshot[D+1] - snapshot[D]:
-// the cron at 05:00 UTC writes snapshot[D] at the *start* of Eastern day D,
-// so it contains all keys timed during day D-1. For today, the next snapshot
-// doesn't exist yet — use the live currentScore instead.
+// Day delta = chart score on this date - chart score on the prior date.
+// The chart plots snapshot[date] for past days and currentScore for today.
 function computeDayDelta(
   date: string,
   scoreByDate: Map<string, number>,
   currentScore: number | undefined,
 ): number | null {
-  const startScore = scoreByDate.get(date)
-  if (startScore == null) return null
-
   const today = easternDateString(new Date())
-  const endScore = date === today
-    ? currentScore
-    : scoreByDate.get(nextEasternDay(date))
+  const scoreOn = date === today ? currentScore : scoreByDate.get(date)
+  if (scoreOn == null) return null
 
-  if (endScore == null) return null
-  return Math.max(0, endScore - startScore)
+  const priorScore = scoreByDate.get(prevEasternDay(date))
+  if (priorScore == null) return null
+
+  return Math.max(0, scoreOn - priorScore)
 }
 
 export function KeyTimeline({ runs, fallbackCharacterName, fallbackCharacterClass, days = 7, history, currentScore }: Props) {
