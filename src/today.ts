@@ -1,4 +1,4 @@
-function easternDateString(d: Date): string {
+export function easternDateString(d: Date): string {
   return new Date(d.getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
 }
 

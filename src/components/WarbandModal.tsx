@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { insetAvatarUrl, fetchWarbandHistory } from '../api'
 import { charKey } from '../hooks/useWarbands'
-import type { CharacterInput, HistoryPoint, WarbandEntry } from '../types'
+import type { CharacterInput, HistoryPoint, WarbandEntry, WarbandRun } from '../types'
 import { HistoryChart } from './HistoryChart'
+import { KeyTimeline } from './KeyTimeline'
 
 const REGIONS = ['us', 'eu', 'kr', 'tw', 'cn']
 
@@ -45,6 +46,17 @@ export function WarbandModal({ entry, sessionId, chartColor, onRemoveMember, onA
       .catch(() => { if (!cancelled) setHistory([]) })
     return () => { cancelled = true }
   }, [entry.id])
+
+  const allMemberRuns: WarbandRun[] = entry.members.flatMap(m =>
+    m.status === 'success' && m.bestRuns
+      ? m.bestRuns.map(r => ({
+          ...r,
+          characterName: m.name,
+          characterClass: m.className,
+          thumbnailUrl: m.thumbnailUrl,
+        }))
+      : []
+  )
 
   function handleAddMember(e: FormEvent) {
     e.preventDefault()
@@ -152,23 +164,10 @@ export function WarbandModal({ entry, sessionId, chartColor, onRemoveMember, onA
           </div>
         )}
 
-        {entry.topRuns.length > 0 && (
+        {allMemberRuns.length > 0 && (
           <div className="cm-section">
-            <p className="cm-section-label">Top 8 Keys</p>
-            <div className="wm-top-runs">
-              {entry.topRuns.map((run, i) => (
-                <div key={i} className="wm-run-row">
-                  <span className={`key-chip key-chip-${run.role}`}>
-                    <span className="key-chip-name">{run.shortName}</span>
-                    <span className="key-chip-level">+{run.level}</span>
-                  </span>
-                  <span className="wm-run-char" style={{ color: run.characterClass ? CLASS_COLORS[run.characterClass] ?? '#aaa' : '#aaa' }}>{run.characterName}</span>
-                  <span className="wm-run-score">
-                    {run.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <p className="cm-section-label">Key Timings · Past Week</p>
+            <KeyTimeline runs={allMemberRuns} />
           </div>
         )}
       </div>

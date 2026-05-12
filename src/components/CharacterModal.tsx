@@ -2,6 +2,7 @@ import { scoreToRankFromCutoffs, getNextRankInfoFromCutoffs } from '../solo-queu
 import type { RankCutoff } from '../solo-queue'
 import type { CharacterEntry } from '../types'
 import { HistoryChart } from './HistoryChart'
+import { KeyTimeline } from './KeyTimeline'
 
 const TIER_COLORS: Record<string, string> = {
   Challenger:  '#f4d03f',
@@ -74,6 +75,17 @@ export function CharacterModal({ entry, leaderRank, classColor, soloMapping, onC
               currentScore={entry.score}
               color={rankColor}
               idSuffix={entry.id}
+            />
+          </div>
+        )}
+
+        {(entry.bestRuns?.length ?? 0) > 0 && (
+          <div className="cm-section">
+            <p className="cm-section-label">Key Timings · Past Week</p>
+            <KeyTimeline
+              runs={entry.bestRuns!}
+              fallbackCharacterName={entry.name}
+              fallbackCharacterClass={entry.className}
             />
           </div>
         )}
