@@ -12,6 +12,10 @@ function easternDate(d: Date): string {
   return new Date(d.getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 10)
 }
 
+function todayEastern(): string {
+  return easternDate(new Date())
+}
+
 function yesterdayEastern(): string {
   return easternDate(new Date(Date.now() - 24 * 60 * 60 * 1000))
 }
@@ -24,7 +28,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'warbandId and score required' })
   }
 
-  const prevScore = await redis.hget<number>(`${PREFIX}:${yesterdayEastern()}`, warbandId)
-  const delta = prevScore != null ? Math.max(0, score - prevScore) : 0
+  // Baseline is the snapshot taken at the start of today (cron at 05:00 UTC).
+  // Fall back to yesterday's snapshot in the small window before today's cron has fired.
+  let baseline = await redis.hget<number>(`${PREFIX}:${todayEastern()}`, warbandId)
+  if (baseline == null) {
+    baseline = await redis.hget<number>(`${PREFIX}:${yesterdayEastern()}`, warbandId)
+  }
+  const delta = baseline != null ? Math.max(0, score - baseline) : 0
   return res.json({ delta })
 }

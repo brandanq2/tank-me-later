@@ -28,6 +28,10 @@ function rankKey(prefix: string, dateStr: string) {
   return `${prefix}:daily-rank:${dateStr}`
 }
 
+function todayEastern(): string {
+  return easternDate(new Date())
+}
+
 function yesterdayEastern(): string {
   return easternDate(new Date(Date.now() - 24 * 60 * 60 * 1000))
 }
@@ -45,12 +49,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const prefix = LIST_PREFIXES[list ?? 'tanks'] ?? LIST_PREFIXES.tanks
   const cKey = charKey(name, realm, region)
+
+  // Baseline is the snapshot taken at the start of today (cron at 05:00 UTC).
+  // Fall back to yesterday's snapshot in the small window before today's cron has fired.
+  const tDate = todayEastern()
   const yDate = yesterdayEastern()
-  const [prevScore, prevRank] = await Promise.all([
+  const [todayScore, todayRank, yScore, yRank] = await Promise.all([
+    redis.hget<number>(dailyKey(prefix, tDate), cKey),
+    redis.hget<number>(rankKey(prefix, tDate), cKey),
     redis.hget<number>(dailyKey(prefix, yDate), cKey),
     redis.hget<number>(rankKey(prefix, yDate), cKey),
   ])
 
+  const prevScore = todayScore ?? yScore
+  const prevRank = todayRank ?? yRank
   const delta = prevScore != null ? Math.max(0, score - prevScore) : 0
 
   return res.json({ delta, prevRank: prevRank ?? null })
