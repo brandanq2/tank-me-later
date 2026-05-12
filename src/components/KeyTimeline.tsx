@@ -88,8 +88,15 @@ export function KeyTimeline({ runs, fallbackCharacterName, fallbackCharacterClas
     scoreByDate.set(today, currentScore)
   }
   const sortedChartDates = [...scoreByDate.keys()].sort()
+  const chartDateSet = new Set(sortedChartDates)
 
-  const sortedDates = [...byDate.keys()].sort((a, b) => b.localeCompare(a))
+  const sortedDates = [...byDate.keys()]
+    .filter(d => chartDateSet.has(d))
+    .sort((a, b) => b.localeCompare(a))
+
+  if (sortedDates.length === 0) {
+    return <p className="cm-no-history">No key timings on the dates in this chart.</p>
+  }
 
   return (
     <>
