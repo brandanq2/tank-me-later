@@ -41,27 +41,24 @@ function formatDayLabel(dateStr: string): string {
   return `${weekday} ${parseInt(m)}/${parseInt(d)}`
 }
 
-function prevEasternDay(dateStr: string): string {
-  const d = new Date(`${dateStr}T12:00:00Z`)
-  d.setUTCDate(d.getUTCDate() - 1)
-  return d.toISOString().slice(0, 10)
-}
-
-// Day delta = chart score on this date - chart score on the prior date.
-// The chart plots snapshot[date] for past days and currentScore for today.
+// Day delta = chart score on this date - chart score on the prior charted date.
+// The chart plots snapshot[date] for past days and currentScore for today,
+// and skips dates where no snapshot exists, so "prior date" means the most
+// recent date with data, not literally yesterday.
 function computeDayDelta(
   date: string,
   scoreByDate: Map<string, number>,
-  currentScore: number | undefined,
 ): number | null {
-  const today = easternDateString(new Date())
-  const scoreOn = date === today ? currentScore : scoreByDate.get(date)
+  const scoreOn = scoreByDate.get(date)
   if (scoreOn == null) return null
 
-  const priorScore = scoreByDate.get(prevEasternDay(date))
-  if (priorScore == null) return null
+  let priorDate: string | undefined
+  for (const d of scoreByDate.keys()) {
+    if (d < date && (priorDate == null || d > priorDate)) priorDate = d
+  }
+  if (priorDate == null) return null
 
-  return Math.max(0, scoreOn - priorScore)
+  return Math.max(0, scoreOn - scoreByDate.get(priorDate)!)
 }
 
 export function KeyTimeline({ runs, fallbackCharacterName, fallbackCharacterClass, days = 7, history, currentScore }: Props) {
@@ -83,9 +80,15 @@ export function KeyTimeline({ runs, fallbackCharacterName, fallbackCharacterClas
     return <p className="cm-no-history">No key timings in the past {days} days.</p>
   }
 
+  // Build the same point set the chart plots: snapshot scores + currentScore
+  // appended as today's point if today isn't already in history.
   const scoreByDate = new Map<string, number>()
   for (const point of history ?? []) {
     if (point.score != null) scoreByDate.set(point.date, point.score)
+  }
+  const today = easternDateString(new Date())
+  if (currentScore != null && !scoreByDate.has(today)) {
+    scoreByDate.set(today, currentScore)
   }
 
   const sortedDates = [...byDate.keys()].sort((a, b) => b.localeCompare(a))
@@ -95,7 +98,7 @@ export function KeyTimeline({ runs, fallbackCharacterName, fallbackCharacterClas
       <div className="key-timeline">
         {sortedDates.map(date => {
           const dayRuns = byDate.get(date)!.sort((a, b) => b.score - a.score)
-          const delta = computeDayDelta(date, scoreByDate, currentScore)
+          const delta = computeDayDelta(date, scoreByDate)
           return (
             <div key={date} className="key-timeline-day">
               <div className="key-timeline-date">
