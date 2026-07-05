@@ -2,7 +2,7 @@
 ## Title: TankMeLater
 ## Notes: Tank-Me-Later rank display and M+ window theming
 ## Author: Brandan Quinn
-## Version: 2026.06.28
+## Version: 2026.07.05
 ## OptionalDeps: RaiderIO
 ## SavedVariables: TankMeLaterDB
 ## X-Website: https://github.com/brandanq2/tank-me-later
