@@ -7,8 +7,7 @@
   ],
   "crons": [
     { "path": "/api/cron",              "schedule": "0 5 * * *" },
-    { "path": "/api/solo-queue-cron",   "schedule": "0 6 * * 0" },
-    { "path": "/api/title-watch?refresh=1", "schedule": "0 * * * *" }
+    { "path": "/api/solo-queue-cron",   "schedule": "0 6 * * 0" }
   ],
   "functions": {
     "api/solo-queue-cron.ts": { "maxDuration": 300 }
