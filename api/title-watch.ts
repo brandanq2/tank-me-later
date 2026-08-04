@@ -1,0 +1,286 @@
+import { Redis } from '@upstash/redis'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+})
+
+const CACHE_KEY = 'tank-me-later:title-watch:cache'
+const PERMA_KEY = 'tank-me-later:title-watch:perma'
+
+const DEFAULT_SEASON = 'season-mn-1'
+const DEFAULT_REGION = 'us'
+
+// A player is "safe" once their IO is this far above the title cutoff.
+const SAFE_MARGIN = 10
+// How many ranked players to pull on each side of the cutoff rank.
+const WINDOW_ABOVE = 6
+const WINDOW_BELOW = 6
+const PER_PAGE = 100
+// Recompute the cached roster if it's older than this (cron keeps it warm).
+const CACHE_TTL_MS = 30 * 60 * 1000
+
+interface CharacterInput {
+  name: string
+  realm: string
+  region: string
+}
+
+interface WatchStream {
+  login: string
+  url: string
+  title: string
+  viewerCount: number
+  thumbnail: string
+}
+
+interface WatchPlayer {
+  name: string
+  realm: string
+  realmName?: string
+  region: string
+  className?: string
+  specName?: string
+  race?: string
+  score: number
+  rank?: number
+  profileUrl?: string
+  thumbnailUrl?: string
+  stream: WatchStream | null
+  source: 'window' | 'perma'
+  perma: boolean
+  margin: number
+  safe: boolean
+}
+
+interface TitleWatchData {
+  updatedAt: number
+  season: string
+  region: string
+  cutoff: { score: number; percentile: string; rank: number }
+  players: WatchPlayer[]
+}
+
+function charKey(c: { name: string; realm: string; region: string }) {
+  return `${c.name}-${c.realm}-${c.region}`.toLowerCase()
+}
+
+function round1(n: number) {
+  return Math.round(n * 10) / 10
+}
+
+interface RankedCharacter {
+  rank: number
+  score: number
+  character: {
+    name: string
+    class?: { name: string }
+    spec?: { name: string }
+    race?: { name: string }
+    path?: string
+    realm?: { name: string; slug: string }
+    region?: { slug: string }
+    stream?: {
+      type?: string
+      name?: string
+      title?: string
+      viewer_count?: number
+      thumbnail_url?: string
+    } | null
+  }
+}
+
+function mapStream(s: RankedCharacter['character']['stream']): WatchStream | null {
+  if (!s || s.type !== 'live' || !s.name) return null
+  return {
+    login: s.name,
+    url: `https://www.twitch.tv/${s.name}`,
+    title: s.title ?? '',
+    viewerCount: s.viewer_count ?? 0,
+    thumbnail: (s.thumbnail_url ?? '').replace('{width}', '440').replace('{height}', '248'),
+  }
+}
+
+function rankedToPlayer(rc: RankedCharacter, source: 'window' | 'perma', cutoffScore: number, perma: boolean): WatchPlayer {
+  const c = rc.character
+  return {
+    name: c.name,
+    realm: c.realm?.slug ?? '',
+    realmName: c.realm?.name,
+    region: c.region?.slug ?? DEFAULT_REGION,
+    className: c.class?.name,
+    specName: c.spec?.name,
+    race: c.race?.name,
+    score: rc.score,
+    rank: rc.rank,
+    profileUrl: c.path ? `https://raider.io${c.path}` : undefined,
+    stream: mapStream(c.stream),
+    source,
+    perma: perma || source === 'perma',
+    margin: round1(rc.score - cutoffScore),
+    safe: rc.score - cutoffScore >= SAFE_MARGIN,
+  }
+}
+
+async function fetchRankPage(season: string, region: string, page: number): Promise<RankedCharacter[]> {
+  const url = `https://raider.io/api/mythic-plus/rankings/characters?region=${region}&season=${season}&class=all&role=all&page=${page}`
+  const res = await fetch(url)
+  if (!res.ok) return []
+  const data = await res.json() as { rankings?: { rankedCharacters?: RankedCharacter[] } }
+  return data?.rankings?.rankedCharacters ?? []
+}
+
+async function fetchPermaPlayer(pc: CharacterInput, cutoffScore: number): Promise<WatchPlayer | null> {
+  const params = new URLSearchParams({
+    region: pc.region,
+    realm: pc.realm,
+    name: pc.name,
+    fields: 'mythic_plus_scores_by_season:current',
+  })
+  const res = await fetch(`https://raider.io/api/v1/characters/profile?${params}`)
+  if (!res.ok) return null
+  const data = await res.json() as {
+    name?: string
+    class?: string
+    active_spec_name?: string
+    race?: string
+    realm?: string
+    thumbnail_url?: string
+    profile_url?: string
+    mythic_plus_scores_by_season?: Array<{ scores?: { all?: number } }>
+  }
+  const score = data.mythic_plus_scores_by_season?.[0]?.scores?.all ?? 0
+  return {
+    name: data.name ?? pc.name,
+    realm: pc.realm,
+    realmName: data.realm,
+    region: pc.region,
+    className: data.class,
+    specName: data.active_spec_name,
+    race: data.race,
+    score,
+    profileUrl: data.profile_url,
+    thumbnailUrl: data.thumbnail_url,
+    stream: null,
+    source: 'perma',
+    perma: true,
+    margin: round1(score - cutoffScore),
+    safe: score - cutoffScore >= SAFE_MARGIN,
+  }
+}
+
+async function computeRoster(season: string, region: string): Promise<TitleWatchData> {
+  const cutoffRes = await fetch(`https://raider.io/api/v1/mythic-plus/season-cutoffs?season=${season}&region=${region}`)
+  if (!cutoffRes.ok) throw new Error(`cutoff ${cutoffRes.status}`)
+  const cutoffJson = await cutoffRes.json() as {
+    cutoffs?: { p999?: { all?: { quantileMinValue?: number; quantilePopulationCount?: number } } }
+  }
+  const p999 = cutoffJson?.cutoffs?.p999?.all
+  const cutoffScore = p999?.quantileMinValue
+  const cutoffRank = p999?.quantilePopulationCount
+  if (typeof cutoffScore !== 'number' || typeof cutoffRank !== 'number') {
+    throw new Error('cutoff not found')
+  }
+
+  // The cutoff rank tells us which ranking page to read; grab neighbours so the
+  // window never straddles a page boundary.
+  const centerPage = Math.floor((cutoffRank - 1) / PER_PAGE)
+  const pages = [...new Set([centerPage - 1, centerPage, centerPage + 1])].filter((p) => p >= 0)
+  const pageResults = await Promise.all(pages.map((p) => fetchRankPage(season, region, p)))
+  const ranked = pageResults.flat()
+
+  const players: WatchPlayer[] = ranked
+    .filter((rc) => rc.rank >= cutoffRank - WINDOW_ABOVE && rc.rank <= cutoffRank + WINDOW_BELOW)
+    .sort((a, b) => a.rank - b.rank)
+    .map((rc) => rankedToPlayer(rc, 'window', cutoffScore, false))
+
+  // Merge the permanent watch list.
+  const perma = (await redis.get<CharacterInput[]>(PERMA_KEY)) ?? []
+  const shown = new Map(players.map((p) => [charKey(p), p]))
+  const rankedByKey = new Map(
+    ranked.map((rc) => [charKey({
+      name: rc.character.name,
+      realm: rc.character.realm?.slug ?? '',
+      region: rc.character.region?.slug ?? region,
+    }), rc]),
+  )
+
+  const toFetch: CharacterInput[] = []
+  for (const pc of perma) {
+    const k = charKey(pc)
+    const existing = shown.get(k)
+    if (existing) {
+      existing.perma = true
+      continue
+    }
+    const rc = rankedByKey.get(k)
+    if (rc) {
+      players.push(rankedToPlayer(rc, 'perma', cutoffScore, true))
+      continue
+    }
+    toFetch.push(pc)
+  }
+
+  const fetched = await Promise.all(toFetch.map((pc) => fetchPermaPlayer(pc, cutoffScore)))
+  for (const p of fetched) if (p) players.push(p)
+
+  return {
+    updatedAt: Date.now(),
+    season,
+    region,
+    cutoff: { score: cutoffScore, percentile: '0.1%', rank: cutoffRank },
+    players,
+  }
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+
+  const season = (req.query.season as string) || DEFAULT_SEASON
+  const region = (req.query.region as string) || DEFAULT_REGION
+
+  if (req.method === 'POST') {
+    const input = req.body as CharacterInput
+    if (!input?.name?.trim() || !input?.realm?.trim()) {
+      return res.status(400).json({ error: 'Name and realm are required' })
+    }
+    const clean: CharacterInput = {
+      name: input.name.trim(),
+      realm: input.realm.trim().toLowerCase(),
+      region: (input.region || DEFAULT_REGION).trim().toLowerCase(),
+    }
+    const perma = (await redis.get<CharacterInput[]>(PERMA_KEY)) ?? []
+    if (!perma.some((c) => charKey(c) === charKey(clean))) {
+      await redis.set(PERMA_KEY, [...perma, clean])
+    }
+    await redis.del(CACHE_KEY)
+    return res.status(201).json({ perma: [...perma.filter((c) => charKey(c) !== charKey(clean)), clean] })
+  }
+
+  if (req.method === 'DELETE') {
+    const { name, realm, region: reg } = req.query as Record<string, string>
+    const key = charKey({ name: name ?? '', realm: realm ?? '', region: reg ?? DEFAULT_REGION })
+    const perma = (await redis.get<CharacterInput[]>(PERMA_KEY)) ?? []
+    const updated = perma.filter((c) => charKey(c) !== key)
+    await redis.set(PERMA_KEY, updated)
+    await redis.del(CACHE_KEY)
+    return res.json({ perma: updated })
+  }
+
+  // GET
+  const refresh = req.query.refresh === '1'
+  const cached = await redis.get<TitleWatchData>(CACHE_KEY)
+  if (!refresh && cached && Date.now() - cached.updatedAt < CACHE_TTL_MS) {
+    return res.json(cached)
+  }
+
+  try {
+    const data = await computeRoster(season, region)
+    await redis.set(CACHE_KEY, data)
+    return res.json(data)
+  } catch (err) {
+    if (cached) return res.json(cached) // serve stale on upstream failure
+    return res.status(502).json({ error: err instanceof Error ? err.message : 'Failed to compute roster' })
+  }
+}

@@ -224,6 +224,114 @@ export async function fetchSoloQueueMapping(): Promise<RankCutoff[]> {
   return data.ranks ?? []
 }
 
+export interface WatchStream {
+  login: string
+  url: string
+  title: string
+  viewerCount: number
+  thumbnail: string
+}
+
+export interface WatchPlayer {
+  name: string
+  realm: string
+  realmName?: string
+  region: string
+  className?: string
+  specName?: string
+  race?: string
+  score: number
+  rank?: number
+  profileUrl?: string
+  thumbnailUrl?: string
+  stream: WatchStream | null
+  source: 'window' | 'perma'
+  perma: boolean
+  margin: number
+  safe: boolean
+}
+
+export interface TitleWatchData {
+  updatedAt: number
+  season: string
+  region: string
+  cutoff: { score: number; percentile: string; rank: number }
+  players: WatchPlayer[]
+}
+
+export async function fetchTitleWatch(refresh = false): Promise<TitleWatchData | null> {
+  const res = await fetch(`/api/title-watch${refresh ? '?refresh=1' : ''}`)
+  if (!res.ok) return null
+  return res.json()
+}
+
+export async function addPermaWatch(char: CharacterInput): Promise<boolean> {
+  const res = await fetch('/api/title-watch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(char),
+  })
+  return res.ok
+}
+
+export async function removePermaWatch(char: CharacterInput): Promise<boolean> {
+  const params = new URLSearchParams({ name: char.name, realm: char.realm, region: char.region })
+  const res = await fetch(`/api/title-watch?${params}`, { method: 'DELETE' })
+  return res.ok
+}
+
+export interface RecentRun {
+  keystoneRunId: number
+  shortName: string
+  dungeon: string
+  level: number
+  completedAt: string
+  numUpgrades: number
+  score: number
+  url: string
+}
+
+export interface LivePlayerData {
+  score: number
+  recentRuns: RecentRun[]
+}
+
+export async function fetchLivePlayer(char: CharacterInput): Promise<LivePlayerData | null> {
+  const params = new URLSearchParams({
+    region: char.region,
+    realm: char.realm,
+    name: char.name,
+    fields: 'mythic_plus_scores_by_season:current,mythic_plus_recent_runs',
+  })
+  const res = await fetch(`/api/raiderio?${params}`)
+  if (!res.ok) return null
+  const data = await res.json() as {
+    mythic_plus_scores_by_season?: Array<{ scores?: { all?: number } }>
+    mythic_plus_recent_runs?: Array<{
+      keystone_run_id?: number
+      short_name?: string
+      dungeon?: string
+      mythic_level?: number
+      completed_at?: string
+      num_keystone_upgrades?: number
+      score?: number
+      url?: string
+    }>
+  }
+  const score = data.mythic_plus_scores_by_season?.[0]?.scores?.all ?? 0
+  const recentRuns: RecentRun[] = (data.mythic_plus_recent_runs ?? []).map((r) => ({
+    keystoneRunId: r.keystone_run_id ?? 0,
+    shortName: r.short_name ?? '',
+    dungeon: r.dungeon ?? '',
+    level: r.mythic_level ?? 0,
+    completedAt: r.completed_at ?? '',
+    numUpgrades: r.num_keystone_upgrades ?? 0,
+    score: r.score ?? 0,
+    url: r.url ?? '',
+  }))
+  return { score, recentRuns }
+}
+
 export async function fetchFlags(): Promise<Record<string, boolean>> {
   const res = await fetch('/api/flags')
   if (!res.ok) return {}
