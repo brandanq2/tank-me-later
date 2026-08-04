@@ -280,7 +280,7 @@ export async function removePermaWatch(char: CharacterInput): Promise<boolean> {
   return res.ok
 }
 
-export interface RecentRun {
+export interface KeyRun {
   keystoneRunId: number
   shortName: string
   dungeon: string
@@ -293,33 +293,23 @@ export interface RecentRun {
 
 export interface LivePlayerData {
   score: number
-  recentRuns: RecentRun[]
+  bestRuns: KeyRun[]
+  recentRuns: KeyRun[]
 }
 
-export async function fetchLivePlayer(char: CharacterInput): Promise<LivePlayerData | null> {
-  const params = new URLSearchParams({
-    region: char.region,
-    realm: char.realm,
-    name: char.name,
-    fields: 'mythic_plus_scores_by_season:current,mythic_plus_recent_runs',
-  })
-  const res = await fetch(`/api/raiderio?${params}`)
-  if (!res.ok) return null
-  const data = await res.json() as {
-    mythic_plus_scores_by_season?: Array<{ scores?: { all?: number } }>
-    mythic_plus_recent_runs?: Array<{
-      keystone_run_id?: number
-      short_name?: string
-      dungeon?: string
-      mythic_level?: number
-      completed_at?: string
-      num_keystone_upgrades?: number
-      score?: number
-      url?: string
-    }>
-  }
-  const score = data.mythic_plus_scores_by_season?.[0]?.scores?.all ?? 0
-  const recentRuns: RecentRun[] = (data.mythic_plus_recent_runs ?? []).map((r) => ({
+interface RawRun {
+  keystone_run_id?: number
+  short_name?: string
+  dungeon?: string
+  mythic_level?: number
+  completed_at?: string
+  num_keystone_upgrades?: number
+  score?: number
+  url?: string
+}
+
+function mapRun(r: RawRun): KeyRun {
+  return {
     keystoneRunId: r.keystone_run_id ?? 0,
     shortName: r.short_name ?? '',
     dungeon: r.dungeon ?? '',
@@ -328,8 +318,29 @@ export async function fetchLivePlayer(char: CharacterInput): Promise<LivePlayerD
     numUpgrades: r.num_keystone_upgrades ?? 0,
     score: r.score ?? 0,
     url: r.url ?? '',
-  }))
-  return { score, recentRuns }
+  }
+}
+
+export async function fetchLivePlayer(char: CharacterInput): Promise<LivePlayerData | null> {
+  const params = new URLSearchParams({
+    region: char.region,
+    realm: char.realm,
+    name: char.name,
+    fields: 'mythic_plus_scores_by_season:current,mythic_plus_best_runs,mythic_plus_recent_runs',
+  })
+  const res = await fetch(`/api/raiderio?${params}`)
+  if (!res.ok) return null
+  const data = await res.json() as {
+    mythic_plus_scores_by_season?: Array<{ scores?: { all?: number } }>
+    mythic_plus_best_runs?: RawRun[]
+    mythic_plus_recent_runs?: RawRun[]
+  }
+  const score = data.mythic_plus_scores_by_season?.[0]?.scores?.all ?? 0
+  return {
+    score,
+    bestRuns: (data.mythic_plus_best_runs ?? []).map(mapRun),
+    recentRuns: (data.mythic_plus_recent_runs ?? []).map(mapRun),
+  }
 }
 
 export async function fetchFlags(): Promise<Record<string, boolean>> {

@@ -4,7 +4,7 @@ import { AddCharacterForm } from './components/AddCharacterForm'
 import {
   fetchTitleWatch, fetchLivePlayer, addPermaWatch, removePermaWatch,
 } from './api'
-import type { TitleWatchData, WatchPlayer, LivePlayerData, RecentRun } from './api'
+import type { TitleWatchData, WatchPlayer, LivePlayerData, KeyRun } from './api'
 import type { CharacterInput } from './types'
 
 const CLASS_COLORS: Record<string, string> = {
@@ -52,28 +52,40 @@ function timeAgo(iso: string): string {
   return `${Math.round(hrs / 24)}d ago`
 }
 
-function KeyChip({ run }: { run: RecentRun }) {
-  const completed = new Date(run.completedAt).getTime()
-  const fresh = Date.now() - completed < FRESH_MS
+function round1(n: number) {
+  return Math.round(n * 10) / 10
+}
+
+interface Gain { run: KeyRun; delta: number | null }
+
+function KeyChip({ run, gain }: { run: KeyRun; gain?: number | null }) {
+  const fresh = run.completedAt ? Date.now() - new Date(run.completedAt).getTime() < FRESH_MS : false
   const timed = run.numUpgrades >= 1
-  const cls = 'tw-key' + (timed ? ' tw-key-timed' : ' tw-key-deplete') + (fresh ? ' tw-key-fresh' : '')
+  const isGain = gain !== undefined
+  const cls = 'tw-key'
+    + (timed ? ' tw-key-timed' : ' tw-key-deplete')
+    + (fresh ? ' tw-key-fresh' : '')
+    + (isGain ? ' tw-key-gain' : '')
+  const title = `${run.dungeon} · ${round1(run.score)} IO${run.completedAt ? ' · ' + timeAgo(run.completedAt) : ''}`
   const content = (
     <>
       <span className="tw-key-level">+{run.level}</span>
       <span className="tw-key-dungeon">{run.shortName}</span>
       {timed && <span className="tw-key-up">{'★'.repeat(Math.min(3, run.numUpgrades))}</span>}
+      {isGain && <span className="tw-key-delta">▲{gain == null ? ' PB' : ' +' + gain}</span>}
     </>
   )
   return run.url
-    ? <a className={cls} href={run.url} target="_blank" rel="noreferrer" title={`${run.dungeon} — ${timeAgo(run.completedAt)}`}>{content}</a>
-    : <span className={cls} title={`${run.dungeon} — ${timeAgo(run.completedAt)}`}>{content}</span>
+    ? <a className={cls} href={run.url} target="_blank" rel="noreferrer" title={title}>{content}</a>
+    : <span className={cls} title={title}>{content}</span>
 }
 
 interface Row extends WatchPlayer {
   liveScore: number
   liveMargin: number
   status: Status
-  runs: RecentRun[]
+  bestKeys: KeyRun[]
+  recentGains: Gain[]
 }
 
 export default function TitleWatchPage() {
@@ -82,6 +94,9 @@ export default function TitleWatchPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const playersRef = useRef<WatchPlayer[]>([])
+  // Best score per dungeon captured the first time we saw each player, so we can
+  // show an accurate +IO delta for keys pushed while the page is watching.
+  const baselineRef = useRef<Map<string, Map<string, number>>>(new Map())
 
   useEffect(() => {
     document.body.classList.add('body-clb')
@@ -103,6 +118,15 @@ export default function TitleWatchPage() {
     const results = await Promise.all(
       players.map(async (p) => ({ key: keyOf(p), d: await fetchLivePlayer(p).catch(() => null) })),
     )
+    for (const { key, d } of results) {
+      if (d && !baselineRef.current.has(key)) {
+        const m = new Map<string, number>()
+        for (const r of d.bestRuns) {
+          if (r.score > (m.get(r.shortName) ?? 0)) m.set(r.shortName, r.score)
+        }
+        baselineRef.current.set(key, m)
+      }
+    }
     setLive((prev) => {
       const next = { ...prev }
       for (const { key, d } of results) if (d) next[key] = d
@@ -154,10 +178,46 @@ export default function TitleWatchPage() {
       // Perma-only players drop off once they're comfortably safe; window
       // players always stay visible. They auto-return when they fall back.
       if (p.source === 'perma' && status === 'safe') { hidden++; continue }
-      const runs = (l?.recentRuns ?? [])
-        .filter((r) => r.completedAt && Date.now() - new Date(r.completedAt).getTime() < WEEK_MS)
-        .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
-      built.push({ ...p, liveScore, liveMargin, status, runs })
+
+      const bestRuns = l?.bestRuns ?? []
+      const recentRuns = l?.recentRuns ?? []
+      const bestKeys = [...bestRuns].sort((a, b) => b.score - a.score)
+
+      const isRecent = (r: KeyRun) => !!r.completedAt && Date.now() - new Date(r.completedAt).getTime() < WEEK_MS
+
+      // Current best run per dungeon.
+      const curBest = new Map<string, KeyRun>()
+      for (const r of bestRuns) {
+        const ex = curBest.get(r.shortName)
+        if (!ex || r.score > ex.score) curBest.set(r.shortName, r)
+      }
+
+      // Recent keys that raised their IO, keyed by run id so each shows once.
+      const baseline = baselineRef.current.get(keyOf(p))
+      const gainsMap = new Map<number, Gain>()
+      for (const [dungeon, run] of curBest) {
+        const base = baseline?.get(dungeon)
+        if (base !== undefined && run.score > base + 0.05) {
+          // Improved for a dungeon we've been watching → exact delta.
+          gainsMap.set(run.keystoneRunId, { run, delta: round1(run.score - base) })
+        } else if (base === undefined && isRecent(run)) {
+          // Brand-new dungeon best since we started watching.
+          gainsMap.set(run.keystoneRunId, { run, delta: null })
+        }
+      }
+      // Recent runs that are already current bests (PBs set just before we
+      // started watching) — shown without a fabricated number.
+      const bestIds = new Set(bestRuns.map((r) => r.keystoneRunId))
+      for (const r of recentRuns) {
+        if (bestIds.has(r.keystoneRunId) && isRecent(r) && !gainsMap.has(r.keystoneRunId)) {
+          gainsMap.set(r.keystoneRunId, { run: r, delta: null })
+        }
+      }
+      const recentGains = [...gainsMap.values()].sort(
+        (a, b) => new Date(b.run.completedAt).getTime() - new Date(a.run.completedAt).getTime(),
+      )
+
+      built.push({ ...p, liveScore, liveMargin, status, bestKeys, recentGains })
     }
     built.sort((a, b) => b.liveScore - a.liveScore)
     return { rows: built, hiddenSafe: hidden }
@@ -237,11 +297,25 @@ export default function TitleWatchPage() {
                       <StatusPill status={r.status} margin={r.liveMargin} />
                     </div>
 
-                    <div className="tw-keys">
-                      {r.runs.length === 0
-                        ? <span className="tw-nokeys">no keys in the last week yet</span>
-                        : r.runs.map((run) => <KeyChip key={run.keystoneRunId} run={run} />)}
+                    <div className="tw-keys-block">
+                      <span className="tw-keys-label">Best</span>
+                      <div className="tw-keys">
+                        {r.bestKeys.length === 0
+                          ? <span className="tw-nokeys">no keys yet</span>
+                          : r.bestKeys.map((run) => <KeyChip key={run.keystoneRunId} run={run} />)}
+                      </div>
                     </div>
+
+                    {r.recentGains.length > 0 && (
+                      <div className="tw-keys-block">
+                        <span className="tw-keys-label tw-keys-label-gain">Recent +IO</span>
+                        <div className="tw-keys">
+                          {r.recentGains.map(({ run, delta }) => (
+                            <KeyChip key={run.keystoneRunId} run={run} gain={delta} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {r.stream && (
                       <a className="tw-stream" href={r.stream.url} target="_blank" rel="noreferrer">

@@ -1863,14 +1863,40 @@ a.row-first:hover {
 .tw-pill-above { color: #e6b45a; background: color-mix(in srgb, #e6b45a 15%, transparent); }
 .tw-pill-risk  { color: var(--red); background: color-mix(in srgb, var(--red) 15%, transparent); }
 
+.tw-keys-block {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tw-keys-label {
+  flex: none;
+  width: 4.2rem;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  font-weight: 700;
+  padding-top: 0.1rem;
+}
+.tw-keys-label-gain { color: var(--gold); }
+
 .tw-keys {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
-  margin-top: 0.55rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .tw-nokeys { font-size: 0.74rem; color: var(--muted); opacity: 0.6; font-style: italic; }
+
+.tw-key-gain {
+  border-color: color-mix(in srgb, var(--gold) 55%, var(--border));
+  background: color-mix(in srgb, var(--gold) 10%, var(--surface2));
+}
+.tw-key-delta { color: var(--gold); font-weight: 800; font-size: 0.66rem; }
 
 .tw-key {
   display: inline-flex;
