@@ -2047,6 +2047,9 @@ a.row-first:hover {
   background-size: cover;
   background-position: center;
   text-decoration: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
 }
 .cr-thumb::after {
   content: '';
@@ -2110,5 +2113,118 @@ a.row-first:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.cr-expand {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 2;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.cr-expand:hover { background: color-mix(in srgb, #9147ff 80%, transparent); border-color: #9147ff; }
+
+/* Focus / theater view */
+.cr-focus-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.cr-focus {
+  position: relative;
+  width: min(92vw, 1200px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.cr-focus-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 3;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.cr-focus-close:hover { background: var(--accent); border-color: var(--accent); }
+
+.cr-focus-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 70vh;
+  background: #000;
+}
+.cr-focus-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.cr-focus-info {
+  padding: 0.85rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cr-focus-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.cr-focus-head .cr-name { font-size: 1.35rem; }
+
+.cr-focus-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.cr-stat b { color: var(--text); font-size: 1.05rem; }
+.cr-stat-off { font-weight: 700; }
+.cr-stat-safe { color: #2ec76a; }
+.cr-stat-risk { color: #e6b45a; }
+.cr-stat-despair { color: var(--red); }
+
+.cr-focus-keys {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.cr-focus-keys .tw-keys-label { width: auto; }
+
+@media (max-width: 640px) {
+  .cr-focus-keys { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
 }
 

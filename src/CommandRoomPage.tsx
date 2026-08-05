@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Nav } from './components/Nav'
 import { StatusPill } from './components/StatusPill'
-import { fetchCommandRoom } from './api'
-import type { CommandRoomData, CommandRoomPlayer } from './api'
+import { fetchCommandRoom, fetchLivePlayer } from './api'
+import type { CommandRoomData, CommandRoomPlayer, KeyRun } from './api'
 import { classColor, effectiveCutoff, statusOf } from './titleStatus'
 
 const REFRESH_INTERVAL = 2 * 60 * 1000
@@ -14,7 +14,102 @@ function minsAgo(ts: number): string {
   return `${Math.round(m / 60)}h ago`
 }
 
-function StreamTile({ p, parent }: { p: CommandRoomPlayer; parent: string }) {
+function offCutoff(margin: number): string {
+  if (margin > 0) return `${margin} above cutoff`
+  if (margin < 0) return `${Math.abs(margin)} below cutoff`
+  return 'exactly on cutoff'
+}
+
+function KeyChips({ keys }: { keys: KeyRun[] | null }) {
+  if (keys === null) return <span className="tw-nokeys">loading…</span>
+  if (keys.length === 0) return <span className="tw-nokeys">no keys yet</span>
+  return (
+    <>
+      {keys.map((run) => {
+        const timed = run.numUpgrades >= 1
+        const cls = 'tw-key' + (timed ? ' tw-key-timed' : ' tw-key-deplete')
+        const inner = (
+          <>
+            <span className="tw-key-level">+{run.level}</span>
+            <span className="tw-key-dungeon">{run.shortName}</span>
+            {timed && <span className="tw-key-up">{'★'.repeat(Math.min(3, run.numUpgrades))}</span>}
+          </>
+        )
+        return run.url
+          ? <a key={run.keystoneRunId} className={cls} href={run.url} target="_blank" rel="noreferrer" title={run.dungeon}>{inner}</a>
+          : <span key={run.keystoneRunId} className={cls} title={run.dungeon}>{inner}</span>
+      })}
+    </>
+  )
+}
+
+function FocusModal({ player, parent, onClose }: { player: CommandRoomPlayer; parent: string; onClose: () => void }) {
+  const [keys, setKeys] = useState<KeyRun[] | null>(null)
+  const [liveScore, setLiveScore] = useState(player.score)
+
+  useEffect(() => {
+    let alive = true
+    fetchLivePlayer({ name: player.name, realm: player.realm, region: player.region }).then((d) => {
+      if (!alive || !d) return
+      setKeys([...d.bestRuns].sort((a, b) => b.score - a.score))
+      if (d.score) setLiveScore(d.score)
+    })
+    return () => { alive = false }
+  }, [player])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [onClose])
+
+  const nameColor = classColor(player.className)
+  const status = statusOf(player.margin)
+  const src = `https://player.twitch.tv/?channel=${encodeURIComponent(player.stream.login)}&parent=${encodeURIComponent(parent)}&muted=false&autoplay=true`
+
+  return (
+    <div className="cr-focus-backdrop" onClick={onClose}>
+      <div className="cr-focus" onClick={(e) => e.stopPropagation()}>
+        <button className="cr-focus-close" onClick={onClose} aria-label="Close">✕</button>
+
+        <div className="cr-focus-video">
+          <iframe src={src} title={player.stream.login} allow="autoplay; fullscreen" allowFullScreen />
+        </div>
+
+        <div className="cr-focus-info">
+          <div className="cr-focus-head">
+            <a className="cr-name" style={{ color: nameColor }} href={player.profileUrl} target="_blank" rel="noreferrer">
+              {player.name}
+            </a>
+            <span className="cr-realm">{player.realmName ?? player.realm}</span>
+            {player.specName && player.className && <span className="cr-spec">{player.specName} {player.className}</span>}
+            <StatusPill status={status} margin={player.margin} />
+          </div>
+
+          <div className="cr-focus-stats">
+            <span className="cr-stat"><b>#{player.rank}</b> NA rank</span>
+            <span className="cr-stat"><b>{liveScore.toLocaleString(undefined, { maximumFractionDigits: 1 })}</b> IO</span>
+            <span className={'cr-stat cr-stat-off cr-stat-' + status}>{offCutoff(player.margin)}</span>
+            <a className="cr-tw" href={player.stream.url} target="_blank" rel="noreferrer">
+              <span className="tw-stream-dot" /> {player.stream.login} · {player.stream.viewerCount.toLocaleString()}
+            </a>
+          </div>
+
+          <div className="cr-focus-keys">
+            <span className="tw-keys-label">Top keys</span>
+            <div className="tw-keys"><KeyChips keys={keys} /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StreamTile({ p, parent, onFocus }: { p: CommandRoomPlayer; parent: string; onFocus: (p: CommandRoomPlayer) => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const [show, setShow] = useState(false)
 
@@ -38,24 +133,17 @@ function StreamTile({ p, parent }: { p: CommandRoomPlayer; parent: string }) {
   return (
     <div className="cr-tile" ref={ref}>
       <div className="cr-video">
+        <button className="cr-expand" onClick={() => onFocus(p)} title="Expand" aria-label="Expand stream">⤢</button>
         {show ? (
-          <iframe
-            src={src}
-            title={p.stream.login}
-            allowFullScreen
-            allow="autoplay; fullscreen"
-            loading="lazy"
-          />
+          <iframe src={src} title={p.stream.login} allow="autoplay; fullscreen" allowFullScreen loading="lazy" />
         ) : (
-          <a
+          <button
             className="cr-thumb"
-            href={p.stream.url}
-            target="_blank"
-            rel="noreferrer"
+            onClick={() => onFocus(p)}
             style={p.stream.thumbnail ? { backgroundImage: `url(${p.stream.thumbnail})` } : undefined}
           >
             <span className="cr-play">▶</span>
-          </a>
+          </button>
         )}
       </div>
 
@@ -84,6 +172,7 @@ export default function CommandRoomPage() {
   const [data, setData] = useState<CommandRoomData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [focus, setFocus] = useState<CommandRoomPlayer | null>(null)
   const parent = useMemo(() => (typeof window !== 'undefined' ? window.location.hostname : 'localhost'), [])
 
   useEffect(() => {
@@ -114,7 +203,7 @@ export default function CommandRoomPage() {
 
       <header className="header tw-header">
         <h1 className="tw-title">Command Room</h1>
-        <p className="subtitle">Live streams within {30} points of the {cutoff.toLocaleString()} title cutoff</p>
+        <p className="subtitle">Live streams within 30 points of the {cutoff.toLocaleString()} title cutoff</p>
         {data && (
           <p className="cutoff-badge">
             {data.cutoff.percentile} cutoff&nbsp;
@@ -141,9 +230,13 @@ export default function CommandRoomPage() {
         <p className="empty">No one within 30 points of title is streaming right now.</p>
       ) : (
         <div className="cr-grid">
-          {players.map((p) => <StreamTile key={`${p.rank}-${p.stream.login}`} p={p} parent={parent} />)}
+          {players.map((p) => (
+            <StreamTile key={`${p.rank}-${p.stream.login}`} p={p} parent={parent} onFocus={setFocus} />
+          ))}
         </div>
       )}
+
+      {focus && <FocusModal player={focus} parent={parent} onClose={() => setFocus(null)} />}
     </div>
   )
 }
