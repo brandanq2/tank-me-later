@@ -97,7 +97,7 @@ function FocusModal({ players, index, parent, onClose, onNavigate }: {
             </>
           )}
           <span className="cr-focus-count">{index + 1} / {players.length}</span>
-          <iframe src={src} title={player.stream.login} allow="autoplay; fullscreen" allowFullScreen />
+          <iframe key={player.stream.login} src={src} title={player.stream.login} allow="autoplay; fullscreen" allowFullScreen />
         </div>
 
         <div className="cr-focus-info">
