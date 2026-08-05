@@ -43,12 +43,21 @@ function KeyChips({ keys }: { keys: KeyRun[] | null }) {
   )
 }
 
-function FocusModal({ player, parent, onClose }: { player: CommandRoomPlayer; parent: string; onClose: () => void }) {
+function FocusModal({ players, index, parent, onClose, onNavigate }: {
+  players: CommandRoomPlayer[]
+  index: number
+  parent: string
+  onClose: () => void
+  onNavigate: (delta: number) => void
+}) {
+  const player = players[index]
   const [keys, setKeys] = useState<KeyRun[] | null>(null)
   const [liveScore, setLiveScore] = useState(player.score)
 
   useEffect(() => {
     let alive = true
+    setKeys(null)
+    setLiveScore(player.score)
     fetchLivePlayer({ name: player.name, realm: player.realm, region: player.region }).then((d) => {
       if (!alive || !d) return
       setKeys([...d.bestRuns].sort((a, b) => b.score - a.score))
@@ -58,14 +67,18 @@ function FocusModal({ player, parent, onClose }: { player: CommandRoomPlayer; pa
   }, [player])
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+      else if (e.key === 'ArrowLeft') onNavigate(-1)
+      else if (e.key === 'ArrowRight') onNavigate(1)
+    }
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
     }
-  }, [onClose])
+  }, [onClose, onNavigate])
 
   const nameColor = classColor(player.className)
   const status = statusOf(player.margin)
@@ -77,6 +90,13 @@ function FocusModal({ player, parent, onClose }: { player: CommandRoomPlayer; pa
         <button className="cr-focus-close" onClick={onClose} aria-label="Close">✕</button>
 
         <div className="cr-focus-video">
+          {players.length > 1 && (
+            <>
+              <button className="cr-nav cr-nav-prev" onClick={() => onNavigate(-1)} aria-label="Previous stream">‹</button>
+              <button className="cr-nav cr-nav-next" onClick={() => onNavigate(1)} aria-label="Next stream">›</button>
+            </>
+          )}
+          <span className="cr-focus-count">{index + 1} / {players.length}</span>
           <iframe src={src} title={player.stream.login} allow="autoplay; fullscreen" allowFullScreen />
         </div>
 
@@ -109,7 +129,7 @@ function FocusModal({ player, parent, onClose }: { player: CommandRoomPlayer; pa
   )
 }
 
-function StreamTile({ p, parent, onFocus }: { p: CommandRoomPlayer; parent: string; onFocus: (p: CommandRoomPlayer) => void }) {
+function StreamTile({ p, parent, onFocus }: { p: CommandRoomPlayer; parent: string; onFocus: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const [show, setShow] = useState(false)
 
@@ -133,13 +153,13 @@ function StreamTile({ p, parent, onFocus }: { p: CommandRoomPlayer; parent: stri
   return (
     <div className="cr-tile" ref={ref}>
       <div className="cr-video">
-        <button className="cr-expand" onClick={() => onFocus(p)} title="Expand" aria-label="Expand stream">⤢</button>
+        <button className="cr-expand" onClick={onFocus} title="Expand" aria-label="Expand stream">⤢</button>
         {show ? (
           <iframe src={src} title={p.stream.login} allow="autoplay; fullscreen" allowFullScreen loading="lazy" />
         ) : (
           <button
             className="cr-thumb"
-            onClick={() => onFocus(p)}
+            onClick={onFocus}
             style={p.stream.thumbnail ? { backgroundImage: `url(${p.stream.thumbnail})` } : undefined}
           >
             <span className="cr-play">▶</span>
@@ -172,7 +192,7 @@ export default function CommandRoomPage() {
   const [data, setData] = useState<CommandRoomData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [focus, setFocus] = useState<CommandRoomPlayer | null>(null)
+  const [focusIndex, setFocusIndex] = useState<number | null>(null)
   const parent = useMemo(() => (typeof window !== 'undefined' ? window.location.hostname : 'localhost'), [])
 
   useEffect(() => {
@@ -196,6 +216,14 @@ export default function CommandRoomPage() {
 
   const cutoff = effectiveCutoff(data?.cutoff.score ?? 0)
   const players = data?.players ?? []
+
+  const navigate = useCallback((delta: number) => {
+    setFocusIndex((i) => {
+      const n = players.length
+      if (i === null || n === 0) return i
+      return (i + delta + n) % n
+    })
+  }, [players.length])
 
   return (
     <div className="app page-clb">
@@ -230,13 +258,21 @@ export default function CommandRoomPage() {
         <p className="empty">No one within 30 points of title is streaming right now.</p>
       ) : (
         <div className="cr-grid">
-          {players.map((p) => (
-            <StreamTile key={`${p.rank}-${p.stream.login}`} p={p} parent={parent} onFocus={setFocus} />
+          {players.map((p, i) => (
+            <StreamTile key={`${p.rank}-${p.stream.login}`} p={p} parent={parent} onFocus={() => setFocusIndex(i)} />
           ))}
         </div>
       )}
 
-      {focus && <FocusModal player={focus} parent={parent} onClose={() => setFocus(null)} />}
+      {focusIndex !== null && players[focusIndex] && (
+        <FocusModal
+          players={players}
+          index={focusIndex}
+          parent={parent}
+          onNavigate={navigate}
+          onClose={() => setFocusIndex(null)}
+        />
+      )}
     </div>
   )
 }

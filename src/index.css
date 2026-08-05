@@ -2185,6 +2185,42 @@ a.row-first:hover {
   flex: 0 0 auto;
   background: #000;
 }
+
+.cr-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 2.6rem;
+  height: 3.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+.cr-nav:hover { background: color-mix(in srgb, #9147ff 80%, transparent); border-color: #9147ff; }
+.cr-nav-prev { left: 0.5rem; }
+.cr-nav-next { right: 0.5rem; }
+
+.cr-focus-count {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  font-size: 0.7rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  pointer-events: none;
+}
 .cr-focus-video iframe {
   position: absolute;
   inset: 0;
