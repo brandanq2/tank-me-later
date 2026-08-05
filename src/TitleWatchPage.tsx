@@ -25,7 +25,7 @@ const CLASS_COLORS: Record<string, string> = {
 
 const SAFE_MARGIN = 15    // >= this far above cutoff → safe
 const DESPAIR_MARGIN = 15 // >= this far below cutoff → despair
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+const DAY_MS = 24 * 60 * 60 * 1000
 const FRESH_MS = 90 * 60 * 1000
 const ROSTER_INTERVAL = 5 * 60 * 1000
 const LIVE_INTERVAL = 60 * 1000
@@ -187,7 +187,7 @@ export default function TitleWatchPage() {
       const recentRuns = l?.recentRuns ?? []
       const bestKeys = [...bestRuns].sort((a, b) => b.score - a.score)
 
-      const isRecent = (r: KeyRun) => !!r.completedAt && Date.now() - new Date(r.completedAt).getTime() < WEEK_MS
+      const isRecent = (r: KeyRun) => !!r.completedAt && Date.now() - new Date(r.completedAt).getTime() < DAY_MS
 
       // Current best run per dungeon.
       const curBest = new Map<string, KeyRun>()
