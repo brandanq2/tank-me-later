@@ -2144,12 +2144,17 @@ a.row-first:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 0.75rem;
 }
 
 .cr-focus {
   position: relative;
-  width: min(92vw, 1200px);
+  /* As wide as the viewport allows, but never so wide that the 16:9 video
+     grows taller than the screen (leaving ~14vh for the overlay). */
+  width: min(96vw, calc(84vh * 16 / 9));
+  max-height: 97vh;
+  display: flex;
+  flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -2177,7 +2182,7 @@ a.row-first:hover {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: 70vh;
+  flex: 0 0 auto;
   background: #000;
 }
 .cr-focus-video iframe {
@@ -2193,6 +2198,9 @@ a.row-first:hover {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .cr-focus-head {
