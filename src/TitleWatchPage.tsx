@@ -241,7 +241,7 @@ export default function TitleWatchPage() {
           <p className="cutoff-badge">
             {data.cutoff.percentile} cutoff&nbsp;
             <span className="cutoff-score">
-              {cutoffScore.toLocaleString()}
+              {data.cutoff.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
             </span>
             &nbsp;· rank ~{data.cutoff.rank.toLocaleString()}
           </p>
