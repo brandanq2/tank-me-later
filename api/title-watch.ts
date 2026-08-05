@@ -237,11 +237,131 @@ async function computeRoster(season: string, region: string): Promise<TitleWatch
   }
 }
 
+// ── Command Room: live streamers within WINDOW points of the cutoff ─────────
+// Folded into this function (rather than its own file) to stay under the
+// Hobby-plan limit of 12 Serverless Functions per deployment.
+const ROOM_CACHE_KEY = 'tank-me-later:command-room:cache'
+const ROOM_WINDOW = 30
+const ROOM_MAX_PAGES_EACH = 20
+const ROOM_CACHE_TTL_MS = 3 * 60 * 1000
+
+interface CommandRoomPlayer {
+  name: string
+  realm: string
+  realmName?: string
+  region: string
+  className?: string
+  specName?: string
+  race?: string
+  score: number
+  rank: number
+  margin: number
+  profileUrl?: string
+  stream: WatchStream
+}
+
+interface CommandRoomData {
+  updatedAt: number
+  season: string
+  region: string
+  cutoff: { score: number; percentile: string; rank: number }
+  players: CommandRoomPlayer[]
+}
+
+// raider.io only attaches stream data to ranked characters, so we page the
+// rankings outward from the cutoff and stop once we leave the score band.
+async function collectBand(season: string, region: string, cutoffRank: number, low: number, high: number): Promise<RankedCharacter[]> {
+  const center = Math.floor((cutoffRank - 1) / PER_PAGE)
+  const out: RankedCharacter[] = []
+  for (let p = center, steps = 0; p >= 0 && steps <= ROOM_MAX_PAGES_EACH; p--, steps++) {
+    const rc = await fetchRankPage(season, region, p)
+    if (rc.length === 0) break
+    out.push(...rc)
+    if (rc[rc.length - 1].score > high) break // whole page above the band
+  }
+  for (let p = center + 1, steps = 0; steps <= ROOM_MAX_PAGES_EACH; p++, steps++) {
+    const rc = await fetchRankPage(season, region, p)
+    if (rc.length === 0) break
+    out.push(...rc)
+    if (rc[0].score < low) break // whole page below the band
+  }
+  return out
+}
+
+async function computeRoom(season: string, region: string): Promise<CommandRoomData> {
+  const cutoffRes = await fetch(`https://raider.io/api/v1/mythic-plus/season-cutoffs?season=${season}&region=${region}`)
+  if (!cutoffRes.ok) throw new Error(`cutoff ${cutoffRes.status}`)
+  const cutoffJson = await cutoffRes.json() as {
+    cutoffs?: { p999?: { all?: { quantileMinValue?: number; quantilePopulationCount?: number } } }
+  }
+  const p999 = cutoffJson?.cutoffs?.p999?.all
+  const cutoffScore = p999?.quantileMinValue
+  const cutoffRank = p999?.quantilePopulationCount
+  if (typeof cutoffScore !== 'number' || typeof cutoffRank !== 'number') {
+    throw new Error('cutoff not found')
+  }
+  const effectiveCutoff = Math.floor(cutoffScore)
+  const low = effectiveCutoff - ROOM_WINDOW
+  const high = effectiveCutoff + ROOM_WINDOW
+
+  const ranked = await collectBand(season, region, cutoffRank, low, high)
+  const seen = new Set<number>()
+  const players: CommandRoomPlayer[] = []
+  for (const rc of ranked) {
+    if (rc.score < low || rc.score > high) continue
+    const stream = mapStream(rc.character.stream)
+    if (!stream) continue
+    if (seen.has(rc.rank)) continue
+    seen.add(rc.rank)
+    const c = rc.character
+    players.push({
+      name: c.name,
+      realm: c.realm?.slug ?? '',
+      realmName: c.realm?.name,
+      region: c.region?.slug ?? region,
+      className: c.class?.name,
+      specName: c.spec?.name,
+      race: c.race?.name,
+      score: rc.score,
+      rank: rc.rank,
+      margin: round1(rc.score - effectiveCutoff),
+      profileUrl: c.path ? `https://raider.io${c.path}` : undefined,
+      stream,
+    })
+  }
+  players.sort((a, b) => b.stream.viewerCount - a.stream.viewerCount)
+
+  return {
+    updatedAt: Date.now(),
+    season,
+    region,
+    cutoff: { score: cutoffScore, percentile: '0.1%', rank: cutoffRank },
+    players,
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
 
   const season = (req.query.season as string) || DEFAULT_SEASON
   const region = (req.query.region as string) || DEFAULT_REGION
+
+  // Command Room view (GET only).
+  if (req.query.view === 'command-room') {
+    const refresh = req.query.refresh === '1'
+    const cached = await redis.get<CommandRoomData>(ROOM_CACHE_KEY)
+    if (!refresh && cached && Date.now() - cached.updatedAt < ROOM_CACHE_TTL_MS) {
+      return res.json(cached)
+    }
+    try {
+      const data = await computeRoom(season, region)
+      await redis.set(ROOM_CACHE_KEY, data)
+      return res.json(data)
+    } catch (err) {
+      if (cached) return res.json(cached)
+      return res.status(502).json({ error: err instanceof Error ? err.message : 'Failed to compute command room' })
+    }
+  }
 
   if (req.method === 'POST') {
     const input = req.body as CharacterInput

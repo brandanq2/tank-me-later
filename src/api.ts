@@ -304,7 +304,7 @@ export interface CommandRoomData {
 }
 
 export async function fetchCommandRoom(refresh = false): Promise<CommandRoomData | null> {
-  const res = await fetch(`/api/command-room${refresh ? '?refresh=1' : ''}`)
+  const res = await fetch(`/api/title-watch?view=command-room${refresh ? '&refresh=1' : ''}`)
   if (!res.ok) return null
   return res.json()
 }
