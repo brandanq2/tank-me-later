@@ -33,7 +33,7 @@ function StreamTile({ p, parent }: { p: CommandRoomPlayer; parent: string }) {
 
   const nameColor = classColor(p.className)
   const status = statusOf(p.margin)
-  const src = `https://player.twitch.tv/?channel=${encodeURIComponent(p.stream.login)}&parent=${encodeURIComponent(parent)}&muted=true`
+  const src = `https://player.twitch.tv/?channel=${encodeURIComponent(p.stream.login)}&parent=${encodeURIComponent(parent)}&muted=true&autoplay=false`
 
   return (
     <div className="cr-tile" ref={ref}>
