@@ -1,0 +1,19 @@
+{
+  "name": "title-watch",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tml/shared": "*",
+    "@upstash/redis": "^1.37.0",
+    "@vercel/node": "^5.7.15",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.2"
+  }
+}

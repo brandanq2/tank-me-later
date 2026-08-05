@@ -1,18 +1,23 @@
 {
-  "name": "tank-me-later",
+  "name": "tank-me-later-monorepo",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "dev": "npm run dev -w tank-me-later",
+    "dev:watch": "npm run dev -w title-watch",
+    "build": "npm run build -w tank-me-later && npm run build -w title-watch",
+    "build:tank-me-later": "npm run build -w tank-me-later",
+    "build:title-watch": "npm run build -w title-watch"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/brandanq2/tank-me-later.git"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/brandanq2/tank-me-later/issues"
@@ -25,14 +30,5 @@
     "dotenv": "^17.4.2",
     "typescript": "^6.0.3",
     "vite": "^8.0.10"
-  },
-  "dependencies": {
-    "@neondatabase/serverless": "^1.1.0",
-    "@upstash/redis": "^1.37.0",
-    "@vercel/edge-config": "^1.4.3",
-    "@vercel/node": "^5.7.15",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "react-router-dom": "^7.14.2"
   }
 }

@@ -1,0 +1,16 @@
+{
+  "name": "@tml/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./styles.css": "./styles/index.css",
+    "./components/*": "./src/components/*.tsx",
+    "./hooks/*": "./src/hooks/*.ts",
+    "./*": "./src/*.ts"
+  },
+  "peerDependencies": {
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  }
+}
