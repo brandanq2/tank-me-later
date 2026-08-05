@@ -1804,9 +1804,9 @@ a.row-first:hover {
   border-radius: 10px;
 }
 
-.tw-row-safe   { border-left-color: #2ec76a; }
-.tw-row-above  { border-left-color: #d9a441; }
-.tw-row-risk   { border-left-color: var(--red); }
+.tw-row-safe    { border-left-color: #2ec76a; }
+.tw-row-risk    { border-left-color: #e6b45a; }
+.tw-row-despair { border-left-color: var(--red); }
 
 .tw-rank {
   min-width: 3rem;
@@ -1859,9 +1859,10 @@ a.row-first:hover {
   border-radius: 4px;
 }
 .tw-pill-margin { font-weight: 600; opacity: 0.85; }
-.tw-pill-safe  { color: #2ec76a; background: color-mix(in srgb, #2ec76a 15%, transparent); }
-.tw-pill-above { color: #e6b45a; background: color-mix(in srgb, #e6b45a 15%, transparent); }
-.tw-pill-risk  { color: var(--red); background: color-mix(in srgb, var(--red) 15%, transparent); }
+.tw-pill-icon { font-size: 0.72rem; line-height: 1; }
+.tw-pill-safe    { color: #2ec76a; background: color-mix(in srgb, #2ec76a 15%, transparent); }
+.tw-pill-risk    { color: #e6b45a; background: color-mix(in srgb, #e6b45a 15%, transparent); }
+.tw-pill-despair { color: var(--red); background: color-mix(in srgb, var(--red) 18%, transparent); }
 
 .tw-keys-block {
   display: flex;

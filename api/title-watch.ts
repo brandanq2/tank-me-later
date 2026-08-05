@@ -13,7 +13,7 @@ const DEFAULT_SEASON = 'season-mn-1'
 const DEFAULT_REGION = 'us'
 
 // A player is "safe" once their IO is this far above the title cutoff.
-const SAFE_MARGIN = 10
+const SAFE_MARGIN = 15
 // How many ranked players to pull on each side of the cutoff rank.
 const WINDOW_ABOVE = 6
 const WINDOW_BELOW = 6

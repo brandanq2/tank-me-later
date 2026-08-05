@@ -23,13 +23,14 @@ const CLASS_COLORS: Record<string, string> = {
   Warrior: '#C69B3A',
 }
 
-const SAFE_MARGIN = 10
+const SAFE_MARGIN = 15    // >= this far above cutoff → safe
+const DESPAIR_MARGIN = 15 // >= this far below cutoff → despair
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 const FRESH_MS = 90 * 60 * 1000
 const ROSTER_INTERVAL = 5 * 60 * 1000
 const LIVE_INTERVAL = 60 * 1000
 
-type Status = 'safe' | 'above' | 'risk'
+type Status = 'safe' | 'risk' | 'despair'
 
 function keyOf(c: { name: string; realm: string; region: string }) {
   return `${c.name}-${c.realm}-${c.region}`.toLowerCase()
@@ -37,7 +38,7 @@ function keyOf(c: { name: string; realm: string; region: string }) {
 
 function statusOf(margin: number): Status {
   if (margin >= SAFE_MARGIN) return 'safe'
-  if (margin >= 0) return 'above'
+  if (margin <= -DESPAIR_MARGIN) return 'despair'
   return 'risk'
 }
 
@@ -352,11 +353,18 @@ export default function TitleWatchPage() {
   )
 }
 
+const STATUS_META: Record<Status, { label: string; icon: string }> = {
+  safe: { label: 'SAFE', icon: '🛡️' },
+  risk: { label: 'AT RISK', icon: '⚠️' },
+  despair: { label: 'DESPAIR', icon: '💀' },
+}
+
 function StatusPill({ status, margin }: { status: Status; margin: number }) {
-  const label = status === 'safe' ? 'SAFE' : status === 'above' ? 'IN' : 'AT RISK'
+  const { label, icon } = STATUS_META[status]
   const sign = margin >= 0 ? '+' : ''
   return (
     <span className={`tw-pill tw-pill-${status}`}>
+      <span className="tw-pill-icon" aria-hidden>{icon}</span>
       {label}<span className="tw-pill-margin">{sign}{margin}</span>
     </span>
   )
