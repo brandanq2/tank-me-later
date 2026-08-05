@@ -165,7 +165,10 @@ export default function TitleWatchPage() {
     setRefreshing(false)
   }, [loadRoster])
 
-  const cutoffScore = data?.cutoff.score ?? 0
+  // Blizzard truncates the cutoff to an integer when awarding the title, so a
+  // 4183.22 raw cutoff really means "4183 gets it". Use the floored value as
+  // the effective threshold everywhere.
+  const cutoffScore = Math.floor(data?.cutoff.score ?? 0)
 
   const { rows, hiddenSafe } = useMemo(() => {
     if (!data) return { rows: [] as Row[], hiddenSafe: 0 }
@@ -238,7 +241,7 @@ export default function TitleWatchPage() {
           <p className="cutoff-badge">
             {data.cutoff.percentile} cutoff&nbsp;
             <span className="cutoff-score">
-              {data.cutoff.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+              {cutoffScore.toLocaleString()}
             </span>
             &nbsp;· rank ~{data.cutoff.rank.toLocaleString()}
           </p>
@@ -271,7 +274,7 @@ export default function TitleWatchPage() {
               <div key={keyOf(r)}>
                 {showDivider && (
                   <div className="tw-cutoff-divider">
-                    <span>title cutoff · {cutoffScore.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+                    <span>title cutoff · {cutoffScore.toLocaleString()}</span>
                   </div>
                 )}
                 <div className={`tw-row tw-row-${r.status}`}>

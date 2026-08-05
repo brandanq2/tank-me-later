@@ -182,6 +182,9 @@ async function computeRoster(season: string, region: string): Promise<TitleWatch
   if (typeof cutoffScore !== 'number' || typeof cutoffRank !== 'number') {
     throw new Error('cutoff not found')
   }
+  // Blizzard truncates the cutoff to an integer when awarding the title, so
+  // margins/safe are measured against the floored value.
+  const effectiveCutoff = Math.floor(cutoffScore)
 
   // The cutoff rank tells us which ranking page to read; grab neighbours so the
   // window never straddles a page boundary.
@@ -193,7 +196,7 @@ async function computeRoster(season: string, region: string): Promise<TitleWatch
   const players: WatchPlayer[] = ranked
     .filter((rc) => rc.rank >= cutoffRank - WINDOW_ABOVE && rc.rank <= cutoffRank + WINDOW_BELOW)
     .sort((a, b) => a.rank - b.rank)
-    .map((rc) => rankedToPlayer(rc, 'window', cutoffScore, false))
+    .map((rc) => rankedToPlayer(rc, 'window', effectiveCutoff, false))
 
   // Merge the permanent watch list.
   const perma = (await redis.get<CharacterInput[]>(PERMA_KEY)) ?? []
@@ -216,13 +219,13 @@ async function computeRoster(season: string, region: string): Promise<TitleWatch
     }
     const rc = rankedByKey.get(k)
     if (rc) {
-      players.push(rankedToPlayer(rc, 'perma', cutoffScore, true))
+      players.push(rankedToPlayer(rc, 'perma', effectiveCutoff, true))
       continue
     }
     toFetch.push(pc)
   }
 
-  const fetched = await Promise.all(toFetch.map((pc) => fetchPermaPlayer(pc, cutoffScore)))
+  const fetched = await Promise.all(toFetch.map((pc) => fetchPermaPlayer(pc, effectiveCutoff)))
   for (const p of fetched) if (p) players.push(p)
 
   return {
