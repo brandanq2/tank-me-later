@@ -329,7 +329,7 @@ async function computeRoom(season: string, region: string): Promise<CommandRoomD
       stream,
     })
   }
-  players.sort((a, b) => a.rank - b.rank)
+  players.sort((a, b) => a.score - b.score)
 
   return {
     updatedAt: Date.now(),
