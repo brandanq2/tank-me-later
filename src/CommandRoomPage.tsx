@@ -132,7 +132,7 @@ function StreamOverlay({ player, keys, score, collapsed }: {
         </div>
         <div className="cr-ov-keys">
           <span className="tw-keys-label">Top keys</span>
-          <div className="tw-keys"><KeyChips keys={keys ? keys.slice(0, 5) : null} /></div>
+          <div className="tw-keys"><KeyChips keys={keys} /></div>
         </div>
       </div>
     </div>
