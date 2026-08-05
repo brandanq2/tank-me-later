@@ -2186,6 +2186,78 @@ a.row-first:hover {
   background: #000;
 }
 
+.cr-focus-video.is-full {
+  aspect-ratio: auto;
+  width: 100%;
+  height: 100%;
+}
+/* Fade the chrome out once the pointer settles, so the run stays unobstructed. */
+.cr-focus-video.is-idle { cursor: none; }
+.cr-focus-video.is-idle .cr-nav,
+.cr-focus-video.is-idle .cr-focus-count,
+.cr-focus-video.is-idle .cr-fs,
+.cr-focus-video.is-idle .cr-ov {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cr-fs {
+  position: absolute;
+  top: 0.6rem;
+  /* Clear of the modal close button, and away from Twitch's own bottom-right controls. */
+  right: 3.1rem;
+  z-index: 3;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: opacity 0.25s ease, background 0.15s ease;
+}
+.cr-fs:hover { background: #9147ff; border-color: #9147ff; }
+.cr-focus-video.is-full .cr-fs { right: 0.6rem; }
+
+.cr-ov {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 3;
+  max-width: min(26rem, 40vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 10, 14, 0.72);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  transition: opacity 0.25s ease;
+  /* Clicks fall through to the Twitch player; only links opt back in. */
+  pointer-events: none;
+}
+.cr-ov a { pointer-events: auto; }
+
+.cr-ov-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.45rem; }
+.cr-ov-head .cr-name { font-size: 1.2rem; }
+.cr-ov-spec { font-size: 0.72rem; color: var(--muted); opacity: 0.8; }
+
+.cr-ov-stats { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem; }
+.cr-ov-rank {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+.cr-ov-io { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.02em; }
+
+.cr-ov-keys { display: flex; align-items: baseline; gap: 0.5rem; }
+.cr-ov-keys .tw-keys-label { width: auto; }
+
 .cr-nav {
   position: absolute;
   top: 50%;
@@ -2203,6 +2275,7 @@ a.row-first:hover {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
+  transition: opacity 0.25s ease, background 0.15s ease;
 }
 .cr-nav:hover { background: color-mix(in srgb, #9147ff 80%, transparent); border-color: #9147ff; }
 .cr-nav-prev { left: 0.5rem; }
@@ -2220,6 +2293,7 @@ a.row-first:hover {
   padding: 0.15rem 0.5rem;
   border-radius: 10px;
   pointer-events: none;
+  transition: opacity 0.25s ease;
 }
 .cr-focus-video iframe {
   position: absolute;

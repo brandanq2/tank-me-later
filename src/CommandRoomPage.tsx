@@ -53,6 +53,10 @@ function FocusModal({ players, index, parent, onClose, onNavigate }: {
   const player = players[index]
   const [keys, setKeys] = useState<KeyRun[] | null>(null)
   const [liveScore, setLiveScore] = useState(player.score)
+  const [isFull, setIsFull] = useState(false)
+  const [idle, setIdle] = useState(false)
+  const videoRef = useRef<HTMLDivElement>(null)
+  const idleTimer = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     let alive = true
@@ -66,11 +70,38 @@ function FocusModal({ players, index, parent, onClose, onNavigate }: {
     return () => { alive = false }
   }, [player])
 
+  // We drive fullscreen ourselves on the wrapper (not the iframe) so the info
+  // overlay stays painted — a fullscreened iframe renders nothing but itself.
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) document.exitFullscreen()
+    else videoRef.current?.requestFullscreen()
+  }, [])
+
+  useEffect(() => {
+    const onChange = () => setIsFull(document.fullscreenElement === videoRef.current)
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [])
+
+  // Reveal the chrome on any pointer movement, then fade it back out.
+  const wake = useCallback(() => {
+    setIdle(false)
+    window.clearTimeout(idleTimer.current)
+    idleTimer.current = window.setTimeout(() => setIdle(true), 2000)
+  }, [])
+
+  useEffect(() => {
+    wake()
+    return () => window.clearTimeout(idleTimer.current)
+  }, [wake, player])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      // In fullscreen, Escape belongs to the browser's exit gesture.
+      if (e.key === 'Escape') { if (!document.fullscreenElement) onClose() }
       else if (e.key === 'ArrowLeft') onNavigate(-1)
       else if (e.key === 'ArrowRight') onNavigate(1)
+      else if (e.key === 'f') toggleFullscreen()
     }
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
@@ -78,7 +109,7 @@ function FocusModal({ players, index, parent, onClose, onNavigate }: {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
     }
-  }, [onClose, onNavigate])
+  }, [onClose, onNavigate, toggleFullscreen])
 
   const nameColor = classColor(player.className)
   const status = statusOf(player.margin)
@@ -89,7 +120,11 @@ function FocusModal({ players, index, parent, onClose, onNavigate }: {
       <div className="cr-focus" onClick={(e) => e.stopPropagation()}>
         <button className="cr-focus-close" onClick={onClose} aria-label="Close">✕</button>
 
-        <div className="cr-focus-video">
+        <div
+          className={'cr-focus-video' + (isFull ? ' is-full' : '') + (isFull && idle ? ' is-idle' : '')}
+          ref={videoRef}
+          onMouseMove={wake}
+        >
           {players.length > 1 && (
             <>
               <button className="cr-nav cr-nav-prev" onClick={() => onNavigate(-1)} aria-label="Previous stream">‹</button>
@@ -97,7 +132,41 @@ function FocusModal({ players, index, parent, onClose, onNavigate }: {
             </>
           )}
           <span className="cr-focus-count">{index + 1} / {players.length}</span>
-          <iframe key={player.stream.login} src={src} title={player.stream.login} allow="autoplay; fullscreen" allowFullScreen />
+          <button
+            className="cr-fs"
+            onClick={toggleFullscreen}
+            title={isFull ? 'Exit fullscreen (f)' : 'Fullscreen (f)'}
+            aria-label={isFull ? 'Exit fullscreen' : 'Fullscreen'}
+          >
+            {isFull ? '⤡' : '⤢'}
+          </button>
+
+          {isFull && (
+            <div className="cr-ov">
+              <div className="cr-ov-head">
+                <a className="cr-name" style={{ color: nameColor }} href={player.profileUrl} target="_blank" rel="noreferrer">
+                  {player.name}
+                </a>
+                <span className="cr-realm">{player.realmName ?? player.realm}</span>
+              </div>
+              {player.specName && player.className && (
+                <div className="cr-ov-spec">{player.specName} {player.className}</div>
+              )}
+              <div className="cr-ov-stats">
+                <span className="cr-ov-rank">#{player.rank}</span>
+                <span className="cr-ov-io">{liveScore.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+                <StatusPill status={status} margin={player.margin} />
+              </div>
+              <div className="cr-ov-keys">
+                <span className="tw-keys-label">Top keys</span>
+                <div className="tw-keys"><KeyChips keys={keys ? keys.slice(0, 5) : null} /></div>
+              </div>
+            </div>
+          )}
+
+          {/* No allowFullScreen: Twitch's own button would fullscreen the iframe
+              alone and drop the overlay. Ours fullscreens the wrapper instead. */}
+          <iframe key={player.stream.login} src={src} title={player.stream.login} allow="autoplay" />
         </div>
 
         <div className="cr-focus-info">
