@@ -1,45 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Nav } from './components/Nav'
 import { AddCharacterForm } from './components/AddCharacterForm'
+import { StatusPill } from './components/StatusPill'
 import {
   fetchTitleWatch, fetchLivePlayer, addPermaWatch, removePermaWatch,
 } from './api'
 import type { TitleWatchData, WatchPlayer, LivePlayerData, KeyRun } from './api'
 import type { CharacterInput } from './types'
+import { SAFE_MARGIN, classColor, effectiveCutoff, statusOf } from './titleStatus'
+import type { Status } from './titleStatus'
 
-const CLASS_COLORS: Record<string, string> = {
-  'Death Knight': '#C41E3A',
-  'Demon Hunter': '#A330C9',
-  Druid: '#FF7C0A',
-  Evoker: '#33937F',
-  Hunter: '#AAD372',
-  Mage: '#3FC7EB',
-  Monk: '#00FF98',
-  Paladin: '#F48CBA',
-  Priest: '#FFFFFF',
-  Rogue: '#FFF468',
-  Shaman: '#0070DD',
-  Warlock: '#8788EE',
-  Warrior: '#C69B3A',
-}
-
-const SAFE_MARGIN = 15    // >= this far above cutoff → safe
-const DESPAIR_MARGIN = 15 // >= this far below cutoff → despair
 const DAY_MS = 24 * 60 * 60 * 1000
 const FRESH_MS = 90 * 60 * 1000
 const ROSTER_INTERVAL = 5 * 60 * 1000
 const LIVE_INTERVAL = 60 * 1000
 
-type Status = 'safe' | 'risk' | 'despair'
-
 function keyOf(c: { name: string; realm: string; region: string }) {
   return `${c.name}-${c.realm}-${c.region}`.toLowerCase()
-}
-
-function statusOf(margin: number): Status {
-  if (margin >= SAFE_MARGIN) return 'safe'
-  if (margin <= -DESPAIR_MARGIN) return 'despair'
-  return 'risk'
 }
 
 function timeAgo(iso: string): string {
@@ -165,10 +142,7 @@ export default function TitleWatchPage() {
     setRefreshing(false)
   }, [loadRoster])
 
-  // Blizzard truncates the cutoff to an integer when awarding the title, so a
-  // 4183.22 raw cutoff really means "4183 gets it". Use the floored value as
-  // the effective threshold everywhere.
-  const cutoffScore = Math.floor(data?.cutoff.score ?? 0)
+  const cutoffScore = effectiveCutoff(data?.cutoff.score ?? 0)
 
   const { rows, hiddenSafe } = useMemo(() => {
     if (!data) return { rows: [] as Row[], hiddenSafe: 0 }
@@ -268,7 +242,7 @@ export default function TitleWatchPage() {
       ) : (
         <div className="tw-list">
           {rows.map((r, i) => {
-            const classColor = r.className ? CLASS_COLORS[r.className] ?? '#aaa' : '#aaa'
+            const nameColor = classColor(r.className)
             const showDivider = i === cutoffIndex && cutoffIndex > 0
             return (
               <div key={keyOf(r)}>
@@ -284,7 +258,7 @@ export default function TitleWatchPage() {
                     <div className="tw-nameline">
                       <a
                         className="tw-name"
-                        style={{ color: classColor }}
+                        style={{ color: nameColor }}
                         href={r.profileUrl}
                         target="_blank"
                         rel="noreferrer"
@@ -353,22 +327,5 @@ export default function TitleWatchPage() {
         </div>
       )}
     </div>
-  )
-}
-
-const STATUS_META: Record<Status, { label: string; icon: string }> = {
-  safe: { label: 'SAFE', icon: '🛡️' },
-  risk: { label: 'AT RISK', icon: '⚠️' },
-  despair: { label: 'DESPAIR', icon: '💀' },
-}
-
-function StatusPill({ status, margin }: { status: Status; margin: number }) {
-  const { label, icon } = STATUS_META[status]
-  const sign = margin >= 0 ? '+' : ''
-  return (
-    <span className={`tw-pill tw-pill-${status}`}>
-      <span className="tw-pill-icon" aria-hidden>{icon}</span>
-      {label}<span className="tw-pill-margin">{sign}{margin}</span>
-    </span>
   )
 }

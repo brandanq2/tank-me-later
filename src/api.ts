@@ -280,6 +280,35 @@ export async function removePermaWatch(char: CharacterInput): Promise<boolean> {
   return res.ok
 }
 
+export interface CommandRoomPlayer {
+  name: string
+  realm: string
+  realmName?: string
+  region: string
+  className?: string
+  specName?: string
+  race?: string
+  score: number
+  rank: number
+  margin: number
+  profileUrl?: string
+  stream: WatchStream
+}
+
+export interface CommandRoomData {
+  updatedAt: number
+  season: string
+  region: string
+  cutoff: { score: number; percentile: string; rank: number }
+  players: CommandRoomPlayer[]
+}
+
+export async function fetchCommandRoom(refresh = false): Promise<CommandRoomData | null> {
+  const res = await fetch(`/api/command-room${refresh ? '?refresh=1' : ''}`)
+  if (!res.ok) return null
+  return res.json()
+}
+
 export interface KeyRun {
   keystoneRunId: number
   shortName: string

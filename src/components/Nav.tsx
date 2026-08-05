@@ -9,6 +9,9 @@ export function Nav() {
       <NavLink to="/watch" className={({ isActive }) => 'nav-link' + (isActive ? ' nav-link-active' : '')}>
         Title Watch
       </NavLink>
+      <NavLink to="/command-room" className={({ isActive }) => 'nav-link' + (isActive ? ' nav-link-active' : '')}>
+        Command Room
+      </NavLink>
     </nav>
   )
 }

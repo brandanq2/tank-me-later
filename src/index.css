@@ -1996,3 +1996,119 @@ a.row-first:hover {
   .tw-row { flex-wrap: wrap; }
 }
 
+/* ── Command Room ────────────────────────────────────────────────────────── */
+.cr-refresh {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+.cr-refresh:disabled { color: var(--muted); cursor: default; text-decoration: none; }
+
+.cr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1rem;
+}
+
+.cr-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cr-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+.cr-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.cr-thumb {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: cover;
+  background-position: center;
+  text-decoration: none;
+}
+.cr-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+.cr-play {
+  position: relative;
+  z-index: 1;
+  font-size: 1.6rem;
+  color: #fff;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, #9147ff 80%, transparent);
+  padding-left: 0.2rem;
+}
+
+.cr-meta {
+  padding: 0.6rem 0.75rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cr-meta-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.cr-name { font-size: 1rem; font-weight: 700; text-decoration: none; }
+.cr-name:hover { text-decoration: underline; }
+.cr-realm { font-size: 0.74rem; color: var(--muted); }
+.cr-spec { font-size: 0.7rem; color: var(--muted); opacity: 0.75; }
+
+.cr-meta-bot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.76rem;
+}
+.cr-score { font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.02em; }
+.cr-tw {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #b48cff;
+  text-decoration: none;
+}
+.cr-tw:hover { text-decoration: underline; }
+
+.cr-title {
+  font-size: 0.72rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
