@@ -14,10 +14,12 @@ const DEFAULT_REGION = 'us'
 
 // A player is "safe" once their IO is this far above the title cutoff.
 const SAFE_MARGIN = 15
-// How many ranked players to pull on each side of the cutoff rank.
-const WINDOW_ABOVE = 6
-const WINDOW_BELOW = 6
+// How many ranked players to show on each side of the cutoff *score*.
+const WINDOW_ABOVE = 5
+const WINDOW_BELOW = 5
 const PER_PAGE = 100
+// Extra ranking pages to walk outward if one side of the cutoff comes up short.
+const ROSTER_MAX_EXTRA_PAGES = 3
 // Recompute the cached roster if it's older than this (cron keeps it warm).
 const CACHE_TTL_MS = 30 * 60 * 1000
 
@@ -131,6 +133,46 @@ async function fetchRankPage(season: string, region: string, page: number): Prom
   return data?.rankings?.rankedCharacters ?? []
 }
 
+/**
+ * Ranked characters around the cutoff, guaranteed to straddle it by score.
+ *
+ * Rank and score drift apart at the boundary: the cutoff is floored and dozens of
+ * players tie on the same IO, so the last character at or above the effective
+ * cutoff can sit well past `cutoffRank` — centring on rank alone returns a window
+ * that is entirely above the line. Page outward until both sides are covered.
+ */
+async function collectStraddle(
+  season: string,
+  region: string,
+  cutoffRank: number,
+  cutoff: number,
+): Promise<RankedCharacter[]> {
+  const center = Math.floor((cutoffRank - 1) / PER_PAGE)
+  const byRank = new Map<number, RankedCharacter>()
+  const soak = (rc: RankedCharacter[]) => { for (const x of rc) byRank.set(x.rank, x) }
+  const countAbove = () => [...byRank.values()].filter((x) => x.score >= cutoff).length
+  const countBelow = () => [...byRank.values()].filter((x) => x.score < cutoff).length
+
+  // The cutoff page plus its neighbours covers both sides in practice, and gives
+  // the perma merge below a wide enough net to read ranks from.
+  const base = [...new Set([center - 1, center, center + 1])].filter((p) => p >= 0)
+  for (const rc of await Promise.all(base.map((p) => fetchRankPage(season, region, p)))) soak(rc)
+
+  for (let p = Math.min(...base) - 1, n = 0; countAbove() < WINDOW_ABOVE && p >= 0 && n < ROSTER_MAX_EXTRA_PAGES; p--, n++) {
+    const rc = await fetchRankPage(season, region, p)
+    if (rc.length === 0) break
+    soak(rc)
+  }
+  for (let p = Math.max(...base) + 1, n = 0; countBelow() < WINDOW_BELOW && n < ROSTER_MAX_EXTRA_PAGES; p++, n++) {
+    const rc = await fetchRankPage(season, region, p)
+    if (rc.length === 0) break
+    soak(rc)
+  }
+
+  // Rank ascending is score descending, which the window slicing relies on.
+  return [...byRank.values()].sort((a, b) => a.rank - b.rank)
+}
+
 async function fetchPermaPlayer(pc: CharacterInput, cutoffScore: number): Promise<WatchPlayer | null> {
   const params = new URLSearchParams({
     region: pc.region,
@@ -186,17 +228,15 @@ async function computeRoster(season: string, region: string): Promise<TitleWatch
   // margins/safe are measured against the floored value.
   const effectiveCutoff = Math.floor(cutoffScore)
 
-  // The cutoff rank tells us which ranking page to read; grab neighbours so the
-  // window never straddles a page boundary.
-  const centerPage = Math.floor((cutoffRank - 1) / PER_PAGE)
-  const pages = [...new Set([centerPage - 1, centerPage, centerPage + 1])].filter((p) => p >= 0)
-  const pageResults = await Promise.all(pages.map((p) => fetchRankPage(season, region, p)))
-  const ranked = pageResults.flat()
+  const ranked = await collectStraddle(season, region, cutoffRank, effectiveCutoff)
 
-  const players: WatchPlayer[] = ranked
-    .filter((rc) => rc.rank >= cutoffRank - WINDOW_ABOVE && rc.rank <= cutoffRank + WINDOW_BELOW)
-    .sort((a, b) => a.rank - b.rank)
-    .map((rc) => rankedToPlayer(rc, 'window', effectiveCutoff, false))
+  // The window is the players nearest the cutoff on each side of it — the lowest
+  // scores still holding title and the highest scores that have lost it.
+  const nearCutoff = [
+    ...ranked.filter((rc) => rc.score >= effectiveCutoff).slice(-WINDOW_ABOVE),
+    ...ranked.filter((rc) => rc.score < effectiveCutoff).slice(0, WINDOW_BELOW),
+  ]
+  const players: WatchPlayer[] = nearCutoff.map((rc) => rankedToPlayer(rc, 'window', effectiveCutoff, false))
 
   // Merge the permanent watch list.
   const perma = (await redis.get<CharacterInput[]>(PERMA_KEY)) ?? []
