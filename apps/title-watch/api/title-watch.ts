@@ -346,6 +346,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const season = (req.query.season as string) || DEFAULT_SEASON
   const region = (req.query.region as string) || DEFAULT_REGION
 
+  // Just the permanent watch list, so the Command Room can show per-stream
+  // watch state without recomputing the whole roster.
+  if (req.query.view === 'perma' && req.method === 'GET') {
+    const perma = (await redis.get<CharacterInput[]>(PERMA_KEY)) ?? []
+    return res.json({ perma })
+  }
+
   // Command Room view (GET only).
   if (req.query.view === 'command-room') {
     const refresh = req.query.refresh === '1'

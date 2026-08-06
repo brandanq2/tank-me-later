@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Nav } from './components/Nav'
 import { StatusPill } from '@tml/shared/components/StatusPill'
-import { fetchCommandRoom, fetchLivePlayer } from './api'
+import {
+  fetchCommandRoom, fetchLivePlayer, fetchPermaWatch, addPermaWatch, removePermaWatch,
+} from './api'
 import type { CommandRoomData, CommandRoomPlayer, KeyRun } from './api'
 import { classColor, effectiveCutoff, statusOf } from '@tml/shared/titleStatus'
 
 const REFRESH_INTERVAL = 2 * 60 * 1000
+
+function keyOf(c: { name: string; realm: string; region: string }) {
+  return `${c.name}-${c.realm}-${c.region}`.toLowerCase()
+}
 
 function minsAgo(ts: number): string {
   const m = Math.max(0, Math.round((Date.now() - ts) / 60000))
@@ -95,15 +102,85 @@ function useLiveDetail(player: CommandRoomPlayer, enabled: boolean) {
   return { keys, score }
 }
 
+interface Watchlist {
+  ready: boolean
+  watching: (c: CommandRoomPlayer) => boolean
+  isPending: (c: CommandRoomPlayer) => boolean
+  toggle: (c: CommandRoomPlayer) => void
+}
+
+/**
+ * Title Watch permanent-list membership for everyone on the page. One fetch on
+ * mount, then each write settles the local copy from the list the server returns.
+ */
+function useWatchlist(): Watchlist {
+  const [keys, setKeys] = useState<Set<string> | null>(null)
+  const [pending, setPending] = useState<Set<string>>(new Set())
+  // Read inside toggle so it doesn't have to be re-created on every change.
+  const keysRef = useRef(keys)
+  keysRef.current = keys
+
+  useEffect(() => {
+    let alive = true
+    fetchPermaWatch().then((list) => {
+      if (alive) setKeys(new Set(list.map(keyOf)))
+    })
+    return () => { alive = false }
+  }, [])
+
+  const toggle = useCallback(async (p: CommandRoomPlayer) => {
+    const k = keyOf(p)
+    if (keysRef.current === null || pending.has(k)) return
+    const on = keysRef.current.has(k)
+    const char = { name: p.name, realm: p.realm, region: p.region }
+
+    setPending((s) => new Set(s).add(k))
+    const list = on ? await removePermaWatch(char) : await addPermaWatch(char)
+    if (list) setKeys(new Set(list.map(keyOf)))
+    setPending((s) => {
+      const n = new Set(s)
+      n.delete(k)
+      return n
+    })
+  }, [pending])
+
+  return {
+    ready: keys !== null,
+    watching: (c) => keys?.has(keyOf(c)) ?? false,
+    isPending: (c) => pending.has(keyOf(c)),
+    toggle,
+  }
+}
+
+/** Adds/removes this streamer from the Title Watch permanent list. */
+function WatchButton({ player, watch }: { player: CommandRoomPlayer; watch: Watchlist }) {
+  const on = watch.watching(player)
+  const busy = watch.isPending(player)
+  return (
+    <button
+      className={'tw-watch-btn cr-watch-btn' + (on ? ' is-on' : '')}
+      disabled={busy || !watch.ready}
+      onClick={(e) => {
+        e.stopPropagation()
+        watch.toggle(player)
+      }}
+      title={on ? `Remove ${player.name} from Title Watch` : `Add ${player.name} to Title Watch`}
+    >
+      {busy ? '…' : on ? '★ Watching' : '+ Watch'}
+    </button>
+  )
+}
+
 /**
  * Character readout painted over the stream. Collapses to a corner chip when the
  * chrome idles; hovering the chip brings the full card back.
  */
-function StreamOverlay({ player, keys, score, collapsed }: {
+function StreamOverlay({ player, keys, score, collapsed, watch }: {
   player: CommandRoomPlayer
   keys: KeyRun[] | null
   score: number
   collapsed: boolean
+  watch: Watchlist
 }) {
   const nameColor = classColor(player.className)
   const status = statusOf(player.margin)
@@ -129,6 +206,7 @@ function StreamOverlay({ player, keys, score, collapsed }: {
           <span className="cr-ov-rank">#{player.rank}</span>
           <span className="cr-ov-io">{score.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
           <StatusPill status={status} margin={player.margin} />
+          <WatchButton player={player} watch={watch} />
         </div>
         <div className="cr-ov-keys">
           <span className="tw-keys-label">Top keys</span>
@@ -162,10 +240,11 @@ function KeyChips({ keys }: { keys: KeyRun[] | null }) {
   )
 }
 
-function FocusModal({ players, index, parent, onClose, onNavigate }: {
+function FocusModal({ players, index, parent, watch, onClose, onNavigate }: {
   players: CommandRoomPlayer[]
   index: number
   parent: string
+  watch: Watchlist
   onClose: () => void
   onNavigate: (delta: number) => void
 }) {
@@ -182,6 +261,7 @@ function FocusModal({ players, index, parent, onClose, onNavigate }: {
       else if (e.key === 'ArrowLeft') onNavigate(-1)
       else if (e.key === 'ArrowRight') onNavigate(1)
       else if (e.key === 'f') toggleFullscreen()
+      else if (e.key === 'w') watch.toggle(player)
     }
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
@@ -189,7 +269,7 @@ function FocusModal({ players, index, parent, onClose, onNavigate }: {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
     }
-  }, [onClose, onNavigate, toggleFullscreen])
+  }, [onClose, onNavigate, toggleFullscreen, watch.toggle, player])
 
   const nameColor = classColor(player.className)
   const status = statusOf(player.margin)
@@ -221,7 +301,7 @@ function FocusModal({ players, index, parent, onClose, onNavigate }: {
             <Icon d={isFull ? D_EXIT_FULLSCREEN : D_FULLSCREEN} />
           </button>
 
-          {isFull && <StreamOverlay player={player} keys={keys} score={score} collapsed={idle} />}
+          {isFull && <StreamOverlay player={player} keys={keys} score={score} collapsed={idle} watch={watch} />}
 
           {/* No allowFullScreen: Twitch's own button would fullscreen the iframe
               alone and drop the overlay. Ours fullscreens the wrapper instead. */}
@@ -236,6 +316,7 @@ function FocusModal({ players, index, parent, onClose, onNavigate }: {
             <span className="cr-realm">{player.realmName ?? player.realm}</span>
             {player.specName && player.className && <span className="cr-spec">{player.specName} {player.className}</span>}
             <StatusPill status={status} margin={player.margin} />
+            <WatchButton player={player} watch={watch} />
           </div>
 
           <div className="cr-focus-stats">
@@ -257,7 +338,12 @@ function FocusModal({ players, index, parent, onClose, onNavigate }: {
   )
 }
 
-function StreamTile({ p, parent, onFocus }: { p: CommandRoomPlayer; parent: string; onFocus: () => void }) {
+function StreamTile({ p, parent, watch, onFocus }: {
+  p: CommandRoomPlayer
+  parent: string
+  watch: Watchlist
+  onFocus: () => void
+}) {
   const ref = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLDivElement>(null)
   const [show, setShow] = useState(false)
@@ -305,7 +391,7 @@ function StreamTile({ p, parent, onFocus }: { p: CommandRoomPlayer; parent: stri
           </button>
         </div>
 
-        {isFull && <StreamOverlay player={p} keys={keys} score={score} collapsed={idle} />}
+        {isFull && <StreamOverlay player={p} keys={keys} score={score} collapsed={idle} watch={watch} />}
 
         {show ? (
           /* Twitch's own fullscreen would drop our overlay — see FocusModal. */
@@ -329,6 +415,7 @@ function StreamTile({ p, parent, onFocus }: { p: CommandRoomPlayer; parent: stri
           <span className="cr-realm">{p.realmName ?? p.realm}</span>
           {p.specName && p.className && <span className="cr-spec">{p.specName} {p.className}</span>}
           <StatusPill status={status} margin={p.margin} />
+          <WatchButton player={p} watch={watch} />
         </div>
         <div className="cr-meta-bot">
           <span className="cr-score">#{p.rank} · {p.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
@@ -348,6 +435,7 @@ export default function CommandRoomPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [focusIndex, setFocusIndex] = useState<number | null>(null)
   const parent = useMemo(() => (typeof window !== 'undefined' ? window.location.hostname : 'localhost'), [])
+  const watch = useWatchlist()
 
   useEffect(() => {
     document.body.classList.add('body-clb')
@@ -404,6 +492,12 @@ export default function CommandRoomPage() {
             </button>
           </p>
         )}
+        {players.length > 0 && (
+          <p className="cr-hint">
+            <b>+ Watch</b> on any stream tracks that character on <Link to="/">Title Watch</Link>
+            {' · '}<kbd>w</kbd> in focus view
+          </p>
+        )}
       </header>
 
       {loading ? (
@@ -413,7 +507,13 @@ export default function CommandRoomPage() {
       ) : (
         <div className="cr-grid">
           {players.map((p, i) => (
-            <StreamTile key={`${p.rank}-${p.stream.login}`} p={p} parent={parent} onFocus={() => setFocusIndex(i)} />
+            <StreamTile
+              key={`${p.rank}-${p.stream.login}`}
+              p={p}
+              parent={parent}
+              watch={watch}
+              onFocus={() => setFocusIndex(i)}
+            />
           ))}
         </div>
       )}
@@ -423,6 +523,7 @@ export default function CommandRoomPage() {
           players={players}
           index={focusIndex}
           parent={parent}
+          watch={watch}
           onNavigate={navigate}
           onClose={() => setFocusIndex(null)}
         />

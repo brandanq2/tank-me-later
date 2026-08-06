@@ -63,6 +63,15 @@ with a real 308 in `apps/tank-me-later/vercel.json`:
 ]
 ```
 
+### Command Room → Title Watch
+
+Each stream in the Command Room has a `+ Watch` toggle — on the tile, in the focus
+view (or `w`), and on the fullscreen overlay. It writes to the same
+`tank-me-later:title-watch:perma` list the Title Watch page uses, so a streamer
+added from a stream keeps showing up on Title Watch after they leave the cutoff
+window. Button state comes from `GET /api/title-watch?view=perma`, a plain Redis
+read that skips the roster recompute.
+
 ## Known duplication
 
 `api/cutoff.ts` and `api/raiderio.ts` exist in both apps. They are thin raider.io

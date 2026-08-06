@@ -45,19 +45,33 @@ export async function fetchTitleWatch(refresh = false): Promise<TitleWatchData |
   return res.json()
 }
 
-export async function addPermaWatch(char: CharacterInput): Promise<boolean> {
+/** The permanent watch list on its own — cheap next to a full roster fetch. */
+export async function fetchPermaWatch(): Promise<CharacterInput[]> {
+  const res = await fetch('/api/title-watch?view=perma')
+  if (!res.ok) return []
+  const data = await res.json() as { perma?: CharacterInput[] }
+  return data.perma ?? []
+}
+
+// Both writes hand back the updated list so callers can settle their local copy
+// against the server instead of trusting an optimistic guess.
+export async function addPermaWatch(char: CharacterInput): Promise<CharacterInput[] | null> {
   const res = await fetch('/api/title-watch', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(char),
   })
-  return res.ok
+  if (!res.ok) return null
+  const data = await res.json() as { perma?: CharacterInput[] }
+  return data.perma ?? []
 }
 
-export async function removePermaWatch(char: CharacterInput): Promise<boolean> {
+export async function removePermaWatch(char: CharacterInput): Promise<CharacterInput[] | null> {
   const params = new URLSearchParams({ name: char.name, realm: char.realm, region: char.region })
   const res = await fetch(`/api/title-watch?${params}`, { method: 'DELETE' })
-  return res.ok
+  if (!res.ok) return null
+  const data = await res.json() as { perma?: CharacterInput[] }
+  return data.perma ?? []
 }
 
 export interface CommandRoomPlayer {

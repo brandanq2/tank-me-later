@@ -2142,6 +2142,43 @@ a.row-first:hover {
   gap: 0.3rem;
 }
 
+/* Add-to-Title-Watch toggle — same shape as the button on the Title Watch list. */
+.cr-watch-btn {
+  margin-left: auto;
+  flex: none;
+  white-space: nowrap;
+}
+.cr-watch-btn.is-on {
+  color: var(--gold);
+  border-color: color-mix(in srgb, var(--gold) 50%, transparent);
+  background: color-mix(in srgb, var(--gold) 12%, var(--surface2));
+}
+/* Over a stream the surface colours read as mud — go translucent instead. */
+.cr-ov .cr-watch-btn {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+.cr-ov .cr-watch-btn.is-on { color: var(--gold); }
+
+.cr-hint {
+  margin-top: 0.35rem;
+  font-size: 0.74rem;
+  color: var(--muted);
+  opacity: 0.8;
+}
+.cr-hint b { color: var(--text); font-weight: 700; }
+.cr-hint a { color: var(--gold); text-decoration: none; }
+.cr-hint a:hover { text-decoration: underline; }
+.cr-hint kbd {
+  font-family: inherit;
+  font-size: 0.68rem;
+  padding: 0.02rem 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface2);
+}
+
 /* Focus / theater view */
 .cr-focus-backdrop {
   position: fixed;
@@ -2238,7 +2275,8 @@ a.row-first:hover {
   /* Clicks fall through to the Twitch player; only links opt back in. */
   pointer-events: none;
 }
-.cr-ov a { pointer-events: auto; }
+.cr-ov a,
+.cr-ov button { pointer-events: auto; }
 
 .cr-ov-full { display: flex; flex-direction: column; gap: 0.35rem; }
 .cr-ov-mini { display: none; align-items: baseline; gap: 0.4rem; cursor: pointer; }
