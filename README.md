@@ -44,11 +44,12 @@ list carries over with no migration.
 
 ### Cross-app links
 
-Both apps link to each other, driven by build-time env vars with preview-domain
-fallbacks:
+Linking is one-way on purpose: tank-me-later links out to Title Watch and the
+Command Room, but title-watch is those two pages only and does not link back to
+the leaderboard.
 
-- `tank-me-later` → set `VITE_TITLE_WATCH_URL` (e.g. `https://title-watch.vercel.app`)
-- `title-watch` → set `VITE_CLB_URL` (e.g. `https://tank-me-later.vercel.app`)
+Set `VITE_TITLE_WATCH_URL` on tank-me-later (e.g. `https://title-watch.vercel.app`).
+It is read at build time, so changing it needs a redeploy.
 
 `/watch` and `/command-room` on tank-me-later redirect to the new app via
 `src/titleWatchUrl.tsx`. That is a client-side hop so it works without a redeploy
