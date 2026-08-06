@@ -127,6 +127,14 @@ export default function TitleWatchPage() {
     return () => clearInterval(id)
   }, [data, pollLive])
 
+  // Recomputes the server-side roster cache rather than re-reading it. The live
+  // per-player poll re-runs on its own once fresh roster data lands.
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await loadRoster(true)
+    setRefreshing(false)
+  }, [loadRoster])
+
   const handleAdd = useCallback(async (char: CharacterInput) => {
     setRefreshing(true)
     await addPermaWatch(char)
@@ -223,7 +231,15 @@ export default function TitleWatchPage() {
         {data && (
           <p className="tw-updated">
             Updated {timeAgo(new Date(data.updatedAt).toISOString())}
-            {refreshing && ' · refreshing…'}
+            {' · '}
+            <button
+              className="tw-refresh"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              title="Recompute the cutoff window from raider.io"
+            >
+              {refreshing ? 'refreshing…' : 'refresh'}
+            </button>
           </p>
         )}
       </header>

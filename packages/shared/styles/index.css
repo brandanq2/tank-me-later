@@ -1997,7 +1997,8 @@ a.row-first:hover {
 }
 
 /* ── Command Room ────────────────────────────────────────────────────────── */
-.cr-refresh {
+/* Recompute-the-cache link under the header. Shared by both pages. */
+.tw-refresh {
   background: none;
   border: none;
   color: var(--accent);
@@ -2007,7 +2008,7 @@ a.row-first:hover {
   padding: 0;
   text-decoration: underline;
 }
-.cr-refresh:disabled { color: var(--muted); cursor: default; text-decoration: none; }
+.tw-refresh:disabled { color: var(--muted); cursor: default; text-decoration: none; }
 
 .cr-grid {
   display: grid;

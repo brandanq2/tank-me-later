@@ -487,7 +487,7 @@ export default function CommandRoomPage() {
           <p className="tw-updated">
             Updated {minsAgo(data.updatedAt)}
             {' · '}
-            <button className="cr-refresh" onClick={() => load(true)} disabled={refreshing}>
+            <button className="tw-refresh" onClick={() => load(true)} disabled={refreshing}>
               {refreshing ? 'refreshing…' : 'refresh'}
             </button>
           </p>
