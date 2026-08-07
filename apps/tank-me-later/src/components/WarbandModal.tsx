@@ -25,19 +25,22 @@ const CLASS_COLORS: Record<string, string> = {
 
 interface Props {
   entry: WarbandEntry
-  sessionId: string
   chartColor?: string
   onRemoveMember: (warbandId: string, memberKey: string) => void
   onAddMember?: (warbandId: string, member: CharacterInput) => void
+  onClaim?: (warbandId: string, code: string) => Promise<string | null>
   onClose: () => void
 }
 
-export function WarbandModal({ entry, sessionId, chartColor, onRemoveMember, onAddMember, onClose }: Props) {
-  const isOwner = entry.ownerSessionId === sessionId
+export function WarbandModal({ entry, chartColor, onRemoveMember, onAddMember, onClaim, onClose }: Props) {
+  const isOwner = entry.isOwner
   const [charName, setCharName] = useState('')
   const [charRealm, setCharRealm] = useState('')
   const [charRegion, setCharRegion] = useState('us')
   const [history, setHistory] = useState<HistoryPoint[] | null>(null)
+  const [claimCode, setClaimCode] = useState('')
+  const [claimError, setClaimError] = useState<string | null>(null)
+  const [claiming, setClaiming] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -67,6 +70,18 @@ export function WarbandModal({ entry, sessionId, chartColor, onRemoveMember, onA
     onAddMember(entry.id, { name: n, realm: r, region: charRegion })
     setCharName('')
     setCharRealm('')
+  }
+
+  async function handleClaim(e: FormEvent) {
+    e.preventDefault()
+    if (!onClaim || !claimCode.trim() || claiming) return
+    setClaiming(true)
+    setClaimError(null)
+    try {
+      setClaimError(await onClaim(entry.id, claimCode.trim()))
+    } finally {
+      setClaiming(false)
+    }
   }
 
   return (
@@ -151,6 +166,47 @@ export function WarbandModal({ entry, sessionId, chartColor, onRemoveMember, onA
             })}
           </div>
         </div>
+
+        {isOwner && entry.claimCode && (
+          <div className="cm-section">
+            <p className="cm-section-label">Access Code</p>
+            <div className="wm-claim-code-row">
+              <code className="wm-claim-code">{entry.claimCode}</code>
+              <button
+                className="wm-claim-copy"
+                onClick={() => { navigator.clipboard?.writeText(entry.claimCode!) }}
+              >Copy</button>
+            </div>
+            <p className="wm-claim-hint">
+              Save this. Entering it on another browser or PC gives that device
+              ownership too — you keep access everywhere you've claimed.
+            </p>
+          </div>
+        )}
+
+        {!isOwner && onClaim && (
+          <div className="cm-section">
+            <p className="cm-section-label">Claim This Warband</p>
+            <form className="wm-claim-form" onSubmit={handleClaim}>
+              <input
+                type="text"
+                placeholder="Access code (e.g. K7QP-3MXR)"
+                value={claimCode}
+                onChange={e => { setClaimCode(e.target.value); setClaimError(null) }}
+                autoComplete="off"
+                required
+              />
+              <button type="submit" disabled={!claimCode.trim() || claiming}>
+                {claiming ? 'Claiming…' : 'Claim'}
+              </button>
+            </form>
+            {claimError && <p className="wm-claim-error">{claimError}</p>}
+            <p className="wm-claim-hint">
+              Made this warband on a different PC? Enter its access code to
+              manage it from here.
+            </p>
+          </div>
+        )}
 
         {history && history.some(h => h.score !== null) && (
           <div className="cm-section">

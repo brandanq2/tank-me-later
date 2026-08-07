@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   fetchWarbands, createWarband, updateWarbandMembers, deleteWarband, persistCharacter,
-  reportWarbandScore,
+  reportWarbandScore, claimWarband,
 } from '../api'
 import type { CharacterEntry, CharacterInput, WarbandDefinition, WarbandEntry, WarbandRun } from '@tml/shared/types'
 
@@ -46,18 +46,23 @@ function computeWarbandEntry(def: WarbandDefinition, loadedEntries: CharacterEnt
   const contributorKeys = new Set(topRuns.map(r => r.characterName.toLowerCase()))
   const contributors = members.filter(m => contributorKeys.has(m.name.toLowerCase()))
 
-  return { id: def.id, name: def.name, ownerSessionId: def.ownerSessionId, score, members, topRuns, contributors }
+  return {
+    id: def.id, name: def.name, isOwner: def.isOwner, claimCode: def.claimCode,
+    score, members, topRuns, contributors,
+  }
 }
 
 export function useWarbands(loadedEntries: CharacterEntry[], sessionId: string) {
   const [definitions, setDefinitions] = useState<WarbandDefinition[]>([])
   const [warbandsLoaded, setWarbandsLoaded] = useState(false)
 
+  // Ownership is resolved server-side from the session, so a changed session
+  // means the whole list has to be re-fetched.
   useEffect(() => {
-    fetchWarbands()
+    fetchWarbands(sessionId)
       .then(data => { setDefinitions(data); setWarbandsLoaded(true) })
       .catch(() => setWarbandsLoaded(true))
-  }, [])
+  }, [sessionId])
 
   const baseWarbandEntries = useMemo(
     () => definitions.map(def => computeWarbandEntry(def, loadedEntries)),
@@ -94,7 +99,7 @@ export function useWarbands(loadedEntries: CharacterEntry[], sessionId: string) 
 
   const removeMember = useCallback(async (warbandId: string, memberKey: string) => {
     const warband = definitions.find(d => d.id === warbandId)
-    if (!warband || warband.ownerSessionId !== sessionId) return
+    if (!warband?.isOwner) return
     const updated = warband.members.filter(m => charKey(m) !== memberKey)
     const result = await updateWarbandMembers(warbandId, updated, sessionId)
     if (result) setDefinitions(prev => prev.map(d => d.id === warbandId ? result : d))
@@ -102,7 +107,7 @@ export function useWarbands(loadedEntries: CharacterEntry[], sessionId: string) 
 
   const addMember = useCallback(async (warbandId: string, member: CharacterInput) => {
     const warband = definitions.find(d => d.id === warbandId)
-    if (!warband || warband.ownerSessionId !== sessionId) return null
+    if (!warband?.isOwner) return null
     const newKey = charKey(member)
     if (warband.members.some(m => charKey(m) === newKey)) return null
     persistCharacter(member, 'open').catch(() => {})
@@ -116,5 +121,16 @@ export function useWarbands(loadedEntries: CharacterEntry[], sessionId: string) 
     if (ok) setDefinitions(prev => prev.filter(d => d.id !== warbandId))
   }, [sessionId])
 
-  return { warbandEntries, warbandMemberKeys, warbandsLoaded, addWarband, addMember, removeMember, removeWarband }
+  /** Resolves to an error message on failure, or null once ownership is granted. */
+  const claim = useCallback(async (warbandId: string, code: string) => {
+    const result = await claimWarband(warbandId, code, sessionId)
+    if ('error' in result) return result.error
+    setDefinitions(prev => prev.map(d => d.id === warbandId ? result.warband : d))
+    return null
+  }, [sessionId])
+
+  return {
+    warbandEntries, warbandMemberKeys, warbandsLoaded,
+    addWarband, addMember, removeMember, removeWarband, claim,
+  }
 }

@@ -53,8 +53,11 @@ export interface CharacterEntry extends CharacterInput {
 export interface WarbandDefinition {
   id: string
   name: string
-  ownerSessionId: string
   members: CharacterInput[]
+  /** Whether the current browser session is one of the warband's owners. */
+  isOwner: boolean
+  /** Only returned to owners — used to claim the warband on another device. */
+  claimCode?: string
 }
 
 export interface WarbandRun extends BestRun {
@@ -66,7 +69,8 @@ export interface WarbandRun extends BestRun {
 export interface WarbandEntry {
   id: string
   name: string
-  ownerSessionId: string
+  isOwner: boolean
+  claimCode?: string
   score: number
   scoreDelta?: number
   members: CharacterEntry[]

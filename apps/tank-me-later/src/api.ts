@@ -149,8 +149,9 @@ export async function fetchWarbandHistory(warbandId: string): Promise<HistoryPoi
   return res.json()
 }
 
-export async function fetchWarbands(): Promise<WarbandDefinition[]> {
-  const res = await fetch('/api/warbands')
+export async function fetchWarbands(sessionId: string): Promise<WarbandDefinition[]> {
+  const params = new URLSearchParams({ session: sessionId })
+  const res = await fetch(`/api/warbands?${params}`)
   if (!res.ok) return []
   return res.json()
 }
@@ -158,12 +159,12 @@ export async function fetchWarbands(): Promise<WarbandDefinition[]> {
 export async function createWarband(
   name: string,
   members: CharacterInput[],
-  ownerSessionId: string,
+  sessionId: string,
 ): Promise<WarbandDefinition | null> {
   const res = await fetch('/api/warbands', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, members, ownerSessionId }),
+    body: JSON.stringify({ name, members, sessionId }),
   })
   if (!res.ok) return null
   return res.json()
@@ -172,15 +173,36 @@ export async function createWarband(
 export async function updateWarbandMembers(
   id: string,
   members: CharacterInput[],
-  ownerSessionId: string,
+  sessionId: string,
 ): Promise<WarbandDefinition | null> {
   const res = await fetch(`/api/warbands?id=${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ members, ownerSessionId }),
+    body: JSON.stringify({ members, sessionId }),
   })
   if (!res.ok) return null
   return res.json()
+}
+
+/**
+ * Adds this browser to the warband's owner list. Resolves to an error message
+ * when the code is wrong so the caller can show it inline.
+ */
+export async function claimWarband(
+  id: string,
+  code: string,
+  sessionId: string,
+): Promise<{ warband: WarbandDefinition } | { error: string }> {
+  const res = await fetch('/api/warbands?action=claim', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, code, sessionId }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    return { error: body?.error ?? 'Could not claim this warband' }
+  }
+  return { warband: await res.json() }
 }
 
 export async function deleteWarband(id: string, sessionId: string): Promise<boolean> {

@@ -72,6 +72,29 @@ added from a stream keeps showing up on Title Watch after they leave the cutoff
 window. Button state comes from `GET /api/title-watch?view=perma`, a plain Redis
 read that skips the roster recompute.
 
+### Warband ownership
+
+A warband is owned by a list of browser sessions (`ownerSessionIds`), not by one
+session id, so the same person can manage it from several devices. Each warband
+also has an **access code** — shown to owners in the warband modal and right
+after creation — and entering that code on a new browser appends it to the owner
+list. Losing `localStorage` (new PC, cleared data) no longer means losing the
+warband.
+
+`GET /api/warbands?session=…` resolves ownership server-side and returns
+`isOwner`; session ids are never sent to the client and the access code only goes
+to owners. Warbands created before this existed get a code generated on first
+read.
+
+If an owner never saved their code, look it up as the admin:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  'https://<tank-me-later-domain>/api/warbands?action=codes'
+```
+
+Claim attempts are rate-limited to 20 per IP per 10 minutes.
+
 ## Known duplication
 
 `api/cutoff.ts` and `api/raiderio.ts` exist in both apps. They are thin raider.io

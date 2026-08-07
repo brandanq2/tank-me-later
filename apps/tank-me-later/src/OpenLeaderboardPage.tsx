@@ -146,7 +146,6 @@ export default function OpenLeaderboardPage() {
                         key={`warband-${item.entry.id}`}
                         entry={item.entry}
                         rank={item.rank}
-                        sessionId={lb.sessionId}
                         cutoffScore={lb.cutoffScore}
                         soloMapping={soloQueueEnabled ? soloMapping : undefined}
                         revealed={lb.revealed}
@@ -158,6 +157,7 @@ export default function OpenLeaderboardPage() {
                           lb.addCharacter(member)
                         }}
                         onRemoveWarband={wb.removeWarband}
+                        onClaim={wb.claim}
                         dungeonOrder={dungeonOrder}
                       />
                     )

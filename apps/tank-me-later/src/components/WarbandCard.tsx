@@ -71,7 +71,6 @@ function RankBadge({ rank }: { rank: number }) {
 interface Props {
   entry: WarbandEntry
   rank: number
-  sessionId: string
   cutoffScore: number
   soloMapping?: RankCutoff[]
   revealed: boolean
@@ -80,17 +79,18 @@ interface Props {
   onRemoveMember: (warbandId: string, memberKey: string) => void
   onAddMember?: (warbandId: string, member: import('@tml/shared/types').CharacterInput) => void
   onRemoveWarband: (warbandId: string) => void
+  onClaim?: (warbandId: string, code: string) => Promise<string | null>
   dungeonOrder?: string[]
 }
 
 export function WarbandCard({
-  entry, rank, sessionId, cutoffScore, soloMapping, revealed, isInitialEntry, revealDelay,
-  onRemoveMember, onAddMember, onRemoveWarband, dungeonOrder,
+  entry, rank, cutoffScore, soloMapping, revealed, isInitialEntry, revealDelay,
+  onRemoveMember, onAddMember, onRemoveWarband, onClaim, dungeonOrder,
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedRun, setSelectedRun] = useState<WarbandRun | null>(null)
 
-  const isOwner = entry.ownerSessionId === sessionId
+  const isOwner = entry.isOwner
   const isFirst = rank === 1
   const revealClass = rank === 1 ? 'row-reveal-1' : rank === 2 ? 'row-reveal-2' : rank === 3 ? 'row-reveal-3' : 'row-reveal-rest'
   const anim = revealed && isInitialEntry
@@ -265,10 +265,10 @@ export function WarbandCard({
       {modalOpen && (
         <WarbandModal
           entry={entry}
-          sessionId={sessionId}
           chartColor={rankColor ?? scoreColor}
           onRemoveMember={onRemoveMember}
           onAddMember={onAddMember}
+          onClaim={onClaim}
           onClose={() => setModalOpen(false)}
         />
       )}

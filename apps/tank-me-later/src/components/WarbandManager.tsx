@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import type { CharacterInput } from '@tml/shared/types'
+import type { CharacterInput, WarbandDefinition } from '@tml/shared/types'
 
 interface Props {
-  onCreate: (name: string, members: CharacterInput[]) => Promise<unknown>
+  onCreate: (name: string, members: CharacterInput[]) => Promise<WarbandDefinition | null>
   onAddCharacter: (input: CharacterInput) => void
 }
 
@@ -16,6 +16,7 @@ export function WarbandManager({ onCreate, onAddCharacter }: Props) {
   const [charRealm, setCharRealm] = useState('')
   const [charRegion, setCharRegion] = useState('us')
   const [submitting, setSubmitting] = useState(false)
+  const [created, setCreated] = useState<{ name: string; claimCode: string } | null>(null)
 
   function handleAddMember(e: FormEvent) {
     e.preventDefault()
@@ -38,11 +39,17 @@ export function WarbandManager({ onCreate, onAddCharacter }: Props) {
     if (!warbandName.trim() || members.length === 0 || submitting) return
     setSubmitting(true)
     try {
-      await onCreate(warbandName.trim(), members)
+      const warband = await onCreate(warbandName.trim(), members)
       members.forEach(onAddCharacter)
+      // Hold the panel open on the access code — it is the only way back in
+      // if this browser's storage is ever lost.
+      if (warband?.claimCode) {
+        setCreated({ name: warband.name, claimCode: warband.claimCode })
+      } else {
+        setOpen(false)
+      }
       setWarbandName('')
       setMembers([])
-      setOpen(false)
     } finally {
       setSubmitting(false)
     }
@@ -50,6 +57,7 @@ export function WarbandManager({ onCreate, onAddCharacter }: Props) {
 
   function handleClose() {
     setOpen(false)
+    setCreated(null)
     setWarbandName('')
     setMembers([])
     setCharName('')
@@ -61,6 +69,30 @@ export function WarbandManager({ onCreate, onAddCharacter }: Props) {
       <button className="refresh-btn" onClick={() => setOpen(true)}>
         ⚔ Create Warband
       </button>
+    )
+  }
+
+  if (created) {
+    return (
+      <div className="warband-manager">
+        <div className="warband-manager-header">
+          <span className="warband-manager-title">{created.name} created</span>
+          <button className="cm-close" style={{ position: 'static' }} onClick={handleClose}>✕</button>
+        </div>
+        <p className="wm-claim-hint">
+          Save this access code. Entering it on another browser or PC gives that
+          device ownership of the warband — it's how you get back in if you
+          clear your browser data or switch machines.
+        </p>
+        <div className="wm-claim-code-row">
+          <code className="wm-claim-code">{created.claimCode}</code>
+          <button
+            className="wm-claim-copy"
+            onClick={() => { navigator.clipboard?.writeText(created.claimCode) }}
+          >Copy</button>
+        </div>
+        <button className="warband-create-btn" onClick={handleClose}>Done</button>
+      </div>
     )
   }
 

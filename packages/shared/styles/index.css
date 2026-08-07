@@ -1576,6 +1576,90 @@ a.row-first:hover {
   cursor: not-allowed;
 }
 
+/* Warband access codes — shown to owners, entered by returning owners */
+.wm-claim-code-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wm-claim-code {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.45rem 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  user-select: all;
+}
+
+.wm-claim-copy {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.wm-claim-copy:hover { border-color: var(--accent); }
+
+.wm-claim-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.wm-claim-form input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  outline: none;
+  text-transform: uppercase;
+  transition: border-color 0.15s;
+}
+
+.wm-claim-form input:focus { border-color: var(--accent); }
+
+.wm-claim-form button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wm-claim-form button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.wm-claim-hint {
+  font-size: 0.7rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.wm-claim-error {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #e8253b;
+}
+
 /* Key detail modal */
 .modal-backdrop {
   position: fixed;
