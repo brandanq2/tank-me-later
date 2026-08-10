@@ -11,6 +11,8 @@ import { classColor, effectiveCutoff, statusOf } from '@tml/shared/titleStatus'
 
 const REFRESH_INTERVAL = 2 * 60 * 1000
 const WINDOW_STORAGE_KEY = 'tml:command-room:window'
+/** Panes the grid can hold. Four 16:9 streams tile a 16:9 stage exactly. */
+const MAX_MULTI = 4
 
 function keyOf(c: { name: string; realm: string; region: string }) {
   return `${c.name}-${c.realm}-${c.region}`.toLowerCase()
@@ -86,6 +88,10 @@ function Icon({ d }: { d: string }) {
 const D_FULLSCREEN = 'M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4'
 const D_EXIT_FULLSCREEN = 'M6 2v4H2M10 2v4h4M6 14v-4H2M10 14v-4h4'
 const D_FOCUS = 'M9.5 2H14v4.5M14 2 8.5 7.5M12 9.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3.5'
+// Four panes — add to the grid, and collapse a solo pane back into it.
+const D_GRID = 'M2.5 2.5h4.5v4.5h-4.5zM9 2.5h4.5v4.5H9zM2.5 9h4.5v4.5h-4.5zM9 9h4.5v4.5H9z'
+const D_AUDIO_ON = 'M2.5 6h2L8 3.5v9L4.5 10h-2zM10.6 6.2a2.6 2.6 0 0 1 0 3.6M12.6 4.4a5.2 5.2 0 0 1 0 7.2'
+const D_AUDIO_OFF = 'M2.5 6h2L8 3.5v9L4.5 10h-2zM10.8 6.2l3.4 3.6M14.2 6.2l-3.4 3.6'
 
 /** Fullscreens the wrapper element, never the iframe — a fullscreened iframe paints alone. */
 function useStageFullscreen(ref: React.RefObject<HTMLElement | null>) {
@@ -384,10 +390,282 @@ function FocusModal({ players, index, parent, watch, onClose, onNavigate }: {
   )
 }
 
-function StreamTile({ p, parent, watch, onFocus }: {
+// ── Multi-stream grid ───────────────────────────────────────────────────────
+// The grid uses Twitch's player *script* rather than a bare iframe: moving audio
+// between panes has to be a `setMuted` call, since re-writing an iframe's src
+// would restart the stream every time you switch who you're listening to.
+interface TwitchPlayerApi {
+  setMuted(muted: boolean): void
+  addEventListener?(event: string, cb: () => void): void
+}
+
+type TwitchPlayerCtor = (new (el: HTMLElement, opts: Record<string, unknown>) => TwitchPlayerApi)
+  & { READY?: string }
+
+declare global {
+  interface Window {
+    Twitch?: { Player: TwitchPlayerCtor }
+  }
+}
+
+const TWITCH_PLAYER_SCRIPT = 'https://player.twitch.tv/js/embed/v1.js'
+let playerScript: Promise<void> | null = null
+
+function loadTwitchPlayer(): Promise<void> {
+  if (window.Twitch?.Player) return Promise.resolve()
+  playerScript ??= new Promise<void>((resolve, reject) => {
+    const el = document.createElement('script')
+    el.src = TWITCH_PLAYER_SCRIPT
+    el.async = true
+    el.onload = () => (window.Twitch?.Player ? resolve() : reject(new Error('no Twitch.Player')))
+    el.onerror = () => reject(new Error('twitch player script blocked'))
+    document.head.appendChild(el)
+  })
+  return playerScript
+}
+
+/**
+ * One pane of the grid. Mounts muted — browsers refuse unmuted autoplay — then
+ * unmutes through the API if this is the pane the user is listening to.
+ */
+function MultiPane({ p, parent, index, audio, solo, watch, onAudio, onSolo, onRemove }: {
+  p: CommandRoomPlayer
+  parent: string
+  index: number
+  audio: boolean
+  solo: boolean
+  watch: Watchlist
+  onAudio: () => void
+  onSolo: () => void
+  onRemove: () => void
+}) {
+  const mount = useRef<HTMLDivElement>(null)
+  const api = useRef<TwitchPlayerApi | null>(null)
+  const [blocked, setBlocked] = useState(false)
+  // The script may still be loading when the audio pane is decided, so the
+  // player reads the latest value on creation instead of missing the first set.
+  const audioRef = useRef(audio)
+  audioRef.current = audio
+
+  useEffect(() => {
+    let dead = false
+    const el = mount.current
+    loadTwitchPlayer().then(() => {
+      if (dead || !el || !window.Twitch) return
+      const Player = window.Twitch.Player
+      const pl = new Player(el, {
+        channel: p.stream.login,
+        parent: [parent],
+        width: '100%',
+        height: '100%',
+        // Always start muted: a browser will refuse unmuted autoplay outright,
+        // where muted-then-unmuted plays. The real state lands on ready.
+        muted: true,
+        autoplay: true,
+        // Twitch's own fullscreen would take the pane's iframe alone and lose the
+        // rest of the grid; expand and stage fullscreen replace it.
+        allowfullscreen: false,
+      })
+      api.current = pl
+      pl.addEventListener?.(Player.READY ?? 'ready', () => pl.setMuted(!audioRef.current))
+    }).catch(() => { if (!dead) setBlocked(true) })
+
+    return () => {
+      dead = true
+      api.current = null
+      if (el) el.innerHTML = '' // React never owns this subtree — Twitch does
+    }
+  }, [p.stream.login, parent])
+
+  useEffect(() => {
+    api.current?.setMuted(!audio)
+  }, [audio])
+
+  const nameColor = classColor(p.className)
+
+  return (
+    <div className={'cr-mv-pane' + (solo ? ' is-solo' : '') + (audio ? ' is-audio' : '')}>
+      {/* Fallback for a blocked script: a plain iframe, where switching audio
+          does cost a reload. */}
+      {blocked
+        ? <iframe
+            src={`https://player.twitch.tv/?channel=${encodeURIComponent(p.stream.login)}&parent=${encodeURIComponent(parent)}&muted=${!audio}&autoplay=true`}
+            title={p.stream.login}
+            allow="autoplay"
+          />
+        : <div className="cr-mv-mount" ref={mount} />}
+
+      <div className="cr-mv-pane-btns">
+        <button
+          className={'cr-btn' + (audio ? ' is-on' : '')}
+          onClick={onAudio}
+          title={audio ? 'Listening to this stream' : `Listen to ${p.stream.login}`}
+          aria-label={audio ? 'Listening' : 'Listen to this stream'}
+        >
+          <Icon d={audio ? D_AUDIO_ON : D_AUDIO_OFF} />
+        </button>
+        <button
+          className="cr-btn"
+          onClick={onSolo}
+          title={solo ? `Back to grid (${index + 1})` : `Expand (${index + 1})`}
+          aria-label={solo ? 'Back to grid' : 'Expand this stream'}
+        >
+          <Icon d={solo ? D_GRID : D_FULLSCREEN} />
+        </button>
+        <button className="cr-btn" onClick={onRemove} title="Remove from grid" aria-label="Remove from grid">✕</button>
+      </div>
+
+      <div className="cr-mv-info">
+        <span className="cr-mv-slot">{index + 1}</span>
+        <a className="cr-name" style={{ color: nameColor }} href={p.profileUrl} target="_blank" rel="noreferrer">
+          {p.name}
+        </a>
+        <span className="cr-mv-score">#{p.rank} · {p.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+        <StatusPill status={statusOf(p.margin)} margin={p.margin} />
+        <WatchButton player={p} watch={watch} />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Up to four streams at once. Expanding a pane hides its neighbours rather than
+ * unmounting them, so collapsing back to the grid never re-buffers a stream.
+ */
+function MultiView({ players, parent, watch, onRemove, onClose }: {
+  players: CommandRoomPlayer[]
+  parent: string
+  watch: Watchlist
+  onRemove: (login: string) => void
+  onClose: () => void
+}) {
+  const stageRef = useRef<HTMLDivElement>(null)
+  const { isFull, toggle: toggleFullscreen } = useStageFullscreen(stageRef)
+  const { idle, wake } = useIdleChrome(isFull)
+  const [audio, setAudio] = useState(() => players[0]?.stream.login ?? '')
+  const [solo, setSolo] = useState<string | null>(null)
+
+  // Expanding a pane also moves audio to it — watching one stream while hearing
+  // another is never what the click meant.
+  const expand = useCallback((login: string) => {
+    setSolo((cur) => (cur === login ? null : login))
+    setAudio(login)
+  }, [])
+
+  // Open straight into real fullscreen — the click that got us here is the user
+  // activation that permits it. Exiting drops to the windowed grid, not out.
+  useEffect(() => {
+    stageRef.current?.requestFullscreen?.().catch(() => { /* denied — f still works */ })
+  }, [])
+
+  // Keep the pointers valid as panes leave (removed, or dropped by a refresh).
+  useEffect(() => {
+    const live = new Set(players.map((p) => p.stream.login))
+    if (solo && !live.has(solo)) setSolo(null)
+    if (!live.has(audio)) setAudio(players[0]?.stream.login ?? '')
+  }, [players, solo, audio])
+
+  const active = solo ?? audio
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // Collapse first; past that, Escape belongs to the browser in fullscreen.
+        if (solo) setSolo(null)
+        else if (!document.fullscreenElement) onClose()
+      } else if (e.key >= '1' && e.key <= String(MAX_MULTI)) {
+        const p = players[Number(e.key) - 1]
+        if (p) expand(p.stream.login)
+      } else if (e.key === 'f') toggleFullscreen()
+      else if (e.key === 'w') {
+        const p = players.find((x) => x.stream.login === active)
+        if (p) watch.toggle(p)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [players, solo, active, expand, onClose, toggleFullscreen, watch.toggle])
+
+  const count = Math.min(players.length, MAX_MULTI)
+
+  return (
+    <div className="cr-mv-backdrop">
+      <div
+        className={'cr-mv-stage cr-stage'
+          + ` cr-mv-n${count}`
+          // Two side-by-side 16:9 panes make a 32:9 stage; soloing one puts it back to 16:9.
+          + (count === 2 && !solo ? ' is-wide' : '')
+          + (solo ? ' is-soloing' : '')
+          + (isFull ? ' is-full' : '')
+          + (idle ? ' is-idle' : '')}
+        ref={stageRef}
+        onMouseMove={wake}
+      >
+        <div className="cr-mv-grid">
+          {players.slice(0, MAX_MULTI).map((p, i) => (
+            <MultiPane
+              key={p.stream.login}
+              p={p}
+              parent={parent}
+              index={i}
+              audio={p.stream.login === audio}
+              solo={p.stream.login === solo}
+              watch={watch}
+              onAudio={() => setAudio(p.stream.login)}
+              onSolo={() => expand(p.stream.login)}
+              onRemove={() => onRemove(p.stream.login)}
+            />
+          ))}
+        </div>
+
+        <div className="cr-mv-ctl">
+          <button
+            className="cr-btn"
+            onClick={toggleFullscreen}
+            title={isFull ? 'Exit fullscreen (f)' : 'Fullscreen (f)'}
+            aria-label={isFull ? 'Exit fullscreen' : 'Fullscreen'}
+          >
+            <Icon d={isFull ? D_EXIT_FULLSCREEN : D_FULLSCREEN} />
+          </button>
+          <button className="cr-btn" onClick={onClose} title="Close grid (Esc)" aria-label="Close grid">✕</button>
+        </div>
+
+        <p className="cr-mv-hint">
+          {count > 1 && <><kbd>1</kbd>–<kbd>{count}</kbd> expand · </>}
+          <kbd>Esc</kbd> back · <kbd>f</kbd> fullscreen · <kbd>w</kbd> watch
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** Puts this stream in (or out of) the multi-stream grid. */
+function GridButton({ slot, full, onToggle }: { slot: number; full: boolean; onToggle: () => void }) {
+  const on = slot > 0
+  return (
+    <button
+      className={'cr-btn cr-grid-btn' + (on ? ' is-on' : '')}
+      onClick={onToggle}
+      disabled={!on && full}
+      aria-pressed={on}
+      title={on ? `Pane ${slot} — click to remove from grid` : full ? `Grid is full (${MAX_MULTI} streams)` : 'Add to grid'}
+    >
+      {on ? <span className="cr-grid-slot">{slot}</span> : <Icon d={D_GRID} />}
+    </button>
+  )
+}
+
+function StreamTile({ p, parent, watch, slot, gridFull, onToggleGrid, onFocus }: {
   p: CommandRoomPlayer
   parent: string
   watch: Watchlist
+  slot: number
+  gridFull: boolean
+  onToggleGrid: () => void
   onFocus: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -432,6 +710,7 @@ function StreamTile({ p, parent, watch, onFocus }: {
               <Icon d={isFull ? D_EXIT_FULLSCREEN : D_FULLSCREEN} />
             </button>
           )}
+          <GridButton slot={slot} full={gridFull} onToggle={onToggleGrid} />
           <button className="cr-btn cr-expand" onClick={onFocus} title="Focus view" aria-label="Open in focus view">
             <Icon d={D_FOCUS} />
           </button>
@@ -475,12 +754,39 @@ function StreamTile({ p, parent, watch, onFocus }: {
   )
 }
 
+/** The selected streams, with a button to open them as a grid. */
+function MultiBar({ picks, onOpen, onClear }: {
+  picks: CommandRoomPlayer[]
+  onOpen: () => void
+  onClear: () => void
+}) {
+  return (
+    <div className="cr-mv-bar">
+      <span className="cr-mv-bar-count">{picks.length}/{MAX_MULTI}</span>
+      <span className="cr-mv-bar-names">
+        {picks.map((p) => (
+          <span key={p.stream.login} className="cr-mv-bar-name" style={{ color: classColor(p.className) }}>
+            {p.name}
+          </span>
+        ))}
+      </span>
+      <button className="cr-mv-bar-open" onClick={onOpen}>
+        <Icon d={D_GRID} /> Watch {picks.length > 1 ? `${picks.length} streams` : 'stream'}
+      </button>
+      <button className="cr-mv-bar-clear" onClick={onClear}>Clear</button>
+    </div>
+  )
+}
+
 export default function CommandRoomPage() {
   const [pts, setPts] = useState(storedWindow)
   const [data, setData] = useState<CommandRoomData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [focusIndex, setFocusIndex] = useState<number | null>(null)
+  // Stream logins in pick order — the grid's slot numbers come straight from it.
+  const [picked, setPicked] = useState<string[]>([])
+  const [gridOpen, setGridOpen] = useState(false)
   const parent = useMemo(() => (typeof window !== 'undefined' ? window.location.hostname : 'localhost'), [])
   const watch = useWatchlist()
   // Every band we've fetched this session, keyed by its width, so flipping back
@@ -543,6 +849,31 @@ export default function CommandRoomPage() {
     })
   }, [players.length])
 
+  // Picks survive refreshes by login, but not a streamer going offline or
+  // dropping out of the band — drop those so the slot frees up.
+  useEffect(() => {
+    setPicked((cur) => {
+      const live = cur.filter((login) => players.some((p) => p.stream.login === login))
+      return live.length === cur.length ? cur : live
+    })
+  }, [players])
+
+  const togglePick = useCallback((login: string) => {
+    setPicked((cur) => (cur.includes(login)
+      ? cur.filter((l) => l !== login)
+      : cur.length >= MAX_MULTI ? cur : [...cur, login]))
+  }, [])
+
+  const picks = useMemo(
+    () => picked.map((login) => players.find((p) => p.stream.login === login)).filter(Boolean) as CommandRoomPlayer[],
+    [picked, players],
+  )
+
+  // Nothing left to show means nothing left to keep open.
+  useEffect(() => {
+    if (gridOpen && picks.length === 0) setGridOpen(false)
+  }, [gridOpen, picks.length])
+
   return (
     <div className="app page-clb">
       <Nav />
@@ -575,6 +906,7 @@ export default function CommandRoomPage() {
           <p className="cr-hint">
             <b>+ Watch</b> on any stream tracks that character on <Link to="/">Title Watch</Link>
             {' · '}<kbd>w</kbd> in focus view
+            {' · '}the <b>grid</b> button stacks up to {MAX_MULTI} streams side by side
           </p>
         )}
       </header>
@@ -588,17 +920,41 @@ export default function CommandRoomPage() {
             && ' Try a wider IO window.'}
         </p>
       ) : (
-        <div className="cr-grid">
+        <div className={'cr-grid' + (picks.length > 0 ? ' has-bar' : '')}>
           {players.map((p, i) => (
             <StreamTile
               key={`${p.rank}-${p.stream.login}`}
               p={p}
               parent={parent}
               watch={watch}
+              slot={picked.indexOf(p.stream.login) + 1}
+              gridFull={picked.length >= MAX_MULTI}
+              onToggleGrid={() => togglePick(p.stream.login)}
               onFocus={() => setFocusIndex(i)}
             />
           ))}
         </div>
+      )}
+
+      {picks.length > 0 && !gridOpen && (
+        <MultiBar
+          picks={picks}
+          onOpen={() => {
+            setFocusIndex(null) // one player at a time
+            setGridOpen(true)
+          }}
+          onClear={() => setPicked([])}
+        />
+      )}
+
+      {gridOpen && picks.length > 0 && (
+        <MultiView
+          players={picks}
+          parent={parent}
+          watch={watch}
+          onRemove={togglePick}
+          onClose={() => setGridOpen(false)}
+        />
       )}
 
       {focusIndex !== null && players[focusIndex] && (

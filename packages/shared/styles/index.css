@@ -2305,6 +2305,256 @@ a.row-first:hover {
   background: var(--surface2);
 }
 
+/* ── Multi-stream grid ───────────────────────────────────────────────────── */
+/* Slot number replaces the grid glyph once a stream is picked. */
+.cr-grid-btn.is-on { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 60%, transparent); }
+.cr-grid-btn:disabled { opacity: 0.35; cursor: default; }
+.cr-grid-slot {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+/* Selection bar. Clears the viewport bottom so it never covers a tile's meta. */
+.cr-mv-bar {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: min(94vw, 46rem);
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+}
+
+.cr-mv-bar-count {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.05rem;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+}
+
+.cr-mv-bar-names {
+  display: flex;
+  gap: 0.45rem;
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.cr-mv-bar-name { white-space: nowrap; }
+
+.cr-mv-bar-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gold) 16%, var(--surface2));
+  color: var(--gold);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.cr-mv-bar-open:hover { background: color-mix(in srgb, var(--gold) 26%, var(--surface2)); }
+
+.cr-mv-bar-clear {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.74rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.cr-mv-bar-clear:hover { color: var(--text); }
+
+/* Keep the last row of tiles reachable above the bar. */
+.cr-grid.has-bar { padding-bottom: 3.5rem; }
+
+.cr-mv-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+/* Four 16:9 panes tile a 16:9 stage, so the stage carries the aspect and every
+   pane just fills its cell. Two side by side need twice the width. */
+.cr-mv-stage {
+  position: relative;
+  width: min(97vw, calc(94vh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  max-height: 94vh;
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.cr-mv-stage.is-wide {
+  width: min(97vw, calc(94vh * 32 / 9));
+  aspect-ratio: 32 / 9;
+}
+/* .cr-stage.is-full already drops the aspect and fills the screen. */
+.cr-mv-stage.is-full { border: 0; border-radius: 0; }
+
+.cr-mv-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  gap: 2px;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+.cr-mv-n1 .cr-mv-grid, .cr-mv-n2 .cr-mv-grid { grid-template-rows: 1fr; }
+.cr-mv-n1 .cr-mv-grid { grid-template-columns: 1fr; }
+/* Three panes: two up top, the third spanning the bottom. */
+.cr-mv-n3 .cr-mv-pane:nth-child(3) { grid-column: span 2; }
+
+.cr-mv-pane {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: #000;
+  overflow: hidden;
+}
+.cr-mv-pane iframe,
+.cr-mv-mount,
+.cr-mv-mount iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.cr-mv-pane.is-audio { outline: 1px solid color-mix(in srgb, var(--gold) 65%, transparent); outline-offset: -1px; }
+
+/* Expanding lifts one pane over the grid. The others stay mounted and merely
+   invisible, so collapsing back never re-buffers a stream. */
+.cr-mv-stage.is-soloing .cr-mv-pane { visibility: hidden; }
+.cr-mv-stage.is-soloing .cr-mv-pane.is-solo {
+  visibility: visible;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  grid-column: auto;
+}
+
+.cr-mv-pane-btns {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 4;
+  display: flex;
+  gap: 0.3rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.cr-mv-pane:hover .cr-mv-pane-btns,
+.cr-mv-pane:focus-within .cr-mv-pane-btns { opacity: 1; }
+/* No hover to reveal them on touch, so leave them out. */
+@media (hover: none) { .cr-mv-pane-btns { opacity: 1; } }
+.cr-mv-pane-btns .cr-btn.is-on { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 60%, transparent); }
+
+.cr-mv-ctl {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 5;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.cr-mv-info {
+  position: absolute;
+  bottom: 0.4rem;
+  left: 0.4rem;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: calc(100% - 0.8rem);
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 10, 14, 0.7);
+  backdrop-filter: blur(6px);
+  font-size: 0.74rem;
+  /* Clicks belong to the player underneath; links and buttons opt back in. */
+  pointer-events: none;
+}
+.cr-mv-info a,
+.cr-mv-info button { pointer-events: auto; }
+.cr-mv-info .cr-name { font-size: 0.82rem; }
+.cr-mv-info .cr-watch-btn {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+.cr-mv-info .cr-watch-btn.is-on { color: var(--gold); }
+
+.cr-mv-slot {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--muted);
+}
+.cr-mv-score { color: var(--muted); white-space: nowrap; }
+
+.cr-mv-hint {
+  position: absolute;
+  bottom: 0.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  margin: 0;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.cr-mv-hint kbd {
+  font-family: inherit;
+  font-size: 0.66rem;
+  padding: 0.02rem 0.22rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+/* Idle in fullscreen fades our chrome, same as the other stages. */
+.cr-stage.is-idle .cr-mv-ctl,
+.cr-stage.is-idle .cr-mv-hint,
+.cr-stage.is-idle .cr-mv-info,
+.cr-stage.is-idle .cr-mv-pane-btns {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Two-up gets cramped on a phone — stack the panes instead. */
+@media (max-width: 640px) {
+  .cr-mv-stage, .cr-mv-stage.is-wide { width: 97vw; aspect-ratio: 9 / 16; max-height: 92vh; }
+  .cr-mv-grid { grid-template-columns: 1fr; grid-template-rows: repeat(auto-fit, 1fr); }
+  .cr-mv-n2 .cr-mv-grid { grid-template-rows: 1fr 1fr; }
+  .cr-mv-n3 .cr-mv-grid, .cr-mv-n4 .cr-mv-grid { grid-template-rows: repeat(4, 1fr); }
+  .cr-mv-n3 .cr-mv-pane:nth-child(3) { grid-column: auto; }
+  .cr-mv-hint { display: none; }
+  .cr-mv-bar-names { display: none; }
+}
+
 /* Focus / theater view */
 .cr-focus-backdrop {
   position: fixed;
