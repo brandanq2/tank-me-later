@@ -4,11 +4,13 @@ import { Nav } from './components/Nav'
 import { StatusPill } from '@tml/shared/components/StatusPill'
 import {
   fetchCommandRoom, fetchLivePlayer, fetchPermaWatch, addPermaWatch, removePermaWatch,
+  ROOM_WINDOW_PRESETS, ROOM_WINDOW_DEFAULT,
 } from './api'
 import type { CommandRoomData, CommandRoomPlayer, KeyRun } from './api'
 import { classColor, effectiveCutoff, statusOf } from '@tml/shared/titleStatus'
 
 const REFRESH_INTERVAL = 2 * 60 * 1000
+const WINDOW_STORAGE_KEY = 'tml:command-room:window'
 
 function keyOf(c: { name: string; realm: string; region: string }) {
   return `${c.name}-${c.realm}-${c.region}`.toLowerCase()
@@ -25,6 +27,50 @@ function offCutoff(margin: number): string {
   if (margin > 0) return `${margin} above cutoff`
   if (margin < 0) return `${Math.abs(margin)} below cutoff`
   return 'exactly on cutoff'
+}
+
+function storedWindow(): number {
+  try {
+    const saved = Number(localStorage.getItem(WINDOW_STORAGE_KEY))
+    if (ROOM_WINDOW_PRESETS.includes(saved)) return saved
+  } catch { /* private mode — fall through to the default */ }
+  return ROOM_WINDOW_DEFAULT
+}
+
+/**
+ * A wider band contains every player in a narrower one, so tightening the window
+ * is a local filter — no second sweep of raider.io.
+ */
+function narrowBand(d: CommandRoomData, pts: number): CommandRoomData {
+  if (d.window <= pts) return d
+  return { ...d, window: pts, players: d.players.filter((p) => Math.abs(p.margin) <= pts) }
+}
+
+/**
+ * How far either side of the cutoff to sweep raider.io for live streams. Clicks
+ * stay live while a band loads — a later pick simply wins the race.
+ */
+function WindowPicker({ pts, loadingBand, onChange }: {
+  pts: number
+  loadingBand: boolean
+  onChange: (pts: number) => void
+}) {
+  return (
+    <div className="cr-window">
+      <span className="cr-window-label">IO window</span>
+      {ROOM_WINDOW_PRESETS.map((n) => (
+        <button
+          key={n}
+          className={'cr-window-btn' + (n === pts ? ' is-on' : '') + (n === pts && loadingBand ? ' is-loading' : '')}
+          onClick={() => onChange(n)}
+          aria-pressed={n === pts}
+          title={`Streams within ${n} points of the cutoff`}
+        >
+          ±{n}
+        </button>
+      ))}
+    </div>
+  )
 }
 
 function Icon({ d }: { d: string }) {
@@ -430,34 +476,64 @@ function StreamTile({ p, parent, watch, onFocus }: {
 }
 
 export default function CommandRoomPage() {
+  const [pts, setPts] = useState(storedWindow)
   const [data, setData] = useState<CommandRoomData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [focusIndex, setFocusIndex] = useState<number | null>(null)
   const parent = useMemo(() => (typeof window !== 'undefined' ? window.location.hostname : 'localhost'), [])
   const watch = useWatchlist()
+  // Every band we've fetched this session, keyed by its width, so flipping back
+  // to one already on hand paints instantly.
+  const bands = useRef(new Map<number, CommandRoomData>())
+  // Only the newest request may write state — bands can land out of order.
+  const reqId = useRef(0)
 
   useEffect(() => {
     document.body.classList.add('body-clb')
     return () => document.body.classList.remove('body-clb')
   }, [])
 
-  const load = useCallback(async (refresh = false) => {
-    if (refresh) setRefreshing(true)
-    const d = await fetchCommandRoom(refresh)
-    if (d) setData(d)
+  const load = useCallback(async (target: number, { local = false, refresh = false } = {}) => {
+    // Paint from the tightest band we hold that covers the request, so tightening
+    // the window is instant; only go back to raider.io if that band has aged out.
+    const covering = local
+      ? [...bands.current.values()].filter((d) => d.window >= target).sort((a, b) => a.window - b.window)[0]
+      : undefined
+    if (covering) {
+      setData(narrowBand(covering, target))
+      setLoading(false)
+      if (Date.now() - covering.updatedAt < REFRESH_INTERVAL) return
+    }
+
+    const id = ++reqId.current
+    setRefreshing(true)
+    const d = await fetchCommandRoom(target, refresh)
+    if (reqId.current !== id) return // a newer band is already in flight
+    if (d) {
+      bands.current.set(d.window, d)
+      setData(d)
+    }
     setLoading(false)
     setRefreshing(false)
   }, [])
 
   useEffect(() => {
-    load()
-    const id = setInterval(() => load(), REFRESH_INTERVAL)
+    load(pts, { local: true })
+    const id = setInterval(() => load(pts), REFRESH_INTERVAL)
     return () => clearInterval(id)
-  }, [load])
+  }, [load, pts])
+
+  const changeWindow = useCallback((n: number) => {
+    setPts(n)
+    setFocusIndex(null) // the list is about to change under it
+    try { localStorage.setItem(WINDOW_STORAGE_KEY, String(n)) } catch { /* not worth failing over */ }
+  }, [])
 
   const cutoff = effectiveCutoff(data?.cutoff.score ?? 0)
   const players = data?.players ?? []
+  // The band on screen, which trails `pts` while a wider sweep is in flight.
+  const shownWindow = data?.window ?? pts
 
   const navigate = useCallback((delta: number) => {
     setFocusIndex((i) => {
@@ -473,7 +549,10 @@ export default function CommandRoomPage() {
 
       <header className="header tw-header">
         <h1 className="tw-title">Command Room</h1>
-        <p className="subtitle">Live streams within 30 points of the {cutoff.toLocaleString()} title cutoff</p>
+        <p className="subtitle">
+          Live streams within {shownWindow} points of the {cutoff.toLocaleString()} title cutoff
+        </p>
+        <WindowPicker pts={pts} loadingBand={refreshing && shownWindow !== pts} onChange={changeWindow} />
         {data && (
           <p className="cutoff-badge">
             {data.cutoff.percentile} cutoff&nbsp;
@@ -487,7 +566,7 @@ export default function CommandRoomPage() {
           <p className="tw-updated">
             Updated {minsAgo(data.updatedAt)}
             {' · '}
-            <button className="tw-refresh" onClick={() => load(true)} disabled={refreshing}>
+            <button className="tw-refresh" onClick={() => load(pts, { refresh: true })} disabled={refreshing}>
               {refreshing ? 'refreshing…' : 'refresh'}
             </button>
           </p>
@@ -503,7 +582,11 @@ export default function CommandRoomPage() {
       {loading ? (
         <p className="empty">Scanning the title race for live streams…</p>
       ) : players.length === 0 ? (
-        <p className="empty">No one within 30 points of title is streaming right now.</p>
+        <p className="empty">
+          No one within {shownWindow} points of title is streaming right now.
+          {shownWindow < (ROOM_WINDOW_PRESETS[ROOM_WINDOW_PRESETS.length - 1] ?? shownWindow)
+            && ' Try a wider IO window.'}
+        </p>
       ) : (
         <div className="cr-grid">
           {players.map((p, i) => (

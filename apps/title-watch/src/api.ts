@@ -93,12 +93,21 @@ export interface CommandRoomData {
   updatedAt: number
   season: string
   region: string
+  /** Points either side of the cutoff this band was collected for. */
+  window: number
   cutoff: { score: number; percentile: string; rank: number }
   players: CommandRoomPlayer[]
 }
 
-export async function fetchCommandRoom(refresh = false): Promise<CommandRoomData | null> {
-  const res = await fetch(`/api/title-watch?view=command-room${refresh ? '&refresh=1' : ''}`)
+/** Bands the picker offers. The API clamps anything outside 5–50. */
+export const ROOM_WINDOW_PRESETS: readonly number[] = [5, 10, 15, 25, 50]
+export const ROOM_WINDOW_DEFAULT = 15
+
+/** `pts` is how far either side of the cutoff to sweep raider.io for streams. */
+export async function fetchCommandRoom(pts: number, refresh = false): Promise<CommandRoomData | null> {
+  const params = new URLSearchParams({ view: 'command-room', window: String(pts) })
+  if (refresh) params.set('refresh', '1')
+  const res = await fetch(`/api/title-watch?${params}`)
   if (!res.ok) return null
   return res.json()
 }

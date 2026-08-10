@@ -280,10 +280,24 @@ async function computeRoster(season: string, region: string): Promise<TitleWatch
 // ── Command Room: live streamers within WINDOW points of the cutoff ─────────
 // Folded into this function (rather than its own file) to stay under the
 // Hobby-plan limit of 12 Serverless Functions per deployment.
-const ROOM_CACHE_KEY = 'tank-me-later:command-room:cache'
-const ROOM_WINDOW = 30
+const ROOM_CACHE_PREFIX = 'tank-me-later:command-room:cache'
 const ROOM_MAX_PAGES_EACH = 20
 const ROOM_CACHE_TTL_MS = 3 * 60 * 1000
+// Points either side of the cutoff to sweep for streams. The client picks it, so
+// every band gets its own cache entry rather than fighting over one.
+const ROOM_WINDOW_DEFAULT = 15
+const ROOM_WINDOW_MIN = 5
+const ROOM_WINDOW_MAX = 50
+
+function roomCacheKey(season: string, region: string, pts: number) {
+  return `${ROOM_CACHE_PREFIX}:${season}:${region}:${pts}`
+}
+
+function parseWindow(raw: unknown): number {
+  const n = Math.round(Number(raw))
+  if (!Number.isFinite(n)) return ROOM_WINDOW_DEFAULT
+  return Math.min(ROOM_WINDOW_MAX, Math.max(ROOM_WINDOW_MIN, n))
+}
 
 interface CommandRoomPlayer {
   name: string
@@ -304,6 +318,8 @@ interface CommandRoomData {
   updatedAt: number
   season: string
   region: string
+  /** Points either side of the cutoff this band was collected for. */
+  window: number
   cutoff: { score: number; percentile: string; rank: number }
   players: CommandRoomPlayer[]
 }
@@ -328,7 +344,7 @@ async function collectBand(season: string, region: string, cutoffRank: number, l
   return out
 }
 
-async function computeRoom(season: string, region: string): Promise<CommandRoomData> {
+async function computeRoom(season: string, region: string, pts: number): Promise<CommandRoomData> {
   const cutoffRes = await fetch(`https://raider.io/api/v1/mythic-plus/season-cutoffs?season=${season}&region=${region}`)
   if (!cutoffRes.ok) throw new Error(`cutoff ${cutoffRes.status}`)
   const cutoffJson = await cutoffRes.json() as {
@@ -341,8 +357,8 @@ async function computeRoom(season: string, region: string): Promise<CommandRoomD
     throw new Error('cutoff not found')
   }
   const effectiveCutoff = Math.floor(cutoffScore)
-  const low = effectiveCutoff - ROOM_WINDOW
-  const high = effectiveCutoff + ROOM_WINDOW
+  const low = effectiveCutoff - pts
+  const high = effectiveCutoff + pts
 
   const ranked = await collectBand(season, region, cutoffRank, low, high)
   const seen = new Set<number>()
@@ -375,6 +391,7 @@ async function computeRoom(season: string, region: string): Promise<CommandRoomD
     updatedAt: Date.now(),
     season,
     region,
+    window: pts,
     cutoff: { score: cutoffScore, percentile: '0.1%', rank: cutoffRank },
     players,
   }
@@ -396,13 +413,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Command Room view (GET only).
   if (req.query.view === 'command-room') {
     const refresh = req.query.refresh === '1'
-    const cached = await redis.get<CommandRoomData>(ROOM_CACHE_KEY)
+    const pts = parseWindow(req.query.window)
+    const cacheKey = roomCacheKey(season, region, pts)
+    const cached = await redis.get<CommandRoomData>(cacheKey)
     if (!refresh && cached && Date.now() - cached.updatedAt < ROOM_CACHE_TTL_MS) {
       return res.json(cached)
     }
     try {
-      const data = await computeRoom(season, region)
-      await redis.set(ROOM_CACHE_KEY, data)
+      const data = await computeRoom(season, region, pts)
+      await redis.set(cacheKey, data)
       return res.json(data)
     } catch (err) {
       if (cached) return res.json(cached)

@@ -2094,6 +2094,47 @@ a.row-first:hover {
 }
 .tw-refresh:disabled { color: var(--muted); cursor: default; text-decoration: none; }
 
+/* Band picker — how far either side of the cutoff to sweep for streams. */
+.cr-window {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
+  margin-top: 0.6rem;
+}
+
+.cr-window-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-right: 0.1rem;
+}
+
+.cr-window-btn {
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--muted);
+  cursor: pointer;
+}
+.cr-window-btn:hover { color: var(--text); border-color: var(--muted); }
+.cr-window-btn.is-on {
+  color: var(--gold);
+  border-color: color-mix(in srgb, var(--gold) 50%, transparent);
+  background: color-mix(in srgb, var(--gold) 12%, var(--surface2));
+}
+.cr-window-btn.is-loading { animation: cr-window-pulse 1.1s ease-in-out infinite; }
+
+@keyframes cr-window-pulse {
+  50% { opacity: 0.45; }
+}
+
 .cr-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
