@@ -92,6 +92,7 @@ const D_FOCUS = 'M9.5 2H14v4.5M14 2 8.5 7.5M12 9.5V13a1 1 0 0 1-1 1H3a1 1 0 0 1-
 const D_GRID = 'M2.5 2.5h4.5v4.5h-4.5zM9 2.5h4.5v4.5H9zM2.5 9h4.5v4.5h-4.5zM9 9h4.5v4.5H9z'
 const D_AUDIO_ON = 'M2.5 6h2L8 3.5v9L4.5 10h-2zM10.6 6.2a2.6 2.6 0 0 1 0 3.6M12.6 4.4a5.2 5.2 0 0 1 0 7.2'
 const D_AUDIO_OFF = 'M2.5 6h2L8 3.5v9L4.5 10h-2zM10.8 6.2l3.4 3.6M14.2 6.2l-3.4 3.6'
+const D_KEY = 'M6.6 5.3a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 1 0 0-5.2M9.2 7.9H14M12.4 7.9v2.3M10.7 7.9v1.7'
 
 /** Fullscreens the wrapper element, never the iframe — a fullscreened iframe paints alone. */
 function useStageFullscreen(ref: React.RefObject<HTMLElement | null>) {
@@ -428,12 +429,13 @@ function loadTwitchPlayer(): Promise<void> {
  * One pane of the grid. Mounts muted — browsers refuse unmuted autoplay — then
  * unmutes through the API if this is the pane the user is listening to.
  */
-function MultiPane({ p, parent, index, audio, solo, watch, onAudio, onSolo, onRemove }: {
+function MultiPane({ p, parent, index, audio, solo, showKeys, watch, onAudio, onSolo, onRemove }: {
   p: CommandRoomPlayer
   parent: string
   index: number
   audio: boolean
   solo: boolean
+  showKeys: boolean
   watch: Watchlist
   onAudio: () => void
   onSolo: () => void
@@ -442,6 +444,8 @@ function MultiPane({ p, parent, index, audio, solo, watch, onAudio, onSolo, onRe
   const mount = useRef<HTMLDivElement>(null)
   const api = useRef<TwitchPlayerApi | null>(null)
   const [blocked, setBlocked] = useState(false)
+  // Only costs a raider.io profile call while the key rows are actually up.
+  const { keys, score } = useLiveDetail(p, showKeys)
   // The script may still be loading when the audio pane is decided, so the
   // player reads the latest value on creation instead of missing the first set.
   const audioRef = useRef(audio)
@@ -516,13 +520,21 @@ function MultiPane({ p, parent, index, audio, solo, watch, onAudio, onSolo, onRe
       </div>
 
       <div className="cr-mv-info">
-        <span className="cr-mv-slot">{index + 1}</span>
-        <a className="cr-name" style={{ color: nameColor }} href={p.profileUrl} target="_blank" rel="noreferrer">
-          {p.name}
-        </a>
-        <span className="cr-mv-score">#{p.rank} · {p.score.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
-        <StatusPill status={statusOf(p.margin)} margin={p.margin} />
-        <WatchButton player={p} watch={watch} />
+        <div className="cr-mv-info-top">
+          <span className="cr-mv-slot">{index + 1}</span>
+          <a className="cr-name" style={{ color: nameColor }} href={p.profileUrl} target="_blank" rel="noreferrer">
+            {p.name}
+          </a>
+          <span className="cr-mv-score">#{p.rank} · {score.toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+          <StatusPill status={statusOf(p.margin)} margin={p.margin} />
+          <WatchButton player={p} watch={watch} />
+        </div>
+        {showKeys && (
+          <div className="cr-mv-keys">
+            <span className="tw-keys-label">Top keys</span>
+            <div className="tw-keys"><KeyChips keys={keys} /></div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -544,6 +556,7 @@ function MultiView({ players, parent, watch, onRemove, onClose }: {
   const { idle, wake } = useIdleChrome(isFull)
   const [audio, setAudio] = useState(() => players[0]?.stream.login ?? '')
   const [solo, setSolo] = useState<string | null>(null)
+  const [showKeys, setShowKeys] = useState(true)
 
   // Expanding a pane also moves audio to it — watching one stream while hearing
   // another is never what the click meant.
@@ -577,6 +590,7 @@ function MultiView({ players, parent, watch, onRemove, onClose }: {
         const p = players[Number(e.key) - 1]
         if (p) expand(p.stream.login)
       } else if (e.key === 'f') toggleFullscreen()
+      else if (e.key === 'k') setShowKeys((v) => !v)
       else if (e.key === 'w') {
         const p = players.find((x) => x.stream.login === active)
         if (p) watch.toggle(p)
@@ -614,6 +628,7 @@ function MultiView({ players, parent, watch, onRemove, onClose }: {
               index={i}
               audio={p.stream.login === audio}
               solo={p.stream.login === solo}
+              showKeys={showKeys}
               watch={watch}
               onAudio={() => setAudio(p.stream.login)}
               onSolo={() => expand(p.stream.login)}
@@ -623,6 +638,15 @@ function MultiView({ players, parent, watch, onRemove, onClose }: {
         </div>
 
         <div className="cr-mv-ctl">
+          <button
+            className={'cr-btn' + (showKeys ? ' is-on' : '')}
+            onClick={() => setShowKeys((v) => !v)}
+            title={showKeys ? 'Hide key overlays (k)' : 'Show key overlays (k)'}
+            aria-label={showKeys ? 'Hide key overlays' : 'Show key overlays'}
+            aria-pressed={showKeys}
+          >
+            <Icon d={D_KEY} />
+          </button>
           <button
             className="cr-btn"
             onClick={toggleFullscreen}
@@ -636,7 +660,7 @@ function MultiView({ players, parent, watch, onRemove, onClose }: {
 
         <p className="cr-mv-hint">
           {count > 1 && <><kbd>1</kbd>–<kbd>{count}</kbd> expand · </>}
-          <kbd>Esc</kbd> back · <kbd>f</kbd> fullscreen · <kbd>w</kbd> watch
+          <kbd>Esc</kbd> back · <kbd>f</kbd> fullscreen · <kbd>k</kbd> keys · <kbd>w</kbd> watch
         </p>
       </div>
     </div>

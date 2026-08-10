@@ -2485,10 +2485,11 @@ a.row-first:hover {
   left: 0.4rem;
   z-index: 4;
   display: flex;
-  align-items: center;
-  gap: 0.4rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
   max-width: calc(100% - 0.8rem);
-  padding: 0.25rem 0.5rem;
+  padding: 0.3rem 0.5rem;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(10, 10, 14, 0.7);
@@ -2500,6 +2501,27 @@ a.row-first:hover {
 .cr-mv-info a,
 .cr-mv-info button { pointer-events: auto; }
 .cr-mv-info .cr-name { font-size: 0.82rem; }
+
+.cr-mv-info-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* The same best-runs readout the focus view carries, sized for a quarter pane. */
+.cr-mv-keys {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  max-width: 100%;
+}
+.cr-mv-keys .tw-keys-label { width: auto; }
+.cr-mv-keys .tw-key {
+  font-size: 0.68rem;
+  padding: 0.1rem 0.35rem;
+  gap: 0.22rem;
+}
 .cr-mv-info .cr-watch-btn {
   border-color: rgba(255, 255, 255, 0.25);
   background: rgba(0, 0, 0, 0.5);
