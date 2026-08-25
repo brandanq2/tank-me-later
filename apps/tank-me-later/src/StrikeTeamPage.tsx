@@ -21,7 +21,7 @@ import {
   CANDIDATE_SLOTS, GRID_LABEL, TIMEZONE_LABEL, blockFromMinutes,
   type Day, type RaidSlot,
 } from './midnight/schedule'
-import type { MidnightState, RaidRole } from './midnight/types'
+import type { MidnightState } from './midnight/types'
 import type { CharacterEntry, CharacterInput } from '@tml/shared/types'
 
 /** useWarbands scores characters; this page only needs names, so nothing is loaded. */
@@ -160,11 +160,14 @@ export default function StrikeTeamPage() {
 
   const handleSignUp = useCallback(async (
     character: CharacterInput,
-    role: RaidRole,
+    className: string,
+    specName: string,
     signupNote: string,
   ): Promise<string | null> => {
     if (!myWarband) return 'Create a warband first'
-    const result = await signUpCharacter(myWarband.id, sessionId, character, role, signupNote)
+    const result = await signUpCharacter(
+      myWarband.id, sessionId, character, className, specName, signupNote,
+    )
     if ('error' in result) return result.error
     setState(prev => prev && ({
       ...prev,

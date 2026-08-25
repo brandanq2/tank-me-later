@@ -232,7 +232,11 @@ export function WarbandPanel({
               const look = looks[charKey(m)]
               return (
                 <li key={memberKey(m)} className="warband-member-chip mn-member-chip">
-                  <SpecIcon look={look} />
+                  <SpecIcon
+                    characterClass={look?.className}
+                    specName={look?.specName}
+                    emptyTitle={look?.status === 'error' ? 'Character not found on raider.io' : undefined}
+                  />
                   <span
                     className="warband-member-chip-name"
                     style={{ color: classColor(look?.className) }}

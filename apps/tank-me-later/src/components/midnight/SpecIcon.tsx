@@ -1,21 +1,22 @@
 import { specIconUrl } from '../../midnight/specIcons'
-import type { CharacterLook } from '../../midnight/useCharacterLooks'
 
 interface Props {
-  look?: CharacterLook
+  characterClass?: string
+  specName?: string
+  /** Shown on hover when there is nothing to draw. */
+  emptyTitle?: string
 }
 
 /**
- * Spec icon for a fetched character. Holds its square while loading so the
- * roster does not reflow as raider.io answers, and degrades to a plain
- * placeholder for characters that failed to load or whose spec is unknown.
+ * Spec icon for a class/spec pair. Holds its square when there is nothing to
+ * draw so rosters do not reflow as raider.io answers, and falls back to the
+ * class icon for specs that postdate the icon map.
  */
-export function SpecIcon({ look }: Props) {
-  const url = specIconUrl(look?.className, look?.specName)
+export function SpecIcon({ characterClass, specName, emptyTitle }: Props) {
+  const url = specIconUrl(characterClass, specName)
 
   if (!url) {
-    const title = look?.status === 'error' ? 'Character not found on raider.io' : undefined
-    return <span className="mn-spec-icon mn-spec-icon-empty" title={title} aria-hidden />
+    return <span className="mn-spec-icon mn-spec-icon-empty" title={emptyTitle} aria-hidden />
   }
 
   return (
@@ -23,7 +24,7 @@ export function SpecIcon({ look }: Props) {
       className="mn-spec-icon"
       src={url}
       alt=""
-      title={`${look?.specName} ${look?.className}`}
+      title={specName ? `${specName} ${characterClass}` : characterClass}
       loading="lazy"
       aria-hidden
     />

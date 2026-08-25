@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { classColor } from '@tml/shared/titleStatus'
 import type { CharacterInput, WarbandEntry } from '@tml/shared/types'
-import { RAID_ROLES, ROLE_LABELS, type RaidRole, type RaidSlotRecord, type SignupRecord } from '../../midnight/types'
+import type { RaidSlotRecord, SignupRecord } from '../../midnight/types'
+import {
+  CLASSES, CLASS_SPECS, RAID_ROLES, ROLE_LABELS, parseSpecValue, specValue,
+} from '../../midnight/specs'
 import { RAID_BLOCKS, blockFromMinutes, raidSlotCells, raidSlotLabel, type Day } from '../../midnight/schedule'
 import { SpecIcon } from './SpecIcon'
+import { RaidBuffs } from './RaidBuffs'
 import type { CharacterLook } from '../../midnight/useCharacterLooks'
 import { charKey } from '../../hooks/useWarbands'
 
@@ -16,10 +20,15 @@ interface Props {
   myWarband: WarbandEntry | null
   /** This warband's own availability, to warn about signing up for a window they marked as out. */
   mySlots: Set<string>
-  /** raider.io class/spec data, keyed by charKey. */
+  /** raider.io data, used only to preselect the spec someone is currently in. */
   looks: Record<string, CharacterLook>
   isOrganizer: boolean
-  onSignUp: (character: CharacterInput, role: RaidRole, note: string) => Promise<string | null>
+  onSignUp: (
+    character: CharacterInput,
+    className: string,
+    specName: string,
+    note: string,
+  ) => Promise<string | null>
   onWithdraw: () => Promise<void>
   onClear: () => void
 }
@@ -28,10 +37,10 @@ function memberKey(m: CharacterInput): string {
   return `${m.name}-${m.realm}-${m.region}`.toLowerCase()
 }
 
-function SignupList({ signups, warbandNames, looks }: {
+/** Tanks / Healers / Melee / Ranged, in that order, like a raid sheet. */
+function SignupList({ signups, warbandNames }: {
   signups: SignupRecord[]
   warbandNames: Map<string, string>
-  looks: Record<string, CharacterLook>
 }) {
   if (signups.length === 0) {
     return <p className="empty">Nobody has signed up yet.</p>
@@ -51,28 +60,24 @@ function SignupList({ signups, warbandNames, looks }: {
               <p className="mn-roster-empty">—</p>
             ) : (
               <ul className="mn-roster-list">
-                {forRole.map(s => {
-                  const look = looks[charKey(s.character)]
-                  return (
-                    <li key={s.warbandId} className="mn-roster-entry">
-                      <div className="mn-roster-headline">
-                        <SpecIcon look={look} />
-                        <span
-                          className="mn-roster-char"
-                          style={{ color: classColor(look?.className) }}
-                        >{s.character.name}</span>
-                      </div>
-                      <span className="mn-roster-realm">
-                        {look?.specName ? `${look.specName} ${look.className} · ` : ''}
-                        {s.character.realm}
-                      </span>
-                      <span className="mn-roster-warband">
-                        {warbandNames.get(s.warbandId) ?? 'Unknown warband'}
-                      </span>
-                      {s.note && <span className="mn-roster-note">{s.note}</span>}
-                    </li>
-                  )
-                })}
+                {forRole.map(s => (
+                  <li key={s.warbandId} className="mn-roster-entry">
+                    <div className="mn-roster-headline">
+                      <SpecIcon characterClass={s.className} specName={s.specName} />
+                      <span
+                        className="mn-roster-char"
+                        style={{ color: classColor(s.className) }}
+                      >{s.character.name}</span>
+                    </div>
+                    <span className="mn-roster-realm">
+                      {s.specName} {s.className}
+                    </span>
+                    <span className="mn-roster-warband">
+                      {warbandNames.get(s.warbandId) ?? 'Unknown warband'}
+                    </span>
+                    {s.note && <span className="mn-roster-note">{s.note}</span>}
+                  </li>
+                ))}
               </ul>
             )}
           </div>
@@ -90,20 +95,48 @@ function SignupForm({ myWarband, existing, conflict, looks, onSignUp, onWithdraw
   onSignUp: Props['onSignUp']
   onWithdraw: Props['onWithdraw']
 }) {
-  const [selected, setSelected] = useState(() =>
-    existing ? memberKey(existing.character) : (myWarband.members[0] ? memberKey(myWarband.members[0]) : ''))
-  const [role, setRole] = useState<RaidRole>(existing?.role ?? 'dps')
+  const initialChar = existing
+    ? memberKey(existing.character)
+    : (myWarband.members[0] ? memberKey(myWarband.members[0]) : '')
+
+  const [selected, setSelected] = useState(initialChar)
+  const [spec, setSpec] = useState(
+    existing ? specValue(existing.className, existing.specName) : '',
+  )
   const [note, setNote] = useState(existing?.note ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Which character the spec box was last defaulted for, so picking a different
+  // alt re-defaults the spec but an edit of an existing signup does not.
+  const defaultedFor = useRef(initialChar)
+
+  const character = myWarband.members.find(m => memberKey(m) === selected)
+  const look = character ? looks[charKey(character)] : undefined
+  const liveClass = look?.className
+
+  useEffect(() => {
+    const characterChanged = defaultedFor.current !== selected
+    if (!characterChanged && spec) return
+    if (!liveClass) return // still waiting on raider.io
+    defaultedFor.current = selected
+    const specs = CLASS_SPECS[liveClass] ?? []
+    const pick = specs.find(s => s.name === look?.specName) ?? specs[0]
+    if (pick) setSpec(specValue(liveClass, pick.name))
+  }, [selected, spec, liveClass, look?.specName])
+
   async function handleSignUp() {
-    const character = myWarband.members.find(m => memberKey(m) === selected)
-    if (!character || busy) return
+    const parsed = parseSpecValue(spec)
+    if (!character || !parsed || busy) return
     setBusy(true)
     setError(null)
     try {
-      setError(await onSignUp({ name: character.name, realm: character.realm, region: character.region }, role, note))
+      setError(await onSignUp(
+        { name: character.name, realm: character.realm, region: character.region },
+        parsed.className,
+        parsed.specName,
+        note,
+      ))
     } finally {
       setBusy(false)
     }
@@ -135,20 +168,35 @@ function SignupForm({ myWarband, existing, conflict, looks, onSignUp, onWithdraw
       )}
       <div className="mn-signup-row">
         <select value={selected} onChange={e => setSelected(e.target.value)}>
-          {myWarband.members.map(m => {
-            const look = looks[charKey(m)]
-            return (
-              <option key={memberKey(m)} value={memberKey(m)}>
-                {m.name}
-                {look?.specName ? ` — ${look.specName} ${look.className}` : ''}
-                {' '}({m.realm} {m.region.toUpperCase()})
+          {myWarband.members.map(m => (
+            <option key={memberKey(m)} value={memberKey(m)}>
+              {m.name} ({m.realm} {m.region.toUpperCase()})
+            </option>
+          ))}
+        </select>
+
+        {/* Whichever spec they *plan* to bring, not necessarily their current one. */}
+        <select value={spec} onChange={e => setSpec(e.target.value)}>
+          <option value="" disabled>Spec…</option>
+          {liveClass && CLASS_SPECS[liveClass]
+            ? CLASS_SPECS[liveClass].map(s => (
+              <option key={s.name} value={specValue(liveClass, s.name)}>
+                {s.name} {liveClass}
               </option>
-            )
-          })}
+            ))
+            // Class unknown (raider.io slow or the character was renamed) — let
+            // them pick from everything rather than blocking the signup.
+            : CLASSES.map(cls => (
+              <optgroup key={cls} label={cls}>
+                {CLASS_SPECS[cls].map(s => (
+                  <option key={s.name} value={specValue(cls, s.name)}>
+                    {s.name} {cls}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
         </select>
-        <select value={role} onChange={e => setRole(e.target.value as RaidRole)}>
-          {RAID_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-        </select>
+
         <input
           type="text"
           placeholder="Note (optional)"
@@ -156,7 +204,11 @@ function SignupForm({ myWarband, existing, conflict, looks, onSignUp, onWithdraw
           onChange={e => setNote(e.target.value)}
           maxLength={280}
         />
-        <button className="warband-create-btn" onClick={handleSignUp} disabled={!selected || busy}>
+        <button
+          className="warband-create-btn"
+          onClick={handleSignUp}
+          disabled={!selected || !spec || busy}
+        >
           {busy ? 'Saving…' : existing ? 'Update' : 'Sign up'}
         </button>
       </div>
@@ -203,13 +255,13 @@ export function RaidSlotPanel({
         )}
       </div>
 
-      <SignupList signups={signups} warbandNames={warbandNames} looks={looks} />
+      <SignupList signups={signups} warbandNames={warbandNames} />
 
       {myWarband
         ? (
           <SignupForm
-            // Remount when the slot or chosen character changes so the form
-            // reflects the signup that actually exists.
+            // Remount when the slot or the signed-up character changes so the
+            // form reflects the signup that actually exists.
             key={`${raidSlot.id}:${mySignup ? memberKey(mySignup.character) : 'none'}`}
             myWarband={myWarband}
             existing={mySignup}
@@ -220,6 +272,8 @@ export function RaidSlotPanel({
           />
         )
         : <p className="mn-slot-hint">Create a warband above to sign up for this raid.</p>}
+
+      <RaidBuffs signups={signups} />
     </div>
   )
 }

@@ -12,7 +12,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
  * open, so a missing env var can never expose the roster.
  */
 
-type Role = 'tank' | 'healer' | 'dps'
+/** Roster sections. Mirrors RaidRole in src/midnight/specs.ts. */
+type Role = 'tank' | 'healer' | 'melee' | 'ranged'
 
 interface CharacterInput {
   name: string
@@ -38,6 +39,8 @@ interface RaidSlotRecord {
 interface SignupRecord {
   warbandId: string
   character: CharacterInput
+  className: string
+  specName: string
   role: Role
   note?: string
   signedUpAt: number
@@ -73,7 +76,7 @@ const GRID_END_MINUTES = 25 * 60
 const BLOCK_MINUTES = 30
 const BLOCKS_PER_DAY = (GRID_END_MINUTES - GRID_START_MINUTES) / BLOCK_MINUTES
 const RAID_BLOCKS = 6
-const ROLES: Role[] = ['tank', 'healer', 'dps']
+const ROLES: Role[] = ['tank', 'healer', 'melee', 'ranged']
 
 function normalizeCode(code: string): string {
   return code.trim().toLowerCase()
@@ -239,10 +242,12 @@ async function handleRaidSlot(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleSignup(req: VercelRequest, res: VercelResponse) {
-  const { warbandId, sessionId, character, role, note } = req.body as Partial<{
+  const { warbandId, sessionId, character, className, specName, role, note } = req.body as Partial<{
     warbandId: string
     sessionId: string
     character: CharacterInput
+    className: string
+    specName: string
     role: Role
     note: string
   }>
@@ -258,11 +263,18 @@ async function handleSignup(req: VercelRequest, res: VercelResponse) {
   if (!warband.members.some(m => sameCharacter(m, character))) {
     return res.status(400).json({ error: 'That character is not in your warband' })
   }
+  if (!className?.trim() || !specName?.trim()) {
+    return res.status(400).json({ error: 'className and specName required' })
+  }
+  // The class/spec pair is not re-validated here — the client picks it from a
+  // fixed list, and `role` is what the roster actually groups on.
   if (!role || !ROLES.includes(role)) return res.status(400).json({ error: 'invalid role' })
 
   const record: SignupRecord = {
     warbandId: warband.id,
     character,
+    className: className.trim().slice(0, 40),
+    specName: specName.trim().slice(0, 40),
     role,
     ...(note?.trim() ? { note: note.trim().slice(0, 280) } : {}),
     signedUpAt: Date.now(),

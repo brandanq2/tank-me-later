@@ -1,8 +1,9 @@
 import type { CharacterInput } from '@tml/shared/types'
 import { getMidnightCode } from './access'
 import type {
-  AvailabilityRecord, MidnightState, RaidRole, RaidSlotRecord, SignupRecord,
+  AvailabilityRecord, MidnightState, RaidSlotRecord, SignupRecord,
 } from './types'
+import { specRole } from './specs'
 import { blockStartMinutes, type RaidSlot } from './schedule'
 
 /** Every call after unlock carries the stored invite code. */
@@ -75,13 +76,19 @@ export async function signUpCharacter(
   warbandId: string,
   sessionId: string,
   character: CharacterInput,
-  role: RaidRole,
+  className: string,
+  specName: string,
   note: string,
 ): Promise<SignupRecord | { error: string }> {
   const res = await fetch('/api/midnight?action=signup', {
     method: 'PUT',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ warbandId, sessionId, character, role, note }),
+    body: JSON.stringify({
+      warbandId, sessionId, character, className, specName,
+      // Derived here so the server never has to own the spec table.
+      role: specRole(className, specName),
+      note,
+    }),
   })
   if (!res.ok) return { error: await errorFrom(res, 'Could not sign up') }
   return res.json()

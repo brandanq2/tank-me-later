@@ -462,7 +462,7 @@ body.body-midnight { background: #0a0814; }
 
 .mn-roster {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -583,6 +583,66 @@ body.body-midnight { background: #0a0814; }
 .mn-withdraw { color: var(--red); }
 .mn-withdraw:hover { color: #ff8a80; }
 
+/* Raid buff coverage */
+.mn-buffs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.85rem;
+}
+
+.mn-buffs-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.mn-buffs-score {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+}
+
+.mn-buff-group { display: flex; flex-direction: column; gap: 0.35rem; }
+
+.mn-buff-group-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.mn-buff-label-missing { color: #e6b45a; }
+.mn-buff-label-covered { color: #2ec76a; }
+
+.mn-buff-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.mn-buff {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  background: var(--surface2);
+}
+
+.mn-buff-missing { border-left: 2px solid #e6b45a; }
+.mn-buff-covered { border-left: 2px solid #2ec76a; }
+
+.mn-buff-name { font-size: 0.78rem; font-weight: 600; color: var(--text); }
+.mn-buff-from { font-size: 0.64rem; color: var(--muted); }
+
+.mn-buffs-note { font-size: 0.64rem; line-height: 1.45; color: var(--muted); opacity: 0.8; }
+
 @media (max-width: 700px) {
   .mn-grid,
   .mn-cal { grid-template-columns: 3.3rem repeat(7, minmax(0, 1fr)); }
@@ -594,4 +654,9 @@ body.body-midnight { background: #0a0814; }
   .mn-cal-cell { height: 1.6rem; }
   .mn-roster { grid-template-columns: 1fr; }
   .mn-cal-legend-note { margin-left: 0; flex-basis: 100%; }
+}
+
+@media (min-width: 701px) and (max-width: 980px) {
+  /* Four raid sections get too narrow to read before this. */
+  .mn-roster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

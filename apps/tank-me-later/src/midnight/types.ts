@@ -1,14 +1,5 @@
 import type { CharacterInput } from '@tml/shared/types'
-
-export type RaidRole = 'tank' | 'healer' | 'dps'
-
-export const RAID_ROLES: RaidRole[] = ['tank', 'healer', 'dps']
-
-export const ROLE_LABELS: Record<RaidRole, string> = {
-  tank: 'Tank',
-  healer: 'Healer',
-  dps: 'DPS',
-}
+import type { RaidRole } from './specs'
 
 /** One warband's weekly evening availability, as half-hour cell keys. */
 export interface AvailabilityRecord {
@@ -30,6 +21,14 @@ export interface RaidSlotRecord {
 export interface SignupRecord {
   warbandId: string
   character: CharacterInput
+  /**
+   * The spec the player intends to bring, which is not necessarily whatever
+   * they happen to be logged in as — so it is chosen by hand and stored here
+   * rather than read back off raider.io at render time.
+   */
+  className: string
+  specName: string
+  /** Derived from class + spec at signup, and what the roster groups on. */
   role: RaidRole
   note?: string
   signedUpAt: number
