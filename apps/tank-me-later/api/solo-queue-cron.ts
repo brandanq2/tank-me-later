@@ -151,7 +151,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const riotApiKey = process.env.RIOT_API_KEY
   if (!riotApiKey) return res.status(500).json({ error: 'RIOT_API_KEY not set' })
 
-  const CANDIDATES = ['season-mn-1', 'season-tww-3', 'season-tww-2']
+  // Newest first — raider.io keeps serving cutoffs for finished seasons, so the
+  // probe would happily sit on last season forever if the live one is missing.
+  const CANDIDATES = ['season-mn-2', 'season-mn-1', 'season-tww-3', 'season-tww-2']
   let anchors: ScoreAnchor[] = []
   let activeSeason = ''
 

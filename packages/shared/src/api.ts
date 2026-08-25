@@ -9,7 +9,7 @@ export interface CutoffData {
   percentile: string
 }
 
-export async function fetchCutoff(season = 'season-mn-1', region = 'us'): Promise<CutoffData> {
+export async function fetchCutoff(season = 'season-mn-2', region = 'us'): Promise<CutoffData> {
   const params = new URLSearchParams({ season, region })
   const res = await fetch(`/api/cutoff?${params}`)
 
