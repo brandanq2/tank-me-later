@@ -30,7 +30,8 @@ interface AvailabilityRecord {
 interface RaidSlotRecord {
   id: string
   day: string
-  block: number
+  /** Minutes past midnight, so a stored slot survives grid-range changes. */
+  startMinutes: number
   lockedAt: number
 }
 
@@ -67,7 +68,10 @@ const MAX_UNLOCK_ATTEMPTS = 30
 // Mirrors src/midnight/schedule.ts. Duplicated because api/ functions are
 // self-contained here; keep the two in sync if the grid ever changes shape.
 const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-const BLOCKS_PER_DAY = 16
+const GRID_START_MINUTES = 14 * 60
+const GRID_END_MINUTES = 25 * 60
+const BLOCK_MINUTES = 30
+const BLOCKS_PER_DAY = (GRID_END_MINUTES - GRID_START_MINUTES) / BLOCK_MINUTES
 const RAID_BLOCKS = 6
 const ROLES: Role[] = ['tank', 'healer', 'dps']
 
@@ -130,12 +134,16 @@ async function ownedWarband(
   return ownerIds(warband).includes(sessionId) ? warband : null
 }
 
+/** Cell keys carry the wall-clock minute, e.g. `wed:1230` for 8:30 PM. */
 function isCellKey(value: unknown): value is string {
   if (typeof value !== 'string') return false
-  const [day, rawBlock] = value.split(':')
+  const [day, rawMinutes] = value.split(':')
   if (!DAYS.includes(day)) return false
-  const block = Number(rawBlock)
-  return Number.isInteger(block) && block >= 0 && block < BLOCKS_PER_DAY
+  const minutes = Number(rawMinutes)
+  if (!Number.isInteger(minutes)) return false
+  const offset = minutes - GRID_START_MINUTES
+  if (offset < 0 || offset % BLOCK_MINUTES !== 0) return false
+  return offset / BLOCK_MINUTES < BLOCKS_PER_DAY
 }
 
 function sameCharacter(a: CharacterInput, b: CharacterInput): boolean {
@@ -205,16 +213,25 @@ async function handleAvailability(req: VercelRequest, res: VercelResponse) {
 }
 
 async function handleRaidSlot(req: VercelRequest, res: VercelResponse) {
-  const { day, block } = req.body as Partial<{ day: string; block: number }>
+  const { day, startMinutes } = req.body as Partial<{ day: string; startMinutes: number }>
   if (!day || !DAYS.includes(day)) return res.status(400).json({ error: 'invalid day' })
-  if (!Number.isInteger(block) || block! < 0 || block! > BLOCKS_PER_DAY - RAID_BLOCKS) {
-    return res.status(400).json({ error: 'invalid block' })
+  if (!Number.isInteger(startMinutes)) {
+    return res.status(400).json({ error: 'invalid startMinutes' })
+  }
+  const offset = startMinutes! - GRID_START_MINUTES
+  // Must land on a half-hour boundary and leave room for the full three hours.
+  if (
+    offset < 0 ||
+    offset % BLOCK_MINUTES !== 0 ||
+    startMinutes! + RAID_BLOCKS * BLOCK_MINUTES > GRID_END_MINUTES
+  ) {
+    return res.status(400).json({ error: 'invalid startMinutes' })
   }
 
   const record: RaidSlotRecord = {
-    id: `${day}:${block}`,
+    id: `${day}:${startMinutes}`,
     day,
-    block: block!,
+    startMinutes: startMinutes!,
     lockedAt: Date.now(),
   }
   await redis.set(RAID_SLOT_KEY, record)

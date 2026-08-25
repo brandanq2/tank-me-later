@@ -1,11 +1,17 @@
 import { useState, type FormEvent } from 'react'
+import { classColor } from '@tml/shared/titleStatus'
 import type { CharacterInput, WarbandDefinition, WarbandEntry } from '@tml/shared/types'
+import { SpecIcon } from './SpecIcon'
+import type { CharacterLook } from '../../midnight/useCharacterLooks'
+import { charKey } from '../../hooks/useWarbands'
 
 interface Props {
   /** Warbands this browser session owns — usually exactly one. */
   owned: WarbandEntry[]
   /** Warbands owned by someone else, offered for access-code recovery. */
   others: WarbandEntry[]
+  /** raider.io class/spec data, keyed by charKey. */
+  looks: Record<string, CharacterLook>
   onCreate: (name: string, members: CharacterInput[]) => Promise<WarbandDefinition | null>
   onAddMember: (warbandId: string, member: CharacterInput) => void
   onRemoveMember: (warbandId: string, memberKey: string) => void
@@ -188,7 +194,7 @@ function ClaimExisting({ others, onClaim }: { others: WarbandEntry[]; onClaim: P
 }
 
 export function WarbandPanel({
-  owned, others, onCreate, onAddMember, onRemoveMember, onClaim,
+  owned, others, looks, onCreate, onAddMember, onRemoveMember, onClaim,
 }: Props) {
   const [showCode, setShowCode] = useState<string | null>(null)
 
@@ -222,17 +228,27 @@ export function WarbandPanel({
           )}
 
           <ul className="warband-member-list">
-            {warband.members.map(m => (
-              <li key={memberKey(m)} className="warband-member-chip">
-                <span className="warband-member-chip-name">{m.name}</span>
-                <span className="warband-member-chip-realm">{m.realm} · {m.region.toUpperCase()}</span>
-                <button
-                  className="remove-btn"
-                  title="Remove from warband"
-                  onClick={() => onRemoveMember(warband.id, memberKey(m))}
-                >✕</button>
-              </li>
-            ))}
+            {warband.members.map(m => {
+              const look = looks[charKey(m)]
+              return (
+                <li key={memberKey(m)} className="warband-member-chip mn-member-chip">
+                  <SpecIcon look={look} />
+                  <span
+                    className="warband-member-chip-name"
+                    style={{ color: classColor(look?.className) }}
+                  >{m.name}</span>
+                  {look?.specName && (
+                    <span className="mn-member-spec">{look.specName} {look.className}</span>
+                  )}
+                  <span className="warband-member-chip-realm">{m.realm} · {m.region.toUpperCase()}</span>
+                  <button
+                    className="remove-btn"
+                    title="Remove from warband"
+                    onClick={() => onRemoveMember(warband.id, memberKey(m))}
+                  >✕</button>
+                </li>
+              )
+            })}
           </ul>
 
           <CharacterFields

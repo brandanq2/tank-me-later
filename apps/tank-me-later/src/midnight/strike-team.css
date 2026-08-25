@@ -545,6 +545,35 @@ body.body-midnight { background: #0a0814; }
   gap: 0.05rem;
 }
 
+/* Spec icons — same square whether loaded, unknown, or failed, so the roster
+   does not reflow as raider.io answers. */
+.mn-spec-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+  display: block;
+}
+
+.mn-spec-icon-empty { background: var(--surface2); }
+
+.mn-member-chip { gap: 0.45rem; }
+
+.mn-member-spec {
+  font-size: 0.66rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.mn-roster-headline {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
 .mn-roster-char { font-size: 0.82rem; font-weight: 700; color: var(--text); }
 .mn-roster-realm { font-size: 0.66rem; color: var(--muted); }
 .mn-roster-warband { font-size: 0.64rem; color: color-mix(in srgb, var(--accent) 80%, var(--muted)); }

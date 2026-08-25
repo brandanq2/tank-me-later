@@ -22,7 +22,8 @@ export interface AvailabilityRecord {
 export interface RaidSlotRecord {
   id: string
   day: string
-  block: number
+  /** Minutes past midnight, so a stored slot survives grid-range changes. */
+  startMinutes: number
   lockedAt: number
 }
 

@@ -1,7 +1,11 @@
 import { useState } from 'react'
+import { classColor } from '@tml/shared/titleStatus'
 import type { CharacterInput, WarbandEntry } from '@tml/shared/types'
 import { RAID_ROLES, ROLE_LABELS, type RaidRole, type RaidSlotRecord, type SignupRecord } from '../../midnight/types'
-import { RAID_BLOCKS, raidSlotCells, raidSlotLabel, type Day } from '../../midnight/schedule'
+import { RAID_BLOCKS, blockFromMinutes, raidSlotCells, raidSlotLabel, type Day } from '../../midnight/schedule'
+import { SpecIcon } from './SpecIcon'
+import type { CharacterLook } from '../../midnight/useCharacterLooks'
+import { charKey } from '../../hooks/useWarbands'
 
 interface Props {
   raidSlot: RaidSlotRecord | null
@@ -12,6 +16,8 @@ interface Props {
   myWarband: WarbandEntry | null
   /** This warband's own availability, to warn about signing up for a window they marked as out. */
   mySlots: Set<string>
+  /** raider.io class/spec data, keyed by charKey. */
+  looks: Record<string, CharacterLook>
   isOrganizer: boolean
   onSignUp: (character: CharacterInput, role: RaidRole, note: string) => Promise<string | null>
   onWithdraw: () => Promise<void>
@@ -22,9 +28,10 @@ function memberKey(m: CharacterInput): string {
   return `${m.name}-${m.realm}-${m.region}`.toLowerCase()
 }
 
-function SignupList({ signups, warbandNames }: {
+function SignupList({ signups, warbandNames, looks }: {
   signups: SignupRecord[]
   warbandNames: Map<string, string>
+  looks: Record<string, CharacterLook>
 }) {
   if (signups.length === 0) {
     return <p className="empty">Nobody has signed up yet.</p>
@@ -44,16 +51,28 @@ function SignupList({ signups, warbandNames }: {
               <p className="mn-roster-empty">—</p>
             ) : (
               <ul className="mn-roster-list">
-                {forRole.map(s => (
-                  <li key={s.warbandId} className="mn-roster-entry">
-                    <span className="mn-roster-char">{s.character.name}</span>
-                    <span className="mn-roster-realm">{s.character.realm}</span>
-                    <span className="mn-roster-warband">
-                      {warbandNames.get(s.warbandId) ?? 'Unknown warband'}
-                    </span>
-                    {s.note && <span className="mn-roster-note">{s.note}</span>}
-                  </li>
-                ))}
+                {forRole.map(s => {
+                  const look = looks[charKey(s.character)]
+                  return (
+                    <li key={s.warbandId} className="mn-roster-entry">
+                      <div className="mn-roster-headline">
+                        <SpecIcon look={look} />
+                        <span
+                          className="mn-roster-char"
+                          style={{ color: classColor(look?.className) }}
+                        >{s.character.name}</span>
+                      </div>
+                      <span className="mn-roster-realm">
+                        {look?.specName ? `${look.specName} ${look.className} · ` : ''}
+                        {s.character.realm}
+                      </span>
+                      <span className="mn-roster-warband">
+                        {warbandNames.get(s.warbandId) ?? 'Unknown warband'}
+                      </span>
+                      {s.note && <span className="mn-roster-note">{s.note}</span>}
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>
@@ -63,10 +82,11 @@ function SignupList({ signups, warbandNames }: {
   )
 }
 
-function SignupForm({ myWarband, existing, conflict, onSignUp, onWithdraw }: {
+function SignupForm({ myWarband, existing, conflict, looks, onSignUp, onWithdraw }: {
   myWarband: WarbandEntry
   existing?: SignupRecord
   conflict: boolean
+  looks: Record<string, CharacterLook>
   onSignUp: Props['onSignUp']
   onWithdraw: Props['onWithdraw']
 }) {
@@ -115,11 +135,16 @@ function SignupForm({ myWarband, existing, conflict, onSignUp, onWithdraw }: {
       )}
       <div className="mn-signup-row">
         <select value={selected} onChange={e => setSelected(e.target.value)}>
-          {myWarband.members.map(m => (
-            <option key={memberKey(m)} value={memberKey(m)}>
-              {m.name} — {m.realm} ({m.region.toUpperCase()})
-            </option>
-          ))}
+          {myWarband.members.map(m => {
+            const look = looks[charKey(m)]
+            return (
+              <option key={memberKey(m)} value={memberKey(m)}>
+                {m.name}
+                {look?.specName ? ` — ${look.specName} ${look.className}` : ''}
+                {' '}({m.realm} {m.region.toUpperCase()})
+              </option>
+            )
+          })}
         </select>
         <select value={role} onChange={e => setRole(e.target.value as RaidRole)}>
           {RAID_ROLES.map(r => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
@@ -146,7 +171,8 @@ function SignupForm({ myWarband, existing, conflict, onSignUp, onWithdraw }: {
 }
 
 export function RaidSlotPanel({
-  raidSlot, signups, warbandNames, myWarband, mySlots, isOrganizer, onSignUp, onWithdraw, onClear,
+  raidSlot, signups, warbandNames, myWarband, mySlots, looks, isOrganizer,
+  onSignUp, onWithdraw, onClear,
 }: Props) {
   if (!raidSlot) {
     return (
@@ -161,7 +187,7 @@ export function RaidSlotPanel({
     )
   }
 
-  const slot = { day: raidSlot.day as Day, block: raidSlot.block }
+  const slot = { day: raidSlot.day as Day, block: blockFromMinutes(raidSlot.startMinutes) }
   const mySignup = myWarband ? signups.find(s => s.warbandId === myWarband.id) : undefined
   const conflict = !!myWarband && !raidSlotCells(slot).every(c => mySlots.has(c))
 
@@ -177,7 +203,7 @@ export function RaidSlotPanel({
         )}
       </div>
 
-      <SignupList signups={signups} warbandNames={warbandNames} />
+      <SignupList signups={signups} warbandNames={warbandNames} looks={looks} />
 
       {myWarband
         ? (
@@ -188,6 +214,7 @@ export function RaidSlotPanel({
             myWarband={myWarband}
             existing={mySignup}
             conflict={conflict}
+            looks={looks}
             onSignUp={onSignUp}
             onWithdraw={onWithdraw}
           />

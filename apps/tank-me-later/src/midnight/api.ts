@@ -3,7 +3,7 @@ import { getMidnightCode } from './access'
 import type {
   AvailabilityRecord, MidnightState, RaidRole, RaidSlotRecord, SignupRecord,
 } from './types'
-import type { RaidSlot } from './schedule'
+import { blockStartMinutes, type RaidSlot } from './schedule'
 
 /** Every call after unlock carries the stored invite code. */
 function authHeaders(extra?: Record<string, string>): Record<string, string> {
@@ -57,7 +57,7 @@ export async function lockRaidSlot(
   const res = await fetch('/api/midnight?action=raid-slot', {
     method: 'PUT',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ day: slot.day, block: slot.block }),
+    body: JSON.stringify({ day: slot.day, startMinutes: blockStartMinutes(slot.block) }),
   })
   if (!res.ok) return { error: await errorFrom(res, 'Could not lock that slot') }
   return res.json()

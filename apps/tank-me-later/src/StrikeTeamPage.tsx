@@ -15,7 +15,12 @@ import {
   withdrawSignup,
 } from './midnight/api'
 import { buildReport, type WarbandRef } from './midnight/report'
-import { CANDIDATE_SLOTS, TIMEZONE_LABEL, type Day, type RaidSlot } from './midnight/schedule'
+import { useCharacterLooks } from './midnight/useCharacterLooks'
+import { charKey } from './hooks/useWarbands'
+import {
+  CANDIDATE_SLOTS, GRID_LABEL, TIMEZONE_LABEL, blockFromMinutes,
+  type Day, type RaidSlot,
+} from './midnight/schedule'
 import type { MidnightState, RaidRole } from './midnight/types'
 import type { CharacterEntry, CharacterInput } from '@tml/shared/types'
 
@@ -78,6 +83,22 @@ export default function StrikeTeamPage() {
     () => buildReport(state?.availability ?? [], warbandRefs),
     [state?.availability, warbandRefs],
   )
+
+  // Only the characters actually rendered get fetched: your own roster, plus
+  // whoever has signed up. Deduped so a character in both is one request.
+  const visibleCharacters = useMemo(() => {
+    const seen = new Set<string>()
+    const out: CharacterInput[] = []
+    for (const c of [...owned.flatMap(w => w.members), ...(state?.signups ?? []).map(s => s.character)]) {
+      const key = charKey(c)
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push({ name: c.name, realm: c.realm, region: c.region })
+    }
+    return out
+  }, [owned, state?.signups])
+
+  const looks = useCharacterLooks(visibleCharacters)
 
   // --- availability draft -------------------------------------------------
   const [draft, setDraft] = useState<Set<string>>(() => new Set())
@@ -173,7 +194,7 @@ export default function StrikeTeamPage() {
   }
 
   const lockedSlot: RaidSlot | null = state?.raidSlot
-    ? { day: state.raidSlot.day as Day, block: state.raidSlot.block }
+    ? { day: state.raidSlot.day as Day, block: blockFromMinutes(state.raidSlot.startMinutes) }
     : null
   const isOrganizer = state?.role === 'organizer'
 
@@ -185,7 +206,7 @@ export default function StrikeTeamPage() {
         <h1 className="mn-title">Strike Team</h1>
         <p className="subtitle">Midnight heroic progression — invite only</p>
         <p className="header-disclaimer">
-          All times {TIMEZONE_LABEL}. {CANDIDATE_SLOTS.length} possible three-hour windows a week.
+          {GRID_LABEL} {TIMEZONE_LABEL} · {CANDIDATE_SLOTS.length} possible three-hour windows a week.
         </p>
         {isOrganizer && <p className="mn-organizer-tag">Organizer access</p>}
       </header>
@@ -202,6 +223,7 @@ export default function StrikeTeamPage() {
               <WarbandPanel
                 owned={owned}
                 others={others}
+                looks={looks}
                 onCreate={wb.addWarband}
                 onAddMember={(id, member) => { wb.addMember(id, member) }}
                 onRemoveMember={wb.removeMember}
@@ -212,10 +234,11 @@ export default function StrikeTeamPage() {
 
           {myWarband && (
             <section className="mn-section">
-              <h2 className="mn-section-title">Your evenings</h2>
+              <h2 className="mn-section-title">Your availability</h2>
               <p className="mn-section-sub">
-                Drag to paint the half hours you could raid, all times {TIMEZONE_LABEL}.
-                Click a day or a time label to toggle the whole row or column.
+                Drag to paint the half hours you could raid — {GRID_LABEL}, all times{' '}
+                {TIMEZONE_LABEL}. Click a day or a time label to toggle the whole
+                row or column.
               </p>
               <AvailabilityGrid
                 selected={draft}
@@ -252,6 +275,7 @@ export default function StrikeTeamPage() {
               warbandNames={warbandNames}
               myWarband={myWarband}
               mySlots={draft}
+              looks={looks}
               isOrganizer={isOrganizer}
               onSignUp={handleSignUp}
               onWithdraw={handleWithdraw}
