@@ -77,8 +77,8 @@ export function RaidBuffs({ signups }: Props) {
       )}
 
       <p className="mn-buffs-note">
-        Death Knight, Rogue and Warlock bring utility rather than a raid-wide
-        buff, so they are never listed as a gap.
+        Death Knight and Warlock bring utility and raid cooldowns rather than a
+        raid-wide buff, so they are never listed as a gap.
       </p>
     </div>
   )

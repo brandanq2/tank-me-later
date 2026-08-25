@@ -123,8 +123,8 @@ export function parseSpecValue(value: string): { className: string; specName: st
  * Raid-wide buffs and debuffs, and the classes that bring them. Any spec of the
  * class counts — these are all class-wide in the current game.
  *
- * Death Knight, Rogue and Warlock intentionally appear nowhere: they bring
- * utility rather than a raid-wide buff, so they are never a coverage gap.
+ * Death Knight and Warlock intentionally appear nowhere: they bring utility and
+ * raid cooldowns rather than a raid-wide buff, so they are never a coverage gap.
  */
 export interface RaidBuff {
   name: string
@@ -144,6 +144,7 @@ export const RAID_BUFFS: RaidBuff[] = [
   { name: 'Devotion Aura', classes: ['Paladin'], note: 'damage reduction' },
   { name: 'Chaos Brand', classes: ['Demon Hunter'], note: '+magic damage taken' },
   { name: 'Mystic Touch', classes: ['Monk'], note: '+physical damage taken' },
+  { name: 'Atrophic Poison', classes: ['Rogue'], note: 'reduces enemy damage dealt' },
   {
     name: 'Bloodlust / Heroism',
     classes: ['Shaman', 'Mage', 'Evoker', 'Hunter'],
