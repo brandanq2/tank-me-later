@@ -370,16 +370,6 @@ body.body-midnight { background: #0a0814; }
 .mn-rep-lede { font-size: 0.88rem; line-height: 1.6; color: var(--text); }
 .mn-rep-lede b { color: var(--accent); }
 
-.mn-rep-pending {
-  font-size: 0.76rem;
-  line-height: 1.5;
-  color: var(--muted);
-  background: var(--surface);
-  border-left: 2px solid #e6b45a;
-  border-radius: 0 6px 6px 0;
-  padding: 0.5rem 0.75rem;
-}
-
 .mn-rep-heading {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem;
@@ -387,8 +377,6 @@ body.body-midnight { background: #0a0814; }
   color: var(--muted);
   margin-top: 0.5rem;
 }
-
-.mn-rep-note { font-size: 0.72rem; line-height: 1.5; color: var(--muted); }
 
 .mn-rep-slots {
   list-style: none;
@@ -456,32 +444,6 @@ body.body-midnight { background: #0a0814; }
 .mn-rep-slot-detail b { color: var(--muted); font-weight: 700; }
 .mn-rep-partial { color: #e6b45a; }
 .mn-rep-missing { color: var(--muted); }
-
-.mn-rep-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.76rem;
-}
-
-.mn-rep-table th {
-  text-align: left;
-  font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--muted);
-  border-bottom: 1px solid var(--border);
-  padding: 0.35rem 0.5rem;
-}
-
-.mn-rep-table td {
-  padding: 0.4rem 0.5rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-  color: var(--text);
-}
-
-.mn-rep-table tr.is-locked td { color: var(--gold); }
-.mn-rep-num { font-variant-numeric: tabular-nums; font-weight: 700; }
-.mn-rep-thin { color: var(--muted); font-size: 0.72rem; }
 
 /* Locked raid slot + signups */
 .mn-slot-card.is-locked { border-color: color-mix(in srgb, var(--gold) 40%, var(--border)); }

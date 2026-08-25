@@ -28,25 +28,15 @@ export interface SlotAnalysis {
   missing: WarbandRef[]
 }
 
-export interface WarbandFlexibility {
-  warband: WarbandRef
-  /** Candidate three-hour windows this warband can cover in full. */
-  slotsCovered: number
-  /** Half-hour cells marked available across the whole week. */
-  cellsMarked: number
-}
-
 export interface ScheduleReport {
-  /** Warbands that have submitted availability. */
+  /**
+   * Warbands that have submitted availability. Deliberately the only notion of
+   * roster here: the Strike Team is invited by hand, so a CLB warband that has
+   * not filled the grid in is presumed uninvited rather than late.
+   */
   responded: WarbandRef[]
-  /** Warbands that exist but have not filled the grid in yet. */
-  pending: WarbandRef[]
   /** Every candidate window, best first. Empty when nobody has responded. */
   ranked: SlotAnalysis[]
-  /** The single best window per night, best night first. */
-  bestPerDay: SlotAnalysis[]
-  /** Who is easy to schedule and who is the bottleneck — hardest first. */
-  flexibility: WarbandFlexibility[]
   /** Cell key → the warbands free in that half hour. */
   cellAvailability: Map<string, WarbandRef[]>
   /** The most warbands any single window can reach. */
@@ -101,7 +91,6 @@ export function buildReport(
   const records = availability.filter(r => byId.has(r.warbandId) && r.slots.length > 0)
   const respondedIds = new Set(records.map(r => r.warbandId))
   const responded = warbands.filter(w => respondedIds.has(w.id))
-  const pending = warbands.filter(w => !respondedIds.has(w.id))
 
   const slotsByWarband = new Map(records.map(r => [r.warbandId, new Set(r.slots)]))
 
@@ -118,27 +107,9 @@ export function buildReport(
     ? []
     : CANDIDATE_SLOTS.map(slot => analyzeSlot(slot, responded, slotsByWarband)).sort(compareSlots)
 
-  const bestPerDay: SlotAnalysis[] = []
-  for (const day of DAYS) {
-    const best = ranked.find(s => s.slot.day === day)
-    if (best) bestPerDay.push(best)
-  }
-  bestPerDay.sort(compareSlots)
-
-  const flexibility: WarbandFlexibility[] = responded.map(warband => {
-    const marked = slotsByWarband.get(warband.id) ?? new Set<string>()
-    const slotsCovered = CANDIDATE_SLOTS.filter(slot =>
-      raidSlotCells(slot).every(c => marked.has(c)),
-    ).length
-    return { warband, slotsCovered, cellsMarked: marked.size }
-  }).sort((a, b) => a.slotsCovered - b.slotsCovered || a.warband.name.localeCompare(b.warband.name))
-
   return {
     responded,
-    pending,
     ranked,
-    bestPerDay,
-    flexibility,
     cellAvailability,
     bestTurnout: ranked[0]?.full.length ?? 0,
   }

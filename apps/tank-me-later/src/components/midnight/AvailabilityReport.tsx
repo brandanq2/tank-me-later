@@ -1,4 +1,4 @@
-import { CANDIDATE_SLOTS, RAID_BLOCKS, raidSlotLabel, raidSlotShortLabel, type RaidSlot } from '../../midnight/schedule'
+import { RAID_BLOCKS, raidSlotLabel, type RaidSlot } from '../../midnight/schedule'
 import { topSlots, type ScheduleReport, type SlotAnalysis } from '../../midnight/report'
 
 interface Props {
@@ -57,7 +57,7 @@ function SlotRow({ analysis, total, onLock, locked }: {
 }
 
 export function AvailabilityReport({ report, onLock, lockedSlotId }: Props) {
-  const { responded, pending, ranked, bestPerDay, flexibility, bestTurnout } = report
+  const { responded, ranked, bestTurnout } = report
   const total = responded.length
   const best = ranked[0]
 
@@ -77,9 +77,7 @@ export function AvailabilityReport({ report, onLock, lockedSlotId }: Props) {
   return (
     <div className="mn-report">
       <p className="mn-rep-lede">
-        {plural(total, 'warband')} {total === 1 ? 'has' : 'have'} submitted availability
-        {pending.length > 0 && <> and <b>{plural(pending.length, 'warband')}</b> {pending.length === 1 ? 'has' : 'have'} not</>}.
-        {' '}
+        {plural(total, 'warband')} {total === 1 ? 'has' : 'have'} submitted availability.{' '}
         {perfect.length > 0 ? (
           <>
             <b>{plural(perfect.length, 'window')}</b> {perfect.length === 1 ? 'works' : 'work'} for
@@ -95,12 +93,6 @@ export function AvailabilityReport({ report, onLock, lockedSlotId }: Props) {
         )}
       </p>
 
-      {pending.length > 0 && (
-        <p className="mn-rep-pending">
-          <b>Still waiting on:</b> {names(pending)}. Numbers below will move once they fill in.
-        </p>
-      )}
-
       <h3 className="mn-rep-heading">Best windows</h3>
       <ol className="mn-rep-slots">
         {topSlots(report, 5).map(analysis => (
@@ -113,47 +105,6 @@ export function AvailabilityReport({ report, onLock, lockedSlotId }: Props) {
           />
         ))}
       </ol>
-
-      <h3 className="mn-rep-heading">Best window each night</h3>
-      <table className="mn-rep-table">
-        <thead>
-          <tr><th>Night</th><th>Best three hours</th><th>Full</th><th>Missing</th></tr>
-        </thead>
-        <tbody>
-          {bestPerDay.map(analysis => (
-            <tr key={analysis.id} className={analysis.id === lockedSlotId ? 'is-locked' : undefined}>
-              <td>{raidSlotShortLabel(analysis.slot).split(' ')[0]}</td>
-              <td>{raidSlotShortLabel(analysis.slot).replace(/^\S+\s/, '')}</td>
-              <td className="mn-rep-num">{analysis.full.length}/{total}</td>
-              <td className="mn-rep-thin">
-                {analysis.missing.length === 0 && analysis.partial.length === 0
-                  ? '—'
-                  : names([...analysis.partial.map(p => p.warband), ...analysis.missing])}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <h3 className="mn-rep-heading">Who is hardest to schedule</h3>
-      <p className="mn-rep-note">
-        Out of {CANDIDATE_SLOTS.length} possible three-hour windows across the week.
-        The warbands at the top are the ones any raid night has to be built around.
-      </p>
-      <table className="mn-rep-table">
-        <thead>
-          <tr><th>Warband</th><th>Windows they can make</th><th>Half hours marked</th></tr>
-        </thead>
-        <tbody>
-          {flexibility.map(f => (
-            <tr key={f.warband.id}>
-              <td>{f.warband.name}</td>
-              <td className="mn-rep-num">{f.slotsCovered}</td>
-              <td className="mn-rep-num">{f.cellsMarked}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   )
 }
