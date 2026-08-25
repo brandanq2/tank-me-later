@@ -9,7 +9,7 @@ const redis = new Redis({
 const CACHE_KEY = 'tank-me-later:title-watch:cache'
 const PERMA_KEY = 'tank-me-later:title-watch:perma'
 
-const DEFAULT_SEASON = 'season-mn-1'
+const DEFAULT_SEASON = 'season-mn-2'
 const DEFAULT_REGION = 'us'
 
 // A player is "safe" once their IO is this far above the title cutoff.
@@ -460,8 +460,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // GET
   const refresh = req.query.refresh === '1'
   const cached = await redis.get<TitleWatchData>(CACHE_KEY)
-  if (!refresh && cached && Date.now() - cached.updatedAt < CACHE_TTL_MS) {
-    return res.json(cached)
+  // The key is not season-scoped, so a roster cached before a season rollover
+  // has to count as a miss rather than be served for another TTL — including
+  // as the stale fallback below, where last season's cutoff would be a lie.
+  const usable = cached && cached.season === season ? cached : null
+  if (!refresh && usable && Date.now() - usable.updatedAt < CACHE_TTL_MS) {
+    return res.json(usable)
   }
 
   try {
@@ -469,7 +473,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await redis.set(CACHE_KEY, data)
     return res.json(data)
   } catch (err) {
-    if (cached) return res.json(cached) // serve stale on upstream failure
+    if (usable) return res.json(usable) // serve stale on upstream failure
     return res.status(502).json({ error: err instanceof Error ? err.message : 'Failed to compute roster' })
   }
 }
