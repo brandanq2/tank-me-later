@@ -140,7 +140,6 @@ export const RAID_BUFFS: RaidBuff[] = [
   { name: 'Battle Shout', classes: ['Warrior'], note: 'attack power' },
   { name: 'Mark of the Wild', classes: ['Druid'], note: 'versatility' },
   { name: 'Skyfury', classes: ['Shaman'], note: 'mastery' },
-  { name: 'Blessing of the Bronze', classes: ['Evoker'], note: 'movement' },
   { name: 'Devotion Aura', classes: ['Paladin'], note: 'damage reduction' },
   { name: 'Chaos Brand', classes: ['Demon Hunter'], note: '+magic damage taken' },
   { name: 'Mystic Touch', classes: ['Monk'], note: '+physical damage taken' },
