@@ -1,0 +1,606 @@
+/*
+ * Strike Team (Midnight heroic scheduling).
+ *
+ * Page-scoped rather than appended to packages/shared/styles/index.css: only
+ * this app has the route, so title-watch has no reason to download it.
+ */
+
+body.body-midnight { background: #0a0814; }
+
+/* Void-purple theme so the invite-only page reads as its own space. */
+.page-midnight {
+  --bg: #0a0814;
+  --surface: #151027;
+  --surface2: #1f1838;
+  --border: #322a52;
+  --text: #e9e5f5;
+  --muted: #9089b5;
+  --accent: #a855f7;
+}
+
+.mn-header { margin-bottom: 2rem; }
+
+.mn-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.4rem, 8vw, 3.6rem);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.mn-organizer-tag {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 999px;
+  padding: 0.16rem 0.6rem;
+}
+
+.mn-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.mn-section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.mn-section-sub {
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-bottom: 0.85rem;
+}
+
+/* Invite gate */
+.mn-gate {
+  max-width: 26rem;
+  margin: 4rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.75rem;
+  text-align: center;
+}
+
+.mn-gate-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.04em;
+}
+
+.mn-gate-sub { font-size: 0.8rem; line-height: 1.5; color: var(--muted); }
+
+.mn-gate-expired {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #e6b45a;
+}
+
+.mn-gate-form { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+
+.mn-gate-form input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.mn-gate-form input:focus { border-color: var(--accent); }
+
+.mn-gate-form button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.55rem 1.2rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.mn-gate-form button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.mn-gate-error { font-size: 0.75rem; font-weight: 600; color: #e8253b; }
+
+/* Cards */
+.mn-warbands { display: flex; flex-direction: column; gap: 1rem; }
+
+.mn-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.mn-card-created { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+
+.mn-card-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.mn-card-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.25rem;
+  letter-spacing: 0.03em;
+  color: var(--text);
+}
+
+.mn-card-sub { font-size: 0.76rem; line-height: 1.5; color: var(--muted); }
+
+.mn-card-meta {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-right: auto;
+}
+
+.mn-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  align-self: flex-start;
+}
+
+.mn-link-btn:hover { color: var(--text); }
+.mn-link-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.mn-char-form { margin-top: 0.15rem; }
+.mn-claim-form { flex-wrap: wrap; }
+
+.mn-claim-form select {
+  flex: 1 1 10rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+/* Availability grid — days across, half hours down */
+.mn-grid {
+  display: grid;
+  grid-template-columns: 4.1rem repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  /* Painting swallows the gesture, so the page must not also scroll. */
+  touch-action: none;
+  user-select: none;
+}
+
+.mn-grid.is-disabled { opacity: 0.55; pointer-events: none; }
+
+.mn-grid-corner {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mn-grid-dayhead,
+.mn-grid-timehead {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  padding: 0.2rem 0.1rem;
+  border-radius: 4px;
+  transition: color 0.12s, background 0.12s;
+}
+
+.mn-grid-dayhead { text-transform: uppercase; }
+.mn-grid-timehead { text-align: right; padding-right: 0.4rem; white-space: nowrap; }
+
+.mn-grid-dayhead:hover,
+.mn-grid-timehead:hover { color: var(--text); background: var(--surface2); }
+
+.mn-cell {
+  height: 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface2);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.08s, border-color 0.08s;
+}
+
+.mn-cell:hover { border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+
+.mn-cell.is-on {
+  background: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 70%, #fff);
+}
+
+.mn-save-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.85rem;
+}
+
+.mn-note-input {
+  flex: 1 1 16rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.mn-note-input:focus { border-color: var(--accent); }
+
+.mn-save-count {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Team calendar heatmap */
+.mn-cal {
+  display: grid;
+  grid-template-columns: 4.1rem repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.mn-cal-dayhead,
+.mn-cal-timehead {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+}
+
+.mn-cal-dayhead { justify-content: center; text-transform: uppercase; }
+.mn-cal-timehead { justify-content: flex-end; padding-right: 0.4rem; white-space: nowrap; }
+
+.mn-cal-cell {
+  height: 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: default;
+}
+
+/* Five steps so turnout is readable without counting labels. */
+.mn-heat-0 { background: var(--surface2); color: transparent; }
+.mn-heat-1 { background: color-mix(in srgb, var(--accent) 18%, var(--surface2)); }
+.mn-heat-2 { background: color-mix(in srgb, var(--accent) 38%, var(--surface2)); }
+.mn-heat-3 { background: color-mix(in srgb, var(--accent) 62%, var(--surface2)); }
+.mn-heat-4 { background: color-mix(in srgb, var(--accent) 88%, var(--surface2)); }
+
+.mn-cal-cell.is-slot {
+  border-color: var(--gold);
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+
+.mn-cal-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.mn-cal-legend-label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.mn-cal-legend-swatch {
+  width: 1.1rem;
+  height: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.mn-cal-legend-note {
+  font-size: 0.66rem;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* Written report */
+.mn-report { display: flex; flex-direction: column; gap: 0.85rem; }
+
+.mn-rep-lede { font-size: 0.88rem; line-height: 1.6; color: var(--text); }
+.mn-rep-lede b { color: var(--accent); }
+
+.mn-rep-pending {
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--muted);
+  background: var(--surface);
+  border-left: 2px solid #e6b45a;
+  border-radius: 0 6px 6px 0;
+  padding: 0.5rem 0.75rem;
+}
+
+.mn-rep-heading {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+
+.mn-rep-note { font-size: 0.72rem; line-height: 1.5; color: var(--muted); }
+
+.mn-rep-slots {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mn-rep-slot {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.7rem 0.85rem;
+}
+
+.mn-rep-slot.is-locked { border-color: var(--gold); }
+
+.mn-rep-slot-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+
+.mn-rep-slot-when {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.03em;
+  color: var(--text);
+}
+
+.mn-rep-slot-count {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  margin-right: auto;
+}
+
+.mn-rep-locked-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  border-radius: 999px;
+  padding: 0.14rem 0.5rem;
+}
+
+.mn-rep-lock-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mn-rep-slot-detail { font-size: 0.76rem; line-height: 1.55; color: var(--text); }
+.mn-rep-slot-detail b { color: var(--muted); font-weight: 700; }
+.mn-rep-partial { color: #e6b45a; }
+.mn-rep-missing { color: var(--muted); }
+
+.mn-rep-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+
+.mn-rep-table th {
+  text-align: left;
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding: 0.35rem 0.5rem;
+}
+
+.mn-rep-table td {
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  color: var(--text);
+}
+
+.mn-rep-table tr.is-locked td { color: var(--gold); }
+.mn-rep-num { font-variant-numeric: tabular-nums; font-weight: 700; }
+.mn-rep-thin { color: var(--muted); font-size: 0.72rem; }
+
+/* Locked raid slot + signups */
+.mn-slot-card.is-locked { border-color: color-mix(in srgb, var(--gold) 40%, var(--border)); }
+.mn-slot-when { color: var(--gold); }
+
+.mn-slot-hint { font-size: 0.76rem; line-height: 1.5; color: var(--muted); }
+
+.mn-slot-warn {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #e6b45a;
+  background: color-mix(in srgb, #e6b45a 10%, transparent);
+  border-radius: 6px;
+  padding: 0.45rem 0.65rem;
+}
+
+.mn-roster {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.mn-roster-col {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem;
+}
+
+.mn-roster-role {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+}
+
+.mn-roster-count {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0;
+  color: var(--accent);
+}
+
+.mn-roster-empty { font-size: 0.75rem; color: var(--muted); }
+
+.mn-roster-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.mn-roster-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.mn-roster-char { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+.mn-roster-realm { font-size: 0.66rem; color: var(--muted); }
+.mn-roster-warband { font-size: 0.64rem; color: color-mix(in srgb, var(--accent) 80%, var(--muted)); }
+.mn-roster-note { font-size: 0.66rem; font-style: italic; color: var(--muted); }
+
+.mn-signup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.85rem;
+}
+
+.mn-signup-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.mn-signup-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mn-signup-row select,
+.mn-signup-row input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.mn-signup-row select:focus,
+.mn-signup-row input:focus { border-color: var(--accent); }
+.mn-signup-row select:first-child { flex: 2 1 12rem; }
+.mn-signup-row input { flex: 1 1 10rem; }
+
+.mn-withdraw { color: var(--red); }
+.mn-withdraw:hover { color: #ff8a80; }
+
+@media (max-width: 700px) {
+  .mn-grid,
+  .mn-cal { grid-template-columns: 3.3rem repeat(7, minmax(0, 1fr)); }
+  .mn-grid-timehead,
+  .mn-cal-timehead { font-size: 0.58rem; }
+  .mn-grid-dayhead,
+  .mn-cal-dayhead { font-size: 0.6rem; }
+  .mn-cell,
+  .mn-cal-cell { height: 1.6rem; }
+  .mn-roster { grid-template-columns: 1fr; }
+  .mn-cal-legend-note { margin-left: 0; flex-basis: 100%; }
+}
