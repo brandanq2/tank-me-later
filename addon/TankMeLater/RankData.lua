@@ -5,44 +5,44 @@ TankMeLater = TankMeLater or {}
 TankMeLater.Data = {}
 
 -- Season metadata
-TankMeLater.Data.Season      = "season-mn-1"
-TankMeLater.Data.UpdatedDate = "2026-08-23"
+TankMeLater.Data.Season      = "season-mn-2"
+TankMeLater.Data.UpdatedDate = "2026-08-30"
 
 -- Pre-computed minimum score for each rank boundary.
 -- Ordered highest rank first (Challenger index 1, Iron IV last).
 -- scoreToRank() scans this table and returns the first entry where score >= minScore.
 TankMeLater.Data.Cutoffs = {
-    { tier = "Challenger" , division = nil  , label = "Challenger"     , minScore = 4233, topPercent =   0.02 },
-    { tier = "Grandmaster", division = nil  , label = "Grandmaster"    , minScore = 4222, topPercent =   0.06 },
-    { tier = "Master"     , division = nil  , label = "Master"         , minScore = 4041, topPercent =   0.71 },
-    { tier = "Diamond"    , division = "I"  , label = "Diamond I"      , minScore = 3946, topPercent =   1.23 },
-    { tier = "Diamond"    , division = "II" , label = "Diamond II"     , minScore = 3889, topPercent =   2.15 },
-    { tier = "Diamond"    , division = "III", label = "Diamond III"    , minScore = 3857, topPercent =   2.67 },
-    { tier = "Diamond"    , division = "IV" , label = "Diamond IV"     , minScore = 3767, topPercent =   4.12 },
-    { tier = "Emerald"    , division = "I"  , label = "Emerald I"      , minScore = 3599, topPercent =   6.81 },
-    { tier = "Emerald"    , division = "II" , label = "Emerald II"     , minScore = 3490, topPercent =   8.57 },
-    { tier = "Emerald"    , division = "III", label = "Emerald III"    , minScore = 3373, topPercent =  11.14 },
-    { tier = "Emerald"    , division = "IV" , label = "Emerald IV"     , minScore = 3248, topPercent =  16.12 },
-    { tier = "Platinum"   , division = "I"  , label = "Platinum I"     , minScore = 3189, topPercent =   18.5 },
-    { tier = "Platinum"   , division = "II" , label = "Platinum II"    , minScore = 3101, topPercent =  22.01 },
-    { tier = "Platinum"   , division = "III", label = "Platinum III"   , minScore = 2997, topPercent =  26.46 },
-    { tier = "Platinum"   , division = "IV" , label = "Platinum IV"    , minScore = 2850, topPercent =   33.8 },
-    { tier = "Gold"       , division = "I"  , label = "Gold I"         , minScore = 2775, topPercent =  37.53 },
-    { tier = "Gold"       , division = "II" , label = "Gold II"        , minScore = 2668, topPercent =  42.91 },
-    { tier = "Gold"       , division = "III", label = "Gold III"       , minScore = 2545, topPercent =  49.01 },
-    { tier = "Gold"       , division = "IV" , label = "Gold IV"        , minScore = 2372, topPercent =  57.69 },
-    { tier = "Silver"     , division = "I"  , label = "Silver I"       , minScore = 2285, topPercent =  62.03 },
-    { tier = "Silver"     , division = "II" , label = "Silver II"      , minScore = 2175, topPercent =  67.51 },
-    { tier = "Silver"     , division = "III", label = "Silver III"     , minScore = 2066, topPercent =  72.98 },
-    { tier = "Silver"     , division = "IV" , label = "Silver IV"      , minScore = 1937, topPercent =   79.4 },
-    { tier = "Bronze"     , division = "I"  , label = "Bronze I"       , minScore = 1862, topPercent =  83.13 },
-    { tier = "Bronze"     , division = "II" , label = "Bronze II"      , minScore = 1780, topPercent =  87.26 },
-    { tier = "Bronze"     , division = "III", label = "Bronze III"     , minScore = 1699, topPercent =   91.3 },
-    { tier = "Bronze"     , division = "IV" , label = "Bronze IV"      , minScore = 1601, topPercent =  96.16 },
-    { tier = "Iron"       , division = "I"  , label = "Iron I"         , minScore = 1564, topPercent =  98.03 },
-    { tier = "Iron"       , division = "II" , label = "Iron II"        , minScore = 1543, topPercent =  99.06 },
-    { tier = "Iron"       , division = "III", label = "Iron III"       , minScore = 1535, topPercent =  99.48 },
-    { tier = "Iron"       , division = "IV" , label = "Iron IV"        , minScore = 1525, topPercent =    100 },
+    { tier = "Challenger" , division = nil  , label = "Challenger"     , minScore = 3477, topPercent =   0.02 },
+    { tier = "Grandmaster", division = nil  , label = "Grandmaster"    , minScore = 3468, topPercent =   0.06 },
+    { tier = "Master"     , division = nil  , label = "Master"         , minScore = 3318, topPercent =    0.7 },
+    { tier = "Diamond"    , division = "I"  , label = "Diamond I"      , minScore = 3239, topPercent =   1.21 },
+    { tier = "Diamond"    , division = "II" , label = "Diamond II"     , minScore = 3193, topPercent =   2.23 },
+    { tier = "Diamond"    , division = "III", label = "Diamond III"    , minScore = 3170, topPercent =   2.73 },
+    { tier = "Diamond"    , division = "IV" , label = "Diamond IV"     , minScore = 3106, topPercent =   4.17 },
+    { tier = "Emerald"    , division = "I"  , label = "Emerald I"      , minScore = 2982, topPercent =   6.92 },
+    { tier = "Emerald"    , division = "II" , label = "Emerald II"     , minScore = 2900, topPercent =   8.76 },
+    { tier = "Emerald"    , division = "III", label = "Emerald III"    , minScore = 2824, topPercent =   11.3 },
+    { tier = "Emerald"    , division = "IV" , label = "Emerald IV"     , minScore = 2747, topPercent =  16.29 },
+    { tier = "Platinum"   , division = "I"  , label = "Platinum I"     , minScore = 2711, topPercent =  18.64 },
+    { tier = "Platinum"   , division = "II" , label = "Platinum II"    , minScore = 2656, topPercent =  22.21 },
+    { tier = "Platinum"   , division = "III", label = "Platinum III"   , minScore = 2571, topPercent =  26.59 },
+    { tier = "Platinum"   , division = "IV" , label = "Platinum IV"    , minScore = 2374, topPercent =  33.93 },
+    { tier = "Gold"       , division = "I"  , label = "Gold I"         , minScore = 2276, topPercent =  37.61 },
+    { tier = "Gold"       , division = "II" , label = "Gold II"        , minScore = 2131, topPercent =  43.01 },
+    { tier = "Gold"       , division = "III", label = "Gold III"       , minScore = 1968, topPercent =  49.12 },
+    { tier = "Gold"       , division = "IV" , label = "Gold IV"        , minScore = 1736, topPercent =  57.78 },
+    { tier = "Silver"     , division = "I"  , label = "Silver I"       , minScore = 1619, topPercent =  62.16 },
+    { tier = "Silver"     , division = "II" , label = "Silver II"      , minScore = 1471, topPercent =  67.66 },
+    { tier = "Silver"     , division = "III", label = "Silver III"     , minScore = 1324, topPercent =  73.17 },
+    { tier = "Silver"     , division = "IV" , label = "Silver IV"      , minScore = 1155, topPercent =  79.49 },
+    { tier = "Bronze"     , division = "I"  , label = "Bronze I"       , minScore = 1056, topPercent =  83.17 },
+    { tier = "Bronze"     , division = "II" , label = "Bronze II"      , minScore =  944, topPercent =  87.34 },
+    { tier = "Bronze"     , division = "III", label = "Bronze III"     , minScore =  838, topPercent =  91.32 },
+    { tier = "Bronze"     , division = "IV" , label = "Bronze IV"      , minScore =  707, topPercent =  96.22 },
+    { tier = "Iron"       , division = "I"  , label = "Iron I"         , minScore =  657, topPercent =  98.06 },
+    { tier = "Iron"       , division = "II" , label = "Iron II"        , minScore =  630, topPercent =  99.07 },
+    { tier = "Iron"       , division = "III", label = "Iron III"       , minScore =  619, topPercent =  99.49 },
+    { tier = "Iron"       , division = "IV" , label = "Iron IV"        , minScore =  605, topPercent =    100 },
 }
 
 -- Tier colors as (r, g, b) in [0-1] range, matching the Tank-Me-Later web app.
